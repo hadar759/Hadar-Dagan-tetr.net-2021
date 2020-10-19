@@ -4,7 +4,8 @@ Hadar Dagan
 v1.0
 """
 import socket
-from tetris_game import TetrisGame
+from .tetris_game import TetrisGame
+
 
 class TetrisClient:
     """The tetris server"""

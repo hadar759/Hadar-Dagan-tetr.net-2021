@@ -1,8 +1,3 @@
-"""
-Hadar Dagan
-31.5.2020
-v1.0
-"""
 import copy
 from typing import List, Tuple
 

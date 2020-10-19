@@ -1,12 +1,7 @@
-"""
-Hadar Dagan
-31.5.2020
-v1.0
-"""
 from typing import Tuple
 
 import pygame
-from colors import Colors
+from .colors import Colors
 
 
 class Button:

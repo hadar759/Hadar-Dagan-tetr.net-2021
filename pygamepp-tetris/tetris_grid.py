@@ -6,8 +6,8 @@ v1.0
 import pygame
 from pygamepp.grid import Grid
 
-from colors import Colors
-from pieces.tetris_piece import Piece
+from .colors import Colors
+from .pieces.tetris_piece import Piece
 
 
 class TetrisGrid(Grid):

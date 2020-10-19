@@ -11,10 +11,10 @@ import pygame
 from pygame import USEREVENT
 from pygamepp.game import Game
 
-from pieces import *
-from pieces.tetris_piece import Piece
-from tetris_grid import TetrisGrid
-from colors import Colors
+from .pieces import *
+from .pieces.tetris_piece import Piece
+from .tetris_grid import TetrisGrid
+from .colors import Colors
 
 
 class TetrisGame(Game):

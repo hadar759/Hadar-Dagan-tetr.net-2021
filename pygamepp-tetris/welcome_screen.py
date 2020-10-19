@@ -32,9 +32,8 @@ class MainMenu:
             self.screen.blit(self.background_image, (0, 0))
         # Set up the buttons and display them
         # Very specific numbers just so they exactly fill the blocks in the background pic hahaha
-        self.create_button((self.width // 2 - 258, self.height // 3 - 250), 504, 200, Colors.BLACK, "sprint")
-        self.create_button((self.width // 2 - 258, self.height // 3 * 2 - 250), 504, 200, Colors.BLACK, "marathon")
-        self.create_button((self.width // 2 - 258, self.height - 250), 504, 200, Colors.BLACK, "multiplayer")
+        self.create_button((self.width // 2 - 258, self.height // 3 - 250), 504, 200, Colors.BLACK, "login")
+        self.create_button((self.width // 2 - 258, self.height // 3 * 2 - 250), 504, 200, Colors.BLACK, "register")
         self.show_buttons()
         self.show_text_in_buttons()
 
@@ -53,11 +52,11 @@ class MainMenu:
                         # Check if the click is inside the button area (i.e. the button was clicked)
                         if button.inside_button(mouse_pos):
                             # The text on the buttons indicates their mode
-                            if button.text == "sprint":
-                                self.sprint()
+                            if button.text == "login":
+                                self.login()
                             elif button.text == "marathon":
-                                self.marathon()
-                            elif button.text == "multiplayer":
+                                self.register()
+                            """elif button.text == "multiplayer":
                                 self.multiplayer()
                             # If we are already in the sprint screen, the buttons each will
                             # indicate "xL" (x is the line number), so we'll start the game as a
@@ -73,7 +72,7 @@ class MainMenu:
                             # If it's none of the above we are in the marathon screen and we'll
                             # start a marathon game
                             else:
-                                self.start_game("marathon", button.text)
+                                self.start_game("marathon", button.text)"""
 
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
