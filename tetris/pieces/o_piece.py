@@ -4,7 +4,7 @@ from .tetris_piece import Piece
 
 
 class OPiece(Piece):
-    def __init__(self, skin: int):
+    def __init__(self, skin: int = 0):
         self.sprite = pygame.image.load(rf"./resources/opiece-sprite{skin}.png")
         super().__init__(self.sprite, [[0, 4], [0, 5], [1, 5], [1, 4]])
 

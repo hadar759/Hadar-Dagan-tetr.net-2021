@@ -2,11 +2,11 @@ from typing import Optional, Tuple
 
 import pygame
 
-from .tetris_game import TetrisGame
-from .button import Button
-from .colors import Colors
-from .tetris_client import TetrisClient
-from .tetris_server import TetrisServer
+from tetris.tetris_game import TetrisGame
+from tetris.button import Button
+from tetris.colors import Colors
+from tetris.tetris_client import TetrisClient
+from tetris.tetris_server import TetrisServer
 
 
 class MainMenu:
@@ -14,15 +14,19 @@ class MainMenu:
 
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
 
-    def __init__(self,
-                 width: int,
-                 height: int,
-                 refresh_rate: int = 60,
-                 background_path: Optional[str] = None):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+    ):
         self.width, self.height = width, height
         self.refresh_rate = refresh_rate
         self.screen = pygame.display.set_mode((self.width, self.height))
-        self.background_image = pygame.image.load(background_path) if background_path else None
+        self.background_image = (
+            pygame.image.load(background_path) if background_path else None
+        )
         self.buttons = []
 
     def run(self):
@@ -32,9 +36,27 @@ class MainMenu:
             self.screen.blit(self.background_image, (0, 0))
         # Set up the buttons and display them
         # Very specific numbers just so they exactly fill the blocks in the background pic hahaha
-        self.create_button((self.width // 2 - 258, self.height // 3 - 250), 504, 200, Colors.BLACK, "sprint")
-        self.create_button((self.width // 2 - 258, self.height // 3 * 2 - 250), 504, 200, Colors.BLACK, "marathon")
-        self.create_button((self.width // 2 - 258, self.height - 250), 504, 200, Colors.BLACK, "multiplayer")
+        self.create_button(
+            (self.width // 2 - 258, self.height // 3 - 250),
+            504,
+            200,
+            Colors.BLACK,
+            "sprint",
+        )
+        self.create_button(
+            (self.width // 2 - 258, self.height // 3 * 2 - 250),
+            504,
+            200,
+            Colors.BLACK,
+            "marathon",
+        )
+        self.create_button(
+            (self.width // 2 - 258, self.height - 250),
+            504,
+            200,
+            Colors.BLACK,
+            "multiplayer",
+        )
         self.show_buttons()
         self.show_text_in_buttons()
 
@@ -79,8 +101,20 @@ class MainMenu:
         """Create the multiplayer screen - set up the correct buttons"""
         self.buttons = []
         self.screen.blit(self.background_image, (0, 0))
-        self.create_button((self.width // 3 - 300, self.height // 2 - 100), 500, 200, Colors.BLACK, "SERVER")
-        self.create_button(((self.width // 3) * 2 - 200, self.height // 2 - 100), 500, 200, Colors.BLACK, "CLIENT")
+        self.create_button(
+            (self.width // 3 - 300, self.height // 2 - 100),
+            500,
+            200,
+            Colors.BLACK,
+            "SERVER",
+        )
+        self.create_button(
+            ((self.width // 3) * 2 - 200, self.height // 2 - 100),
+            500,
+            200,
+            Colors.BLACK,
+            "CLIENT",
+        )
         self.show_buttons()
         self.show_text_in_buttons()
         pygame.display.flip()
@@ -89,10 +123,34 @@ class MainMenu:
         """Create the sprint screen - set up the correct buttons"""
         self.buttons = []
         self.screen.blit(self.background_image, (0, 0))
-        self.create_button((self.width // 2 - 257, self.height // 8 - 85), 501, 200, Colors.BLACK, "20L")
-        self.create_button((self.width // 2 - 257, self.height // 8 * 3 - 81), 501, 200, Colors.BLACK, "40L")
-        self.create_button((self.width // 2 - 257, self.height // 8 * 5 - 86), 501, 200, Colors.BLACK, "100L")
-        self.create_button((self.width // 2 - 257, self.height // 8 * 7 - 85), 501, 200, Colors.BLACK, "1000L")
+        self.create_button(
+            (self.width // 2 - 257, self.height // 8 - 85),
+            501,
+            200,
+            Colors.BLACK,
+            "20L",
+        )
+        self.create_button(
+            (self.width // 2 - 257, self.height // 8 * 3 - 81),
+            501,
+            200,
+            Colors.BLACK,
+            "40L",
+        )
+        self.create_button(
+            (self.width // 2 - 257, self.height // 8 * 5 - 86),
+            501,
+            200,
+            Colors.BLACK,
+            "100L",
+        )
+        self.create_button(
+            (self.width // 2 - 257, self.height // 8 * 7 - 85),
+            501,
+            200,
+            Colors.BLACK,
+            "1000L",
+        )
         self.show_buttons()
         self.show_text_in_buttons()
         pygame.display.flip()
@@ -107,19 +165,23 @@ class MainMenu:
         row_starting_width = self.width // 10
         # First line of buttons
         for i in range(5):
-            self.create_button((row_starting_width * (3 + (i - 1) * 2) - 100, row_height),
-                               button_width,
-                               button_height,
-                               Colors.BLACK,
-                               str(i))
+            self.create_button(
+                (row_starting_width * (3 + (i - 1) * 2) - 100, row_height),
+                button_width,
+                button_height,
+                Colors.BLACK,
+                str(i),
+            )
         # Second line of buttons
         row_height = row_height + button_height + 100
         for i in range(5):
-            self.create_button((row_starting_width * (3 + (i - 1) * 2) - 100, row_height),
-                               button_width,
-                               button_height,
-                               Colors.BLACK,
-                               str(i + 5))
+            self.create_button(
+                (row_starting_width * (3 + (i - 1) * 2) - 100, row_height),
+                button_width,
+                button_height,
+                Colors.BLACK,
+                str(i + 5),
+            )
         self.show_buttons()
         self.show_text_in_buttons()
         pygame.display.flip()
@@ -142,7 +204,14 @@ class MainMenu:
         game = TetrisGame(500 + 200, 1000, mode, 75, lines_or_level=int(lines_or_level))
         game.run()
 
-    def create_button(self, starting_pixel: Tuple[int, int], width: int, height: int, color: int, text: str):
+    def create_button(
+        self,
+        starting_pixel: Tuple[int, int],
+        width: int,
+        height: int,
+        color: int,
+        text: str,
+    ):
         """Create a button given all of his stats"""
         self.buttons.append(Button(starting_pixel, width, height, color, text))
 

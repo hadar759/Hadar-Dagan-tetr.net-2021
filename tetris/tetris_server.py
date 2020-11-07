@@ -4,7 +4,7 @@ Hadar Dagan
 v1.0
 """
 import socket
-from .tetris_game import TetrisGame
+from tetris.tetris_game import TetrisGame
 
 
 class TetrisServer:
@@ -28,4 +28,3 @@ class TetrisServer:
         self.client_socket.send(str(0).encode())
         self.tetris_game.client_socket = self.client_socket
         self.tetris_game.run()
-

@@ -7,7 +7,7 @@ class GarbagePiece(GridGameObject):
     LEFT_BORDER = 0
     LOWER_BORDER = 19
 
-    def __init__(self, height: int, hole: int, skin: int):
+    def __init__(self, height: int, hole: int, skin: int = 0):
         position = []
         for i in range(self.LEFT_BORDER, self.RIGHT_BORDER + 1):
             if i != hole:

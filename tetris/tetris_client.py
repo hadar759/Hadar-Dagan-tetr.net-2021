@@ -1,10 +1,5 @@
-"""
-Hadar Dagan
-31.5.2020
-v1.0
-"""
 import socket
-from .tetris_game import TetrisGame
+from tetris.tetris_game import TetrisGame
 
 
 class TetrisClient:

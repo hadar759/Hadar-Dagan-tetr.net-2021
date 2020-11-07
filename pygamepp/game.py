@@ -7,16 +7,17 @@ from pygamepp.grid_game_object import GridGameObject
 
 pygame.init()
 
-EVENT_HANDLER_TYPE = Union[Callable[[pygame.event.EventType], None],
-                           Callable[[], None]]
+EVENT_HANDLER_TYPE = Union[Callable[[pygame.event.EventType], None], Callable[[], None]]
 
 
 class Game:
-    def __init__(self,
-                 width: int,
-                 height: int,
-                 refresh_rate: int = 60,
-                 background_path: Optional[str] = None):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+    ):
 
         self.width, self.height = width, height
         self.refresh_rate = refresh_rate
@@ -30,7 +31,9 @@ class Game:
         self.game_objects: List[GameObject, GridGameObject] = []
         self.last_pressed_key = 0
 
-        self.background_image = pygame.image.load(background_path) if background_path else None
+        self.background_image = (
+            pygame.image.load(background_path) if background_path else None
+        )
 
     def run(self):
         """Run the game"""

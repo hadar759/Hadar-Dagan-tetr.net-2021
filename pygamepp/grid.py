@@ -10,14 +10,20 @@ class Grid:
 
         self.blocks = []
         for i in range(self.height):
-            self.blocks.append([Block(j * block_size, i * block_size, False)
-                                for j in range(self.width)])
+            self.blocks.append(
+                [
+                    Block(j * block_size, i * block_size, False)
+                    for j in range(self.width)
+                ]
+            )
 
     def is_a_legal_move(self, position: List[int]) -> bool:
         """Returns whether an object already occupies a given position"""
-        return (0 <= position[0] < self.height
-                and 0 <= position[1] < self.width
-                and not self.blocks[position[0]][position[1]].occupied)
+        return (
+            0 <= position[0] < self.height
+            and 0 <= position[1] < self.width
+            and not self.blocks[position[0]][position[1]].occupied
+        )
 
     def occupy_block(self, block_num):
         cur_block = self.blocks[block_num[0]][block_num[1]]
@@ -32,7 +38,7 @@ class Grid:
                     [position[0] + i, position[1] + j],
                     [position[0] + i, position[1] - j],
                     [position[0] - i, position[1] + j],
-                    [position[0] - i, position[1] - j]
+                    [position[0] - i, position[1] - j],
                 ]
                 for pos in temp_positions:
                     if self.is_a_legal_move(pos) and pos not in available_spaces:

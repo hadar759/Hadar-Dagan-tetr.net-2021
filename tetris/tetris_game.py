@@ -11,29 +11,29 @@ import pygame
 from pygame import USEREVENT
 from pygamepp.game import Game
 
-from .pieces import *
-from .pieces.tetris_piece import Piece
-from .tetris_grid import TetrisGrid
-from .colors import Colors
+from tetris.pieces import *
+from tetris.pieces.tetris_piece import Piece
+from tetris.tetris_grid import TetrisGrid
+from tetris.colors import Colors
 
 
 class TetrisGame(Game):
     # Will be displayed when users lose
-    LOSE_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 60).render("YOU LOSE",
-                                                                                 True,
-                                                                                 Colors.WHITE)
+    LOSE_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 60).render(
+        "YOU LOSE", True, Colors.WHITE
+    )
     # Will be displayed when users win
-    WIN_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 60).render("YOU WIN",
-                                                                                True,
-                                                                                Colors.WHITE)
+    WIN_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 60).render(
+        "YOU WIN", True, Colors.WHITE
+    )
     # Will be displayed before the score
-    SCORE_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render("SCORE:",
-                                                                                  True,
-                                                                                  Colors.WHITE)
+    SCORE_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render(
+        "SCORE:", True, Colors.WHITE
+    )
     # Will be displayed before the time
-    TIME_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render("TIME:",
-                                                                                 True,
-                                                                                 Colors.WHITE)
+    TIME_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render(
+        "TIME:", True, Colors.WHITE
+    )
     GRAVITY_EVENT = USEREVENT + 1
     DAS_EVENT = USEREVENT + 2
     ARR_EVENT = USEREVENT + 3
@@ -42,22 +42,17 @@ class TetrisGame(Game):
     LOWER_BORDER = 19
     # The first - base - amount of time it takes for a piece to drop one block (in ms)
     GRAVITY_BASE_TIME = 800
-    PIECES_AND_NEXT_SPRITES = {"<class 'pieces.i_piece.IPiece'>": pygame.image.load("./resources/ipiece-full-sprite.png"),
-                               "<class 'pieces.j_piece.JPiece'>": pygame.image.load("./resources/jpiece-full-sprite.png"),
-                               "<class 'pieces.o_piece.OPiece'>": pygame.image.load("./resources/opiece-full-sprite.png"),
-                               "<class 'pieces.l_piece.LPiece'>": pygame.image.load("./resources/lpiece-full-sprite.png"),
-                               "<class 'pieces.t_piece.TPiece'>": pygame.image.load("./resources/tpiece-full-sprite.png"),
-                               "<class 'pieces.s_piece.SPiece'>": pygame.image.load("./resources/spiece-full-sprite.png"),
-                               "<class 'pieces.z_piece.ZPiece'>": pygame.image.load("./resources/zpiece-full-sprite.png")}
 
-    def __init__(self,
-                 width: int,
-                 height: int,
-                 mode: str,
-                 refresh_rate: int = 60,
-                 background_path: Optional[str] = None,
-                 lines_or_level: Optional[int] = None,
-                 client_socket: Optional[socket] = None):
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        mode: str,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+        lines_or_level: Optional[int] = None,
+        client_socket: Optional[socket] = None,
+    ):
         super().__init__(width, height, refresh_rate, background_path)
         self.mode = mode
         # The current piece the player is controlling
@@ -78,27 +73,53 @@ class TetrisGame(Game):
         self.cur_seven_bag = []
         self.grid = TetrisGrid()
         # Every variable that has to do with moving the piece
-        self.move_variables: Dict[str, bool] = {"right_das": False,
-                                                "left_das": False,
-                                                "arr": False,
-                                                "key_down": False,
-                                                "hard_drop": False,
-                                                "manual_drop": False}
+        self.move_variables: Dict[str, bool] = {
+            "right_das": False,
+            "left_das": False,
+            "arr": False,
+            "key_down": False,
+            "hard_drop": False,
+            "manual_drop": False,
+        }
+        self.skin = 0
+        self.pieces_and_next_sprites = {
+            "<class 'tetris.pieces.i_piece.IPiece'>": pygame.image.load(
+                f"resources/ipiece-full-sprite{self.skin}.png"
+            ),
+            "<class 'tetris.pieces.j_piece.JPiece'>": pygame.image.load(
+                f"resources/jpiece-full-sprite{self.skin}.png"
+            ),
+            "<class 'tetris.pieces.o_piece.OPiece'>": pygame.image.load(
+                f"resources/opiece-full-sprite{self.skin}.png"
+            ),
+            "<class 'tetris.pieces.l_piece.LPiece'>": pygame.image.load(
+                f"resources/lpiece-full-sprite{self.skin}.png"
+            ),
+            "<class 'tetris.pieces.t_piece.TPiece'>": pygame.image.load(
+                f"resources/tpiece-full-sprite{self.skin}.png"
+            ),
+            "<class 'tetris.pieces.s_piece.SPiece'>": pygame.image.load(
+                f"resources/spiece-full-sprite{self.skin}.png"
+            ),
+            "<class 'tetris.pieces.z_piece.ZPiece'>": pygame.image.load(
+                f"resources/zpiece-full-sprite{self.skin}.png"
+            ),
+        }
 
         if self.mode == "sprint":
             # Sprint specific variables
             self.starting_time = pygame.time.get_ticks()
             self.lines_to_finish = lines_or_level
-            self.line_text = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render("LEFT:",
-                                                                                         True,
-                                                                                         Colors.WHITE)
+            self.line_text = pygame.font.Font(
+                "./resources/joystix-monospace.ttf", 19
+            ).render("LEFT:", True, Colors.WHITE)
         if self.mode == "marathon":
             # Marathon specific variables
             self.level = lines_or_level
             self.gravity_time -= self.level * 83
-            self.line_text = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render("LINES:",
-                                                                                         True,
-                                                                                         Colors.WHITE)
+            self.line_text = pygame.font.Font(
+                "./resources/joystix-monospace.ttf", 19
+            ).render("LINES:", True, Colors.WHITE)
         if self.mode == "multiplayer":
             # Multiplayer specific variables
             self.client_socket = client_socket
@@ -143,10 +164,12 @@ class TetrisGame(Game):
         step = 200
         for i in range(5):
             cur_next_piece = self.cur_seven_bag[i]
-            self.screen.blit(self.PIECES_AND_NEXT_SPRITES[str(cur_next_piece)], (500, 100 + step * i))
+            self.screen.blit(
+                self.pieces_and_next_sprites[str(cur_next_piece)], (500, 100 + step * i)
+            )
 
     def initialize_ghost_piece(self):
-        """Create a ghost piece of the current piece"""''
+        """Create a ghost piece of the current piece""" ""
         # Remove the last ghost piece
         if self.ghost_piece in self.game_objects:
             self.game_objects.remove(self.ghost_piece)
@@ -257,7 +280,7 @@ class TetrisGame(Game):
             if 9 < i < 29:
                 total_time_decrease += 17
 
-        temp_gravity_time = (self.GRAVITY_BASE_TIME - total_time_decrease)
+        temp_gravity_time = self.GRAVITY_BASE_TIME - total_time_decrease
 
         # In case the player has advanced a level - i.e. the gravity time has changed
         if self.gravity_time != temp_gravity_time:
@@ -299,7 +322,13 @@ class TetrisGame(Game):
     def show_time(self):
         """Displays the current amount of time since the start on the screen"""
         seconds = self.render_input(20, str(self.get_current_time_since_start()))
-        self.screen.fill(0x000000, [(500 + self.line_text.get_rect()[2], 10), (500 + self.line_text.get_rect()[2] + 300, 40)])
+        self.screen.fill(
+            0x000000,
+            [
+                (500 + self.line_text.get_rect()[2], 10),
+                (500 + self.line_text.get_rect()[2] + 300, 40),
+            ],
+        )
         self.screen.blit(self.TIME_TEXT, (500, 10))
         self.screen.blit(seconds, (500 + self.line_text.get_rect()[2], 10))
 
@@ -452,7 +481,10 @@ class TetrisGame(Game):
             if pos[0] >= self.LOWER_BORDER:
                 return True
 
-            elif self.grid.blocks[pos[0] + 1][pos[1]].occupied or self.grid.blocks[pos[0]][pos[1]].occupied:
+            elif (
+                self.grid.blocks[pos[0] + 1][pos[1]].occupied
+                or self.grid.blocks[pos[0]][pos[1]].occupied
+            ):
                 if pos[0] <= 0:
                     self.game_over(False)
                 return True
@@ -475,14 +507,22 @@ class TetrisGame(Game):
 
         # Display the winning text (can't win in marathon)
         if self.mode != "marathon" and win:
-            self.screen.blit(self.WIN_TEXT, self.calculate_center_name_position(
-                self.screen.get_rect()[2] // 2 - self.WIN_TEXT.get_rect()[2] // 2,
-                self.screen.get_rect()[3] // 2 - self.WIN_TEXT.get_rect()[3] // 2))
+            self.screen.blit(
+                self.WIN_TEXT,
+                self.calculate_center_name_position(
+                    self.screen.get_rect()[2] // 2 - self.WIN_TEXT.get_rect()[2] // 2,
+                    self.screen.get_rect()[3] // 2 - self.WIN_TEXT.get_rect()[3] // 2,
+                ),
+            )
         # Display the losing text
         else:
-            self.screen.blit(self.LOSE_TEXT, self.calculate_center_name_position(
-                self.screen.get_rect()[2] // 2 - self.LOSE_TEXT.get_rect()[2] // 2,
-                self.screen.get_rect()[3] // 2 - self.LOSE_TEXT.get_rect()[3] // 2))
+            self.screen.blit(
+                self.LOSE_TEXT,
+                self.calculate_center_name_position(
+                    self.screen.get_rect()[2] // 2 - self.LOSE_TEXT.get_rect()[2] // 2,
+                    self.screen.get_rect()[3] // 2 - self.LOSE_TEXT.get_rect()[3] // 2,
+                ),
+            )
         pygame.display.flip()
 
         # Cinematic effects
@@ -491,9 +531,10 @@ class TetrisGame(Game):
 
         # Stop the game, and load the end screen
         self.running = False
-        self.background_image = pygame.image.load("./resources/end-screen.png")
-        self.screen = pygame.display.set_mode((self.background_image.get_size()[0],
-                                               self.background_image.get_size()[1]))
+        self.background_image = pygame.image.load("resources/end-screen.png")
+        self.screen = pygame.display.set_mode(
+            (self.background_image.get_size()[0], self.background_image.get_size()[1])
+        )
         self.screen.blit(self.background_image, (0, 0))
 
         # Display mode specific end stats
@@ -505,7 +546,10 @@ class TetrisGame(Game):
             self.screen.blit(rendered_time_text, (300, 75))
             rendered_time = self.render_input(50, str(final_time))
             self.screen.blit(rendered_time, (515, 75))
-            self.screen.blit(self.render_input(50, "Seconds"), (530 + rendered_time.get_rect()[2], 75))
+            self.screen.blit(
+                self.render_input(50, "Seconds"),
+                (530 + rendered_time.get_rect()[2], 75),
+            )
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds
@@ -517,9 +561,8 @@ class TetrisGame(Game):
     def render_input(self, font_size: int, inp):
         """Render a text given it's font and size"""
         return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
-            inp,
-            True,
-            Colors.WHITE)
+            inp, True, Colors.WHITE
+        )
 
     def fade(self, delay):
         """Fade the screen"""
@@ -531,7 +574,9 @@ class TetrisGame(Game):
             pygame.display.update()
             pygame.time.delay(delay)
 
-    def calculate_center_name_position(self, x_space: int, y_space: int) -> Tuple[int, int]:
+    def calculate_center_name_position(
+        self, x_space: int, y_space: int
+    ) -> Tuple[int, int]:
         """Returns the center position the text should be in"""
         return max(0, x_space), max(0, y_space)
 

@@ -32,15 +32,19 @@ class Piece(GridGameObject):
         if key == pygame.K_LEFT:
             position_change = -1
             for pos in self.position:
-                if (pos[1] == self.LEFT_BORDER or
-                        grid.blocks[pos[0]][pos[1] + position_change].occupied):
+                if (
+                    pos[1] == self.LEFT_BORDER
+                    or grid.blocks[pos[0]][pos[1] + position_change].occupied
+                ):
                     illegal_move = True
 
         if key == pygame.K_RIGHT:
             position_change = 1
             for pos in self.position:
-                if (pos[1] == self.RIGHT_BORDER or
-                        grid.blocks[pos[0]][pos[1] + position_change].occupied):
+                if (
+                    pos[1] == self.RIGHT_BORDER
+                    or grid.blocks[pos[0]][pos[1] + position_change].occupied
+                ):
                     illegal_move = True
 
         # If the move cannot be executed
@@ -55,17 +59,19 @@ class Piece(GridGameObject):
         too_low = False
         pivot_point = self.position[self.PIVOT_POINT]
         for i in range(len(self.position)):
-            self.position[i] = self.rotated_piece_position(self.position[i],
-                                                           pivot_point,
-                                                           rotation_matrix)
+            self.position[i] = self.rotated_piece_position(
+                self.position[i], pivot_point, rotation_matrix
+            )
             # In case the piece will be underground after the rotation
             if self.position[i][0] > self.LOWER_BORDER:
                 too_low = True
 
             # In case the piece will be out of bounds, or be inside another piece
-            elif (self.position[i][1] < self.LEFT_BORDER
-                    or self.position[i][1] > self.RIGHT_BORDER
-                    or grid.blocks[self.position[i][0]][self.position[i][1]].occupied):
+            elif (
+                self.position[i][1] < self.LEFT_BORDER
+                or self.position[i][1] > self.RIGHT_BORDER
+                or grid.blocks[self.position[i][0]][self.position[i][1]].occupied
+            ):
                 illegal_rotation = True
 
         if too_low:
@@ -125,19 +131,36 @@ class Piece(GridGameObject):
             changed_position = self.move_down(grid, changed_position)
         return changed_position
 
-    def rotated_piece_position(self, point: List[int], pivot_point: List[int],
-                               rotation_matrix: Tuple[Tuple[int, int], Tuple[int, int]]) -> List[int]:
+    def rotated_piece_position(
+        self,
+        point: List[int],
+        pivot_point: List[int],
+        rotation_matrix: Tuple[Tuple[int, int], Tuple[int, int]],
+    ) -> List[int]:
         """Returns the final position of the rotated piece"""
         relative_vector = self.get_relative_vector(point, pivot_point)
-        transformed_vector = self.get_transformed_vector(rotation_matrix, relative_vector)
-        return [pivot_point[0] + transformed_vector[0], pivot_point[1] + transformed_vector[1]]
+        transformed_vector = self.get_transformed_vector(
+            rotation_matrix, relative_vector
+        )
+        return [
+            pivot_point[0] + transformed_vector[0],
+            pivot_point[1] + transformed_vector[1],
+        ]
 
     @staticmethod
-    def get_transformed_vector(rotation_matrix: Tuple[Tuple[int, int], Tuple[int, int]],
-                               relative_vector: Tuple[int, int]) -> Tuple[int, int]:
+    def get_transformed_vector(
+        rotation_matrix: Tuple[Tuple[int, int], Tuple[int, int]],
+        relative_vector: Tuple[int, int],
+    ) -> Tuple[int, int]:
         """Rotates the piece using vectors"""
-        transformed_x = rotation_matrix[0][0] * relative_vector[0] + rotation_matrix[0][1] * relative_vector[1]
-        transformed_y = rotation_matrix[1][0] * relative_vector[0] + rotation_matrix[1][1] * relative_vector[1]
+        transformed_x = (
+            rotation_matrix[0][0] * relative_vector[0]
+            + rotation_matrix[0][1] * relative_vector[1]
+        )
+        transformed_y = (
+            rotation_matrix[1][0] * relative_vector[0]
+            + rotation_matrix[1][1] * relative_vector[1]
+        )
         return transformed_x, transformed_y
 
     @staticmethod
