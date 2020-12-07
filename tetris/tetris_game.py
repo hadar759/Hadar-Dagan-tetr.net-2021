@@ -541,6 +541,7 @@ class TetrisGame(Game):
         if self.mode == "marathon":
             self.screen.blit(self.render_input(50, "SCORE:"), (300, 75))
             self.screen.blit(self.render_input(50, str(self.score)), (550, 75))
+            self.screen.blit(self.render_input(50, f"LEVEL:{self.level}"), (300, 150))
         elif self.mode == "sprint":
             rendered_time_text = self.render_input(50, "TIME:")
             self.screen.blit(rendered_time_text, (300, 75))

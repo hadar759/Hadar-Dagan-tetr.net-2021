@@ -20,6 +20,7 @@ class MainMenu:
         height: int,
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
+        skin: int = 1
     ):
         self.width, self.height = width, height
         self.refresh_rate = refresh_rate
@@ -28,6 +29,7 @@ class MainMenu:
             pygame.image.load(background_path) if background_path else None
         )
         self.buttons = []
+        self.skin = skin
 
     def run(self):
         """Main loop of the main menu"""
@@ -100,7 +102,8 @@ class MainMenu:
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
         self.buttons = []
-        self.screen.blit(self.background_image, (0, 0))
+        if self.background_image:
+            self.screen.blit(self.background_image, (0, 0))
         self.create_button(
             (self.width // 3 - 300, self.height // 2 - 100),
             500,
@@ -122,7 +125,8 @@ class MainMenu:
     def sprint(self):
         """Create the sprint screen - set up the correct buttons"""
         self.buttons = []
-        self.screen.blit(self.background_image, (0, 0))
+        if self.background_image:
+            self.screen.blit(self.background_image, (0, 0))
         self.create_button(
             (self.width // 2 - 257, self.height // 8 - 85),
             501,
@@ -158,7 +162,8 @@ class MainMenu:
     def marathon(self):
         """Create the marathon screen - set up the correct buttons"""
         self.buttons = []
-        self.screen.blit(self.background_image, (0, 0))
+        if self.background_image:
+            self.screen.blit(self.background_image, (0, 0))
         button_height = 200
         button_width = 200
         row_height = self.height // 2 - button_height
