@@ -1,3 +1,4 @@
+import json
 from typing import Optional, Tuple, Dict, List
 
 import pygame
@@ -8,7 +9,7 @@ from tetris.main_menu import MainMenu
 from tetris.button import Button
 from tetris.colors import Colors
 from tetris.text_box import TextBox
-from requests import get
+from requests import get, post
 
 
 class WelcomeScreen:
@@ -18,7 +19,6 @@ class WelcomeScreen:
         self,
         width: int,
         height: int,
-        user_collection: Collection,
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
@@ -31,9 +31,10 @@ class WelcomeScreen:
         self.background_path = background_path
         self.buttons: Dict[Button, callable] = {}
         self.textboxes: Dict[TextBox, str] = {}
-        self.user_collection = user_collection
 
         self.text_cursor_ticks = pygame.time.get_ticks()
+        self.server_ip = "127.0.0.1"
+        self.server_port = "8000"
 
     def run(self):
         """Main loop of the main menu"""
@@ -169,21 +170,25 @@ class WelcomeScreen:
         if not valid_user:
             return
 
-        user = self.get_user(user_identifier)
+        # TODO CHANGE
+        user_exists = self.user_identifier_exists(user_identifier)
 
         # Given user doesn't exist in the database
-        if not user:
+        if not user_exists:
             self.create_popup_button(r"Username\Email doesn't exist")
 
-        # User exists but the password doesn't match
-        elif not self.user_matches_password(user_identifier, password):
-            self.create_popup_button(r"Wrong Password")
-
-        # Update the user's latest ip
         else:
-            user["ip"] = self.get_ip()
-            #this = None
-            MainMenu(self.width, self.height, self.refresh_rate, self.background_path).run()
+            user = self.get_user(user_identifier, password)
+            # Update the user's latest ip
+            if user:
+                new_ip = self.get_ip()
+                self.update_ip(user_identifier, password, new_ip)
+                MainMenu(self.width, self.height, self.refresh_rate, self.background_path).run()
+                pygame.quit()
+
+            # User exists but the password doesn't match
+            else:
+                self.create_popup_button(r"Wrong Password")
 
     def create_popup_button(self, text):
         button_width = self.width // 2
@@ -199,25 +204,7 @@ class WelcomeScreen:
             text,
             38,
             text_color=Colors.RED,
-            func=self.buttons.popitem,
-        )
-
-    def get_user(self, user_identifier: str) -> Optional[dict]:
-        user_by_username = self.user_collection.find_one({"username": user_identifier})
-        user_by_email = self.user_collection.find_one({"email": user_identifier})
-
-        if user_by_username:
-            return user_by_username
-        elif user_by_email:
-            return user_by_email
-
-        return None
-
-    def user_matches_password(self, user_identifier: str, password: str) -> bool:
-        return self.user_collection.find_one(
-            {"username": user_identifier, "password": password}
-        ) or self.user_collection.find_one(
-            {"email": user_identifier, "password": password}
+            func=self.buttons.popitem
         )
 
     @staticmethod
@@ -300,38 +287,70 @@ class WelcomeScreen:
             self.create_popup_button("Please enter Username")
             valid_user = False
 
-        if self.user_collection.find_one({"email": email}):
+        # TODO CHANGE
+        if self.email_exists(email):
             self.reset_textboxes()
             self.create_popup_button("Email already exists")
             valid_user = False
 
-        elif self.user_collection.find_one({"username": username}):
+        # TODO CHANGE
+        elif self.username_exists(username):
             self.reset_textboxes()
             self.create_popup_button("Username already exists")
             valid_user = False
 
         # Add the valid user to the DB
         if valid_user:
-            user_number = self.user_collection.estimated_document_count()
-            self.user_collection.insert_one(
+            user_number = self.estimated_document_count()
+            self.create_user(
                 self.create_db_post(
                     user_number, email, username, password, self.get_ip()
                 )
             )
+            MainMenu(self.width, self.height, self.refresh_rate, self.background_path).run()
+            pygame.quit()
+
+    def update_ip(self, user_identifier: str, password: str, ip: str):
+        post(f"http://{self.server_ip}:{self.server_port}/users/ip?user_identifier={user_identifier}&password={password}&ip={ip}")
+
+    def create_user(self, db_post: dict):
+        post(f"http://{self.server_ip}:{self.server_port}/users", data=json.dumps(db_post))
+
+    def estimated_document_count(self) -> int:
+        return int(get(f"http://{self.server_ip}:{self.server_port}/users/len").text)
+
+    def user_identifier_exists(self, user_identifier: str) -> bool:
+        """Returns whether a user with a given user identifier exists in the database"""
+        return get(f"http://{self.server_ip}:{self.server_port}/users/find?user_identifier={user_identifier}").text == "true"
+
+    def username_exists(self, username: str) -> bool:
+        """Returns whether a user with a given username exists in the database"""
+        return get(f"http://{self.server_ip}:{self.server_port}/users/find?username={username}").text == "true"
+
+    def email_exists(self, email: str) -> bool:
+        """Returns whether a user with a given email exists in the database"""
+        return get(f"http://{self.server_ip}:{self.server_port}/users/find?email={email}").text == "true"
+
+    def get_user(self, user_identifier: str, password: str) -> dict:
+        """Returns a dict of a user in the database with the given user_identifier and password"""
+        resp = get(
+            f"http://{self.server_ip}:{self.server_port}/users?user_identifier={user_identifier}&password={password}")
+        # Load the user's information onto a tuple
+        return json.loads(resp.text)
 
     @staticmethod
     def get_ip():
         return get("https://api.ipify.org").text
 
     @staticmethod
-    def create_db_post(user_number, email, username, password, ip):
+    def create_db_post(user_number: int, email: str, username: str, password: str, ip: str) -> dict:
         """Returns a db post with the given parameters"""
         return {
             "_id": user_number,
             "email": email,
             "username": username,
             "password": password,
-            "ip": ip,
+            "ip": ip
         }
 
     def create_button(
