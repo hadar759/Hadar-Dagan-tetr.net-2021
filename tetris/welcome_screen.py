@@ -76,7 +76,7 @@ class WelcomeScreen:
 
                     for textbox in self.textboxes.keys():
                         # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
-                        if textbox.inside_textbox(mouse_pos):
+                        if textbox.inside_button(mouse_pos):
                             # Make the textbox writeable
                             textbox.active = True
                         else:
@@ -381,8 +381,7 @@ class WelcomeScreen:
         text: str,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
-        active: bool = False,
+        show: bool = True
     ):
         """Creates a new textbox and appends it to the textbox dict"""
         self.textboxes[
@@ -395,7 +394,6 @@ class WelcomeScreen:
                 text_size,
                 text_color,
                 show,
-                active,
             )
         ] = ""
 
