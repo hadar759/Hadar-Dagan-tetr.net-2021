@@ -377,7 +377,7 @@ class TetrisGame(Game):
             else:
                 self.times_touching_ground += 1
 
-    def key_pressed(self, event: pygame.event.EventType):
+    def key_pressed(self, event: pygame.event):
         """Handle a key press and call the relevant functions"""
         if event.key == pygame.K_SPACE:
             self.hard_drop()
@@ -556,10 +556,10 @@ class TetrisGame(Game):
         # Show the ending screen for 5 seconds
         pygame.time.wait(5000)
 
-        pygame.quit()
-        exit()
+        self.running = False
 
-    def render_input(self, font_size: int, inp):
+    @staticmethod
+    def render_input(font_size: int, inp):
         """Render a text given it's font and size"""
         return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
             inp, True, Colors.WHITE
@@ -575,8 +575,9 @@ class TetrisGame(Game):
             pygame.display.update()
             pygame.time.delay(delay)
 
+    @staticmethod
     def calculate_center_name_position(
-        self, x_space: int, y_space: int
+        x_space: int, y_space: int
     ) -> Tuple[int, int]:
         """Returns the center position the text should be in"""
         return max(0, x_space), max(0, y_space)

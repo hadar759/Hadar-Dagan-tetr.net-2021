@@ -30,9 +30,24 @@ class MainMenu:
         )
         self.buttons = []
         self.skin = skin
+        self.running = True
 
     def run(self):
         """Main loop of the main menu"""
+        while True:
+            self.create_menu()
+            self.running = True
+            pygame.display.flip()
+
+            while self.running:
+                mouse_pos = pygame.mouse.get_pos()
+                for event in pygame.event.get():
+                    self.handle_events(event, mouse_pos)
+                pygame.display.flip()
+
+    def create_menu(self):
+        """Creates the main menu screen and all it's components"""
+        self.screen = pygame.display.set_mode((self.width, self.height))
         # Display the background image in case there is one
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
@@ -62,42 +77,40 @@ class MainMenu:
         self.show_buttons()
         self.show_text_in_buttons()
 
-        pygame.display.flip()
+    def handle_events(self, event: pygame.event, mouse_pos: Tuple[int, int]):
+        """Responds to pygame events"""
+        if event.type == pygame.QUIT:
+            self.running = False
+            pygame.quit()
+            exit()
 
-        run = True
-        while run:
-            mouse_pos = pygame.mouse.get_pos()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False
-
-                # In case the user pressed the mouse button
-                if event.type == self.BUTTON_PRESS:
-                    for button in self.buttons:
-                        # Check if the click is inside the button area (i.e. the button was clicked)
-                        if button.inside_button(mouse_pos):
-                            # The text on the buttons indicates their mode
-                            if button.text == "sprint":
-                                self.sprint()
-                            elif button.text == "marathon":
-                                self.marathon()
-                            elif button.text == "multiplayer":
-                                self.multiplayer()
-                            # If we are already in the sprint screen, the buttons each will
-                            # indicate "xL" (x is the line number), so we'll start the game as a
-                            # sprint to x lines
-                            elif button.text[-1] == "L":
-                                self.start_game("sprint", button.text[:2])
-                            # If we are already in the multiplayer screen, there will be 2 options -
-                            # server and client. The game will start according to the user's choice
-                            elif button.text == "SERVER":
-                                self.start_multiplayer(True)
-                            elif button.text == "CLIENT":
-                                self.start_multiplayer(False)
-                            # If it's none of the above we are in the marathon screen and we'll
-                            # start a marathon game
-                            else:
-                                self.start_game("marathon", button.text)
+        # In case the user pressed the mouse button
+        if event.type == self.BUTTON_PRESS:
+            for button in self.buttons:
+                # Check if the click is inside the button area (i.e. the button was clicked)
+                if button.inside_button(mouse_pos):
+                    # The text on the buttons indicates their mode
+                    if button.text == "sprint":
+                        self.sprint()
+                    elif button.text == "marathon":
+                        self.marathon()
+                    elif button.text == "multiplayer":
+                        self.multiplayer()
+                    # If we are already in the sprint screen, the buttons each will
+                    # indicate "xL" (x is the line number), so we'll start the game as a
+                    # sprint to x lines
+                    elif button.text[-1] == "L":
+                        self.start_game("sprint", button.text[:2])
+                    # If we are already in the multiplayer screen, there will be 2 options -
+                    # server and client. The game will start according to the user's choice
+                    elif button.text == "SERVER":
+                        self.start_multiplayer(True)
+                    elif button.text == "CLIENT":
+                        self.start_multiplayer(False)
+                    # If it's none of the above we are in the marathon screen and we'll
+                    # start a marathon game
+                    else:
+                        self.start_game("marathon", button.text)
 
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
@@ -203,9 +216,10 @@ class MainMenu:
             client = TetrisClient(client_game)
             client.run()
 
-    @staticmethod
-    def start_game(mode, lines_or_level):
+    def start_game(self, mode, lines_or_level):
         """Start a generic game, given a mode and the optional starting lines or starting level"""
+        self.running = False
+        self.buttons = []
         game = TetrisGame(500 + 200, 1000, mode, 75, lines_or_level=int(lines_or_level))
         game.run()
 

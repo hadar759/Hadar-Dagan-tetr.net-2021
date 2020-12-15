@@ -8,8 +8,8 @@ def main():
     user32 = ctypes.windll.user32
     width = user32.GetSystemMetrics(0)
     height = user32.GetSystemMetrics(1)
-    game = game.Game(width, height, 75)
-    game.run()
+    cur_game = game.Game(width, height, 75)
+    cur_game.run()
 
 
 if __name__ == "__main__":
