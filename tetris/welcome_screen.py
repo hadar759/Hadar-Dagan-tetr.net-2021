@@ -2,6 +2,7 @@ import json
 from typing import Optional, Tuple, Dict, List
 
 import pygame
+import socket
 import pymongo
 from pymongo.collection import Collection
 from pymongo import MongoClient
@@ -10,7 +11,7 @@ from tetris.button import Button
 from tetris.colors import Colors
 from tetris.text_box import TextBox
 from requests import get, post
-
+from server_communicator import ServerCommunicator
 
 class WelcomeScreen:
     """The starting screen of the game"""
@@ -33,8 +34,7 @@ class WelcomeScreen:
         self.textboxes: Dict[TextBox, str] = {}
 
         self.text_cursor_ticks = pygame.time.get_ticks()
-        self.server_ip = "127.0.0.1"
-        self.server_port = "8000"
+        self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
 
     def run(self):
         """Main loop of the main menu"""
@@ -171,19 +171,21 @@ class WelcomeScreen:
             return
 
         # TODO CHANGE
-        user_exists = self.user_identifier_exists(user_identifier)
+        user_exists = self.server_communicator.user_identifier_exists(user_identifier)
 
         # Given user doesn't exist in the database
         if not user_exists:
             self.create_popup_button(r"Username\Email doesn't exist")
 
         else:
-            user = self.get_user(user_identifier, password)
+            user = self.server_communicator.get_user(user_identifier, password)
             # Update the user's latest ip
             if user:
-                new_ip = self.get_ip()
-                self.update_ip(user_identifier, password, new_ip)
-                MainMenu(self.width, self.height, self.refresh_rate, self.background_path).run()
+                new_outer_ip = self.get_outer_ip()
+                new_local_ip = self.get_local_ip()
+                self.server_communicator.update_outer_ip(user_identifier, password, new_outer_ip)
+                self.server_communicator.update_local_ip(user_identifier, password, new_local_ip)
+                MainMenu(self.width, self.height, user, self.refresh_rate, self.background_path).run()
                 pygame.quit()
 
             # User exists but the password doesn't match
@@ -288,69 +290,49 @@ class WelcomeScreen:
             valid_user = False
 
         # TODO CHANGE
-        if self.email_exists(email):
+        if self.server_communicator.email_exists(email):
             self.reset_textboxes()
             self.create_popup_button("Email already exists")
             valid_user = False
 
         # TODO CHANGE
-        elif self.username_exists(username):
+        elif self.server_communicator.username_exists(username):
             self.reset_textboxes()
             self.create_popup_button("Username already exists")
             valid_user = False
 
         # Add the valid user to the DB
         if valid_user:
-            user_number = self.estimated_document_count()
-            self.create_user(
+            user_number = self.server_communicator.estimated_document_count()
+            self.server_communicator.create_user(
                 self.create_db_post(
-                    user_number, email, username, password, self.get_ip()
+                    user_number, email, username, password, self.get_outer_ip(), self.get_local_ip()
                 )
             )
             MainMenu(self.width, self.height, self.refresh_rate, self.background_path).run()
             pygame.quit()
 
-    def update_ip(self, user_identifier: str, password: str, ip: str):
-        post(f"http://{self.server_ip}:{self.server_port}/users/ip?user_identifier={user_identifier}&password={password}&ip={ip}")
-
-    def create_user(self, db_post: dict):
-        post(f"http://{self.server_ip}:{self.server_port}/users", data=json.dumps(db_post))
-
-    def estimated_document_count(self) -> int:
-        return int(get(f"http://{self.server_ip}:{self.server_port}/users/len").text)
-
-    def user_identifier_exists(self, user_identifier: str) -> bool:
-        """Returns whether a user with a given user identifier exists in the database"""
-        return get(f"http://{self.server_ip}:{self.server_port}/users/find?user_identifier={user_identifier}").text == "true"
-
-    def username_exists(self, username: str) -> bool:
-        """Returns whether a user with a given username exists in the database"""
-        return get(f"http://{self.server_ip}:{self.server_port}/users/find?username={username}").text == "true"
-
-    def email_exists(self, email: str) -> bool:
-        """Returns whether a user with a given email exists in the database"""
-        return get(f"http://{self.server_ip}:{self.server_port}/users/find?email={email}").text == "true"
-
-    def get_user(self, user_identifier: str, password: str) -> dict:
-        """Returns a dict of a user in the database with the given user_identifier and password"""
-        resp = get(
-            f"http://{self.server_ip}:{self.server_port}/users?user_identifier={user_identifier}&password={password}")
-        # Load the user's information onto a tuple
-        return json.loads(resp.text)
-
     @staticmethod
-    def get_ip():
+    def get_outer_ip():
         return get("https://api.ipify.org").text
 
+    @ staticmethod
+    def get_local_ip():
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        return local_ip
+
+
     @staticmethod
-    def create_db_post(user_number: int, email: str, username: str, password: str, ip: str) -> dict:
+    def create_db_post(user_number: int, email: str, username: str, password: str, ip: str, local_ip: str) -> dict:
         """Returns a db post with the given parameters"""
         return {
             "_id": user_number,
             "email": email,
             "username": username,
             "password": password,
-            "ip": ip
+            "ip": ip,
+            "local-ip": local_ip
         }
 
     def create_button(

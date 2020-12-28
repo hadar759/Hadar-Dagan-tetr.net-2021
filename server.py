@@ -30,12 +30,21 @@ class Server:
     def get_document_count(self) -> int:
         return self.user_collection.dependency().estimated_document_count()
 
-    @router.post("/users/ip")
-    def update_ip(self, user_identifier: str, password: str, ip: str):
+    @router.post("/users/outer-ip")
+    def update_outer_ip(self, user_identifier: str, password: str, outer_ip: str):
         user = self.user_matches_password(user_identifier, password)
 
-        old_query = {"ip": user["ip"]}
-        new_query = {"$set": {"ip": ip}}
+        old_query = {"outer_ip": user["outer_ip"]}
+        new_query = {"$set": {"outer_ip": outer_ip}}
+
+        self.user_collection.dependency().update_one(old_query, new_query)
+
+    @router.post("/users/local-ip")
+    def update_local_ip(self, user_identifier: str, password: str, local_ip: str):
+        user = self.user_matches_password(user_identifier, password)
+
+        old_query = {"local_ip": user["local_ip"]}
+        new_query = {"$set": {"local_ip": local_ip}}
 
         self.user_collection.dependency().update_one(old_query, new_query)
 
