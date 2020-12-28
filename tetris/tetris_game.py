@@ -128,8 +128,7 @@ class TetrisGame(Game):
 
     def run(self):
         # Every event that has to do with moving the piece
-        if self.mode != "sprint":
-            self.create_timer(self.GRAVITY_EVENT, self.gravity_time)
+        self.create_timer(self.GRAVITY_EVENT, self.gravity_time)
         self.set_event_handler(self.GRAVITY_EVENT, self.gravitate)
         self.create_timer(self.MANUAL_DROP, 20)
         self.set_event_handler(self.MANUAL_DROP, self.manual_drop)
@@ -289,12 +288,15 @@ class TetrisGame(Game):
 
     def generate_new_piece(self):
         """Generate a new current piece and update every variable that has to do with it"""
-        for key in self.move_variables:
-            self.move_variables[key] = False
+        self.reset_move_variables()
         self.generate_seven_bag()
         self.cur_piece = self.cur_seven_bag.pop(0)()
         self.game_objects.append(self.cur_piece)
         self.initialize_ghost_piece()
+
+    def reset_move_variables(self):
+        for key in self.move_variables:
+            self.move_variables[key] = False
 
     def generate_seven_bag(self):
         """Generates a new, or updates the current seven bag, according to the tetris guideline"""
@@ -430,17 +432,18 @@ class TetrisGame(Game):
             if self.move_variables["right_das"]:
                 self.grid.reset_screen(self.screen)
                 self.cur_piece.move(pygame.K_RIGHT, self.grid)
-                self.create_timer(self.DAS_EVENT, 30, True)
+                self.create_timer(self.DAS_EVENT, 5, True)
             # Move the piece to the left every 30 milliseconds
             elif self.move_variables["left_das"]:
                 self.grid.reset_screen(self.screen)
                 self.cur_piece.move(pygame.K_LEFT, self.grid)
-                self.create_timer(self.DAS_EVENT, 30, True)
+                self.create_timer(self.DAS_EVENT, 5, True)
         self.update_ghost_position()
 
     def key_right(self):
         """Move the piece one block to the right and start the ARR timer"""
         self.grid.reset_screen(self.screen)
+        self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, 100, True)
         self.move_variables["key_down"] = True
         self.move_variables["right_das"] = True
@@ -449,6 +452,7 @@ class TetrisGame(Game):
     def key_left(self):
         """Move the piece to the left and start the ARR timer"""
         self.grid.reset_screen(self.screen)
+        self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, 100, True)
         self.move_variables["key_down"] = True
         self.move_variables["left_das"] = True
