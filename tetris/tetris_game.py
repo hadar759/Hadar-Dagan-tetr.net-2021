@@ -148,6 +148,8 @@ class TetrisGame(Game):
         # Make sure we always have a current piece on the screen
         if self.cur_piece is None:
             self.generate_new_piece()
+            # Clear the screen from the old next pieces
+            self.grid.reset_screen(self.screen)
         if self.mode == "multiplayer":
             # Receive the amount of lines to be received from the opponent
             lines_received = self.client_socket.recv(2).decode()
@@ -201,6 +203,8 @@ class TetrisGame(Game):
 
             # Add the garbage to the screen
             self.add_garbage()
+
+        self.clear_lines()
 
         if self.mode == "marathon":
             # Marathon specific functions
@@ -412,7 +416,10 @@ class TetrisGame(Game):
         """In case a key is released change the relevant move variables"""
         if self.last_pressed_key == pygame.K_DOWN:
             self.move_variables["manual_drop"] = False
-        elif self.last_pressed_key in [pygame.K_RIGHT, pygame.K_LEFT]:
+        # When we've released a move button, check if we've activated the other direction's das
+        # before completely stopping all move variables.
+        elif (self.last_pressed_key == pygame.K_RIGHT and not self.move_variables["left_das"] or
+              self.last_pressed_key == pygame.K_LEFT and not self.move_variables["right_das"]):
             for key in self.move_variables:
                 self.move_variables[key] = False
 
@@ -428,12 +435,12 @@ class TetrisGame(Game):
         # DAS - tetris term
         # If the arr timer already ended and there is a current piece to move
         if self.move_variables["arr"] and self.cur_piece:
-            # Move the piece to the right every 30 milliseconds
+            # Move the piece to the right every 5 milliseconds
             if self.move_variables["right_das"]:
                 self.grid.reset_screen(self.screen)
                 self.cur_piece.move(pygame.K_RIGHT, self.grid)
                 self.create_timer(self.DAS_EVENT, 5, True)
-            # Move the piece to the left every 30 milliseconds
+            # Move the piece to the left every 5 milliseconds
             elif self.move_variables["left_das"]:
                 self.grid.reset_screen(self.screen)
                 self.cur_piece.move(pygame.K_LEFT, self.grid)
