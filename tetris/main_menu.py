@@ -1,7 +1,13 @@
+import socket
+import time
 from typing import Optional, Tuple, Dict
+from requests import get, post
+import threading
 
+import concurrent.futures
 import pygame
 
+from server_communicator import ServerCommunicator
 from tetris.tetris_game import TetrisGame
 from tetris.button import Button
 from tetris.colors import Colors
@@ -12,17 +18,18 @@ from tetris.text_box import TextBox
 
 class MainMenu:
     """The starting screen of the game"""
-
+    GAME_PORT = 44444
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
 
     def __init__(
-        self,
-        width: int,
-        height: int,
-        user: Dict,
-        refresh_rate: int = 60,
-        background_path: Optional[str] = None,
-        skin: int = 1
+            self,
+            width: int,
+            height: int,
+            user: Dict,
+            server_communicator: ServerCommunicator,
+            refresh_rate: int = 60,
+            background_path: Optional[str] = None,
+            skin: int = 1,
     ):
         self.width, self.height = width, height
         self.user = user
@@ -32,11 +39,13 @@ class MainMenu:
             pygame.image.load(background_path) if background_path else None
         )
         self.buttons = []
-        self.textboxes = {}
+        self.textboxes: Dict[TextBox] = {}
         self.actions = {}
         self.skin = skin
         self.running = True
         self.text_cursor_ticks = pygame.time.get_ticks()
+        self.server_communicator = server_communicator
+        self.socket = socket.socket()
 
     def run(self):
         """Main loop of the main menu"""
@@ -44,13 +53,110 @@ class MainMenu:
             self.create_menu()
             self.running = True
             pygame.display.flip()
+            run_count = 0
 
             while self.running:
                 self.update_screen()
                 mouse_pos = pygame.mouse.get_pos()
                 for event in pygame.event.get():
                     self.handle_events(event, mouse_pos)
+                if round(time.time()) % 10 == 0:
+                    #threading.Thread(target=self.check_invite).start()
+                    self.check_invite()
+                run_count += 1
                 pygame.display.flip()
+
+    # TODO
+    # Check if the sockets are working (connecting to the server, i.e. the function below), maybe it's coded wrong,
+    # maybe i've fucked up the threads, maybe it's calling location is finnicky. Check it.
+    # Secondly, all games are clients now, which will connect to a separate server. Make that server (a class, which
+    # will be ran by the dynos in heroku), run it locally, test it, make sure it's working.
+    # Check all problems with the login - online, offline, getting a server, etc.
+    # I think that's all. Afterwards i've finished the connecting 2 computers part.
+
+    def check_invite(self):
+        invite = self.server_communicator.get_invite(self.user["username"]).replace('"', '')
+        if invite:
+            self.display_invite(invite)
+
+    def display_invite(self, inviter_name):
+        screen_corner_x = 1200
+        screen_corner_y = 600
+        button_height = 300
+        button_width = 200
+        self.create_button((screen_corner_x - button_width, screen_corner_y - button_height), button_width, button_height,
+                           Colors.BLACK, inviter_name)
+        self.actions[inviter_name] = (self.accept_invite,)
+        x_height = 20
+        x_width = 20
+        self.create_button((screen_corner_x, screen_corner_y - button_height), x_width, x_height, Colors.BLACK, "X",
+                           text_size=20, text_color=Colors.RED)
+        self.actions["X"] = (self.dismiss_invite,)
+
+    # TODO
+    # Make accept invite, add the invite and invite_ip field to the entries in the db
+    # Tweak the inviting part cause i changed it a bit now, test everything.
+    # Make the actual game server so players can play, and then i pretty much finished the connection part
+
+    def accept_invite(self):
+        invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
+        self.socket.send("accepted".encode())
+        self.start_client_game(invite_ip)
+        self.dismiss_invite()
+
+    # TODO
+    # Check if the dismiss invite works and everything is great. debug why it sometimes invites yourself.
+    # Handle the accept invite situation (i.e. holding a game, and check if it works when the game ends).
+
+    def dismiss_invite(self):
+        """Dismisses an invite from a player"""
+        inviter_name = self.server_communicator.get_invite(self.user["username"])
+        invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
+        print(invite_ip)
+        self.socket.connect((invite_ip, self.GAME_PORT))
+        self.socket.send("declined".encode())
+        buttons = []
+        actions = {}
+        print(inviter_name)
+        for button in self.buttons:
+            if button.text == "X":
+                # Close the connection
+                self.socket.close()
+                self.socket = socket.socket()
+                # Free the server
+                self.server_communicator.finished_server(invite_ip)
+                # Remove the invite from the DB
+                self.server_communicator.dismiss_invite(self.user["username"])
+                # Don't add the button to the new buttons array
+                continue
+            elif button.text == inviter_name:
+                continue
+            else:
+                buttons.append(button)
+                actions[button.text] = self.actions[button.text]
+        print(buttons)
+        print(actions)
+        self.buttons = buttons
+        self.actions = actions
+        self.update_screen()
+
+    def handle_socket_info(self):
+        info = self.socket.recv(1024).decode()
+        server_ip = self.socket.getpeername()[0]
+        if info == "declined":
+            # Free the server's ip
+            self.server_communicator.finished_server(server_ip)
+            self.socket.close()
+            self.socket = socket.socket()
+            self.create_popup_button("Invitation declined")
+        elif info == "accepted":
+            client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
+            client = TetrisClient(client_game, server_ip)
+            client.run()
+
+    # TODO
+    # Make an "invite" field in the db which will contain the username of whoever's inviting you to a game, and it will
+    # check it after every "for event in pygame.events:", and display it. then work on connecting the 2 players.
 
     def update_screen(self):
         """Displays everything needed to be displayed on the screen"""
@@ -118,6 +224,7 @@ class MainMenu:
         """Responds to pygame events"""
         if event.type == pygame.QUIT:
             self.running = False
+            self.server_communicator.update_online(self.user["username"], False)
             pygame.quit()
             exit()
 
@@ -141,7 +248,7 @@ class MainMenu:
                 for char in button.text:
                     if char.isdigit():
                         numbers_in_button += char
-                    elif char.isalpha():
+                    elif not char.isspace():
                         text_in_button += char
                 # Get the correct response using to the button
                 func = self.actions.get(text_in_button)
@@ -173,27 +280,23 @@ class MainMenu:
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
         self.create_textbox(
-            (self.width // 2 - 250, self.height // 2 - 100),
+            (self.width // 2 - 250, self.height // 2 - 200),
             500,
             200,
             Colors.WHITE,
             "Opponent Name",
             text_color=Colors.GREY
         )
-        """self.create_button(
-            (self.width // 3 - 300, self.height // 2 - 100),
-            500,
-            200,
-            Colors.BLACK,
-            "SERVER",
-        )
+
+        cur_button_text = "Challenge"
         self.create_button(
-            ((self.width // 3) * 2 - 200, self.height // 2 - 100),
+            (self.width // 2 - 250, (self.height // 3) * 2),
             500,
             200,
             Colors.BLACK,
-            "CLIENT",
-        )"""
+            cur_button_text
+        )
+        self.actions[cur_button_text] = self.multiplayer_continue,
         self.display_all_buttons()
         self.display_textboxes()
         pygame.display.flip()
@@ -267,6 +370,12 @@ class MainMenu:
         self.display_all_buttons()
         pygame.display.flip()
 
+    def start_client_game(self, server_ip):
+        client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
+        client = TetrisClient(client_game, server_ip)
+        client.run()
+
+    # TODO delete this
     def start_multiplayer(self, host: bool):
         """Start a multiplayer game"""
         if host:
@@ -287,16 +396,102 @@ class MainMenu:
         game = TetrisGame(500 + 200, 1000, mode, 75, lines_or_level=int(lines_or_level))
         game.run()
 
+    def multiplayer_continue(self):
+        foe_name = list(self.textboxes.values())[0]
+
+        # Entered invalid foe name
+        if foe_name == self.user["username"] or not self.server_communicator.username_exists(foe_name):
+            self.create_popup_button(r"Invalid Username Entered")
+            self.reset_textboxes()
+
+        elif self.server_communicator.is_online(foe_name):
+            # Get a server to play on
+            server_ip = self.server_communicator.get_free_server().replace('"', '')
+            # Error message
+            if "server" in server_ip:
+                self.create_popup_button(server_ip)
+                self.reset_textboxes()
+                return
+            print(foe_name, server_ip)
+            self.server_communicator.invite_user(self.user["username"], foe_name, server_ip)
+            self.socket.connect((server_ip, self.GAME_PORT))
+            data = self.socket.recv(1024).decode()
+            if data == "accepted":
+                self.start_client_game(server_ip)
+            else:
+                self.socket.close()
+                self.socket = socket.socket()
+                self.create_popup_button("Invite declined")
+
+        else:
+            self.create_popup_button("Opponent not online")
+            self.reset_textboxes()
+
+    def invite_player(self, foe_name):
+        self.server_communicator.invite_user(self.user["username"], foe_name)
+        # TODO make an invite field which will contain the username of the person who invited you
+        # in the db, check in the main menu if this field == "", otherwise display an invite.
+        # When you send an invite, you will open another thread with a udp server.
+        # If the other person accepted your invite, he will connect to the server (he will get your
+        # ip from the db, will compare your outer ips, and if they're the same
+        # connect to your local ip) and send you "start",
+        # and the game between you two will start, with you acting as the server.
+        # If he declined, he will send you "decline" and then you will get a notification
+        # That your opponent declined the invite
+        # Also add an "ingame" field to the db.
+
+    def setup_server(self):
+        server_ip = self.server_communicator.get_free_server()
+        server_ip = "10.100.102.17"
+        self.socket.connect((server_ip, self.GAME_PORT))
+        self.handle_socket_info()
+
+    @staticmethod
+    def get_outer_ip():
+        return get("https://api.ipify.org").text
+
+    @staticmethod
+    def get_local_ip():
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        return local_ip
+
     def create_button(
-        self,
-        starting_pixel: Tuple[int, int],
-        width: int,
-        height: int,
-        color: int,
-        text: str,
+            self,
+            starting_pixel: Tuple[int, int],
+            width: int,
+            height: int,
+            color: int,
+            text: str,
+            text_size: int = 45,
+            text_color: Tuple[int, int, int] = Colors.WHITE,
+            show: bool = True,
     ):
-        """Create a button given all of it's stats"""
-        self.buttons.append(Button(starting_pixel, width, height, color, text))
+        """Creates a new button and appends it to the button dict"""
+        self.buttons.append(
+            Button(
+                starting_pixel, width, height, color, text, text_size, text_color, show
+            )
+        )
+
+    def create_popup_button(self, text):
+        button_width = self.width // 2
+        button_height = self.height // 3
+        # Place the button in the middle of the screen
+        mid_x_pos = self.width // 2 - (button_width // 2)
+
+        self.create_button(
+            (mid_x_pos, self.height // 2 - button_height),
+            button_width,
+            button_height,
+            Colors.BLACK,
+            text,
+            38,
+            text_color=Colors.RED
+        )
+        # TODO change this shitty solution
+        self.actions["".join(char for char in text.split() if char != " ")] = self.buttons.pop,
+        #self.actions[text] = self.buttons.pop,
 
     def display_all_buttons(self):
         """Displays all buttons on the screen"""
@@ -315,15 +510,15 @@ class MainMenu:
         self.screen.blit(button.rendered_text, button.get_text_position())
 
     def create_textbox(
-        self,
-        starting_pixel: Tuple[int, int],
-        width: int,
-        height: int,
-        color: int,
-        text: str,
-        text_size: int = 45,
-        text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True
+            self,
+            starting_pixel: Tuple[int, int],
+            width: int,
+            height: int,
+            color: int,
+            text: str,
+            text_size: int = 45,
+            text_color: Tuple[int, int, int] = Colors.WHITE,
+            show: bool = True
     ):
         """Creates a new textbox and appends it to the textbox dict"""
         self.textboxes[
@@ -385,7 +580,7 @@ class MainMenu:
             self.text_cursor_ticks = cur_ticks
 
         return text
-    
+
     def reset_textboxes(self):
         for textbox in self.textboxes:
             self.textboxes[textbox] = ""
