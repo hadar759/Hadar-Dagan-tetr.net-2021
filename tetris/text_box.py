@@ -21,5 +21,3 @@ class TextBox(Button):
             starting_pixel, width, height, color, text, text_size, text_color, show
         )
         self.active = False
-
-

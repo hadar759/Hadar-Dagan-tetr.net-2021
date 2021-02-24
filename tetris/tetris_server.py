@@ -14,7 +14,7 @@ class TetrisServer:
     def __init__(self, tetris_game: TetrisGame):
         self.server_socket = socket.socket()
         self.tetris_game = tetris_game
-        self.cilent_socket = None
+        self.client_socket = None
 
     def initialize_socket(self):
         """Bind the server to an IP and a port and start listening"""

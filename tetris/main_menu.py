@@ -18,18 +18,19 @@ from tetris.text_box import TextBox
 
 class MainMenu:
     """The starting screen of the game"""
+
     GAME_PORT = 44444
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
 
     def __init__(
-            self,
-            width: int,
-            height: int,
-            user: Dict,
-            server_communicator: ServerCommunicator,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
-            skin: int = 1,
+        self,
+        width: int,
+        height: int,
+        user: Dict,
+        server_communicator: ServerCommunicator,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+        skin: int = 1,
     ):
         self.width, self.height = width, height
         self.user = user
@@ -61,7 +62,7 @@ class MainMenu:
                 for event in pygame.event.get():
                     self.handle_events(event, mouse_pos)
                 if round(time.time()) % 10 == 0:
-                    #threading.Thread(target=self.check_invite).start()
+                    # threading.Thread(target=self.check_invite).start()
                     self.check_invite()
                 run_count += 1
                 pygame.display.flip()
@@ -75,7 +76,9 @@ class MainMenu:
     # I think that's all. Afterwards i've finished the connecting 2 computers part.
 
     def check_invite(self):
-        invite = self.server_communicator.get_invite(self.user["username"]).replace('"', '')
+        invite = self.server_communicator.get_invite(self.user["username"]).replace(
+            '"', ""
+        )
         if invite:
             self.display_invite(invite)
 
@@ -84,13 +87,25 @@ class MainMenu:
         screen_corner_y = 600
         button_height = 300
         button_width = 200
-        self.create_button((screen_corner_x - button_width, screen_corner_y - button_height), button_width, button_height,
-                           Colors.BLACK, inviter_name)
+        self.create_button(
+            (screen_corner_x - button_width, screen_corner_y - button_height),
+            button_width,
+            button_height,
+            Colors.BLACK,
+            inviter_name,
+        )
         self.actions[inviter_name] = (self.accept_invite,)
         x_height = 20
         x_width = 20
-        self.create_button((screen_corner_x, screen_corner_y - button_height), x_width, x_height, Colors.BLACK, "X",
-                           text_size=20, text_color=Colors.RED)
+        self.create_button(
+            (screen_corner_x, screen_corner_y - button_height),
+            x_width,
+            x_height,
+            Colors.BLACK,
+            "X",
+            text_size=20,
+            text_color=Colors.RED,
+        )
         self.actions["X"] = (self.dismiss_invite,)
 
     # TODO
@@ -181,9 +196,9 @@ class MainMenu:
             504,
             200,
             Colors.BLACK,
-            cur_button_text
+            cur_button_text,
         )
-        self.actions[cur_button_text] = self.sprint,
+        self.actions[cur_button_text] = (self.sprint,)
 
         cur_button_text = "marathon"
         self.create_button(
@@ -191,9 +206,9 @@ class MainMenu:
             504,
             200,
             Colors.BLACK,
-            cur_button_text
+            cur_button_text,
         )
-        self.actions[cur_button_text] = self.marathon,
+        self.actions[cur_button_text] = (self.marathon,)
 
         cur_button_text = "multiplayer"
         self.create_button(
@@ -201,9 +216,9 @@ class MainMenu:
             504,
             200,
             Colors.BLACK,
-            cur_button_text
+            cur_button_text,
         )
-        self.actions[cur_button_text] = self.multiplayer,
+        self.actions[cur_button_text] = (self.multiplayer,)
 
         cur_button_text = self.user["username"]
         self.create_button(
@@ -211,9 +226,9 @@ class MainMenu:
             250,
             100,
             Colors.BLACK,
-            cur_button_text
+            cur_button_text,
         )
-        self.actions[cur_button_text] = self.user_profile,
+        self.actions[cur_button_text] = (self.user_profile,)
 
         self.actions[""] = self.start_game, "marathon"
         self.actions["L"] = self.start_game, "sprint"
@@ -285,7 +300,7 @@ class MainMenu:
             200,
             Colors.WHITE,
             "Opponent Name",
-            text_color=Colors.GREY
+            text_color=Colors.GREY,
         )
 
         cur_button_text = "Challenge"
@@ -294,9 +309,9 @@ class MainMenu:
             500,
             200,
             Colors.BLACK,
-            cur_button_text
+            cur_button_text,
         )
-        self.actions[cur_button_text] = self.multiplayer_continue,
+        self.actions[cur_button_text] = (self.multiplayer_continue,)
         self.display_all_buttons()
         self.display_textboxes()
         pygame.display.flip()
@@ -400,20 +415,24 @@ class MainMenu:
         foe_name = list(self.textboxes.values())[0]
 
         # Entered invalid foe name
-        if foe_name == self.user["username"] or not self.server_communicator.username_exists(foe_name):
+        if foe_name == self.user[
+            "username"
+        ] or not self.server_communicator.username_exists(foe_name):
             self.create_popup_button(r"Invalid Username Entered")
             self.reset_textboxes()
 
         elif self.server_communicator.is_online(foe_name):
             # Get a server to play on
-            server_ip = self.server_communicator.get_free_server().replace('"', '')
+            server_ip = self.server_communicator.get_free_server().replace('"', "")
             # Error message
             if "server" in server_ip:
                 self.create_popup_button(server_ip)
                 self.reset_textboxes()
                 return
             print(foe_name, server_ip)
-            self.server_communicator.invite_user(self.user["username"], foe_name, server_ip)
+            self.server_communicator.invite_user(
+                self.user["username"], foe_name, server_ip
+            )
             self.socket.connect((server_ip, self.GAME_PORT))
             data = self.socket.recv(1024).decode()
             if data == "accepted":
@@ -457,15 +476,15 @@ class MainMenu:
         return local_ip
 
     def create_button(
-            self,
-            starting_pixel: Tuple[int, int],
-            width: int,
-            height: int,
-            color: int,
-            text: str,
-            text_size: int = 45,
-            text_color: Tuple[int, int, int] = Colors.WHITE,
-            show: bool = True,
+        self,
+        starting_pixel: Tuple[int, int],
+        width: int,
+        height: int,
+        color: int,
+        text: str,
+        text_size: int = 45,
+        text_color: Tuple[int, int, int] = Colors.WHITE,
+        show: bool = True,
     ):
         """Creates a new button and appends it to the button dict"""
         self.buttons.append(
@@ -487,11 +506,13 @@ class MainMenu:
             Colors.BLACK,
             text,
             38,
-            text_color=Colors.RED
+            text_color=Colors.RED,
         )
         # TODO change this shitty solution
-        self.actions["".join(char for char in text.split() if char != " ")] = self.buttons.pop,
-        #self.actions[text] = self.buttons.pop,
+        self.actions["".join(char for char in text.split() if char != " ")] = (
+            self.buttons.pop,
+        )
+        # self.actions[text] = self.buttons.pop,
 
     def display_all_buttons(self):
         """Displays all buttons on the screen"""
@@ -510,15 +531,15 @@ class MainMenu:
         self.screen.blit(button.rendered_text, button.get_text_position())
 
     def create_textbox(
-            self,
-            starting_pixel: Tuple[int, int],
-            width: int,
-            height: int,
-            color: int,
-            text: str,
-            text_size: int = 45,
-            text_color: Tuple[int, int, int] = Colors.WHITE,
-            show: bool = True
+        self,
+        starting_pixel: Tuple[int, int],
+        width: int,
+        height: int,
+        color: int,
+        text: str,
+        text_size: int = 45,
+        text_color: Tuple[int, int, int] = Colors.WHITE,
+        show: bool = True,
     ):
         """Creates a new textbox and appends it to the textbox dict"""
         self.textboxes[

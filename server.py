@@ -38,7 +38,9 @@ class Server:
         # Set up the new query for update:
         new_query = {"$set": {"invite": inviter, "invite_ip": invite_ip}}
 
-        self.user_collection.dependency().update_one(filter={"username": invitee}, update=new_query)
+        self.user_collection.dependency().update_one(
+            filter={"username": invitee}, update=new_query
+        )
 
     @router.get("/users/invites")
     def get_invite(self, username: str) -> str:
@@ -85,10 +87,14 @@ class Server:
         free_servers = free_servers[1:]
 
         # Setup new queries for update
-        new_query = {"$set": {"free_servers": free_servers, "busy_servers": busy_servers}}
+        new_query = {
+            "$set": {"free_servers": free_servers, "busy_servers": busy_servers}
+        }
 
         # Update the servers lists
-        self.user_collection.dependency().update_one(filter=self.SERVERS_QUERY, update=new_query)
+        self.user_collection.dependency().update_one(
+            filter=self.SERVERS_QUERY, update=new_query
+        )
 
         print(free_servers)
         print(busy_servers)
@@ -105,12 +111,16 @@ class Server:
         # Setup new query for update
         free_servers.append(server_ip)
         busy_servers.remove(server_ip)
-        new_query = {"$set": {"free_servers": free_servers, "busy_servers": busy_servers}}
+        new_query = {
+            "$set": {"free_servers": free_servers, "busy_servers": busy_servers}
+        }
 
         print(free_servers)
         print(busy_servers)
 
-        self.user_collection.dependency().update_one(filter=self.SERVERS_QUERY, update=new_query)
+        self.user_collection.dependency().update_one(
+            filter=self.SERVERS_QUERY, update=new_query
+        )
 
     @router.get("/users/len")
     def get_document_count(self) -> int:
@@ -124,15 +134,17 @@ class Server:
 
         new_query = {"$set": {"ip": ip}}
 
-        self.user_collection.dependency().update_one(filter={"username": user["username"]}, update=new_query)
+        self.user_collection.dependency().update_one(
+            filter={"username": user["username"]}, update=new_query
+        )
 
     @router.post("/users/local-ip")
     def update_local_ip(self, user_identifier: str, password: str, local_ip: str):
         """Updates the local ip of a user on a new connection"""
         user = self.user_matches_password(user_identifier, password)
 
-        #old_query = {"local_ip": user["local_ip"]}
-        #new_query = {"$set": {"local_ip": local_ip}}
+        # old_query = {"local_ip": user["local_ip"]}
+        # new_query = {"$set": {"local_ip": local_ip}}
 
         self.user_collection.dependency().update_one(old_query, new_query)
 
@@ -142,7 +154,12 @@ class Server:
         self.user_collection.dependency().insert_one(user_field)
 
     @router.get("/users/find")
-    def user_exists(self, user_identifier: Optional[str] = None, email: Optional[str] = None, username: Optional[str] = None) -> bool:
+    def user_exists(
+        self,
+        user_identifier: Optional[str] = None,
+        email: Optional[str] = None,
+        username: Optional[str] = None,
+    ) -> bool:
         """Returns whether a user exists in the db"""
         if email:
             user_by_email = self.email_exists(email)
@@ -153,7 +170,9 @@ class Server:
             return user_by_username
 
         if user_identifier:
-            return self.email_exists(user_identifier) or self.username_exists(user_identifier)
+            return self.email_exists(user_identifier) or self.username_exists(
+                user_identifier
+            )
 
     def email_exists(self, email: str) -> bool:
         """Returns whether a user with a given email exists in the db"""
@@ -161,7 +180,10 @@ class Server:
 
     def username_exists(self, username: str) -> bool:
         """Returns whether a user with a given username exists in the db"""
-        return self.user_collection.dependency().find_one({"username": username}) is not None
+        return (
+            self.user_collection.dependency().find_one({"username": username})
+            is not None
+        )
 
     @router.get("/users")
     def user_matches_password(self, user_identifier: str, password: str) -> dict:
@@ -176,6 +198,6 @@ class Server:
 app.include_router(router)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Run Server
     uvicorn.run(app)

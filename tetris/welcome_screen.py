@@ -183,9 +183,18 @@ class WelcomeScreen:
             # Update the user's latest ip
             if user:
                 new_outer_ip = self.get_outer_ip()
-                self.server_communicator.update_outer_ip(user_identifier, password, new_outer_ip)
+                self.server_communicator.update_outer_ip(
+                    user_identifier, password, new_outer_ip
+                )
                 self.server_communicator.update_online(user_identifier, True)
-                MainMenu(self.width, self.height, user, self.server_communicator, self.refresh_rate, self.background_path).run()
+                MainMenu(
+                    self.width,
+                    self.height,
+                    user,
+                    self.server_communicator,
+                    self.refresh_rate,
+                    self.background_path,
+                ).run()
                 pygame.quit()
 
             # User exists but the password doesn't match
@@ -206,7 +215,7 @@ class WelcomeScreen:
             text,
             38,
             text_color=Colors.RED,
-            func=self.buttons.popitem
+            func=self.buttons.popitem,
         )
 
     @staticmethod
@@ -305,26 +314,33 @@ class WelcomeScreen:
         if valid_user:
             user_number = self.server_communicator.estimated_document_count()
             user_post = self.create_db_post(
-                    user_number, email, username, password, self.get_outer_ip()
-                )
-            self.server_communicator.create_user(
-                user_post
+                user_number, email, username, password, self.get_outer_ip()
             )
-            MainMenu(self.width, self.height, user_post, self.server_communicator, self.refresh_rate, self.background_path).run()
+            self.server_communicator.create_user(user_post)
+            MainMenu(
+                self.width,
+                self.height,
+                user_post,
+                self.server_communicator,
+                self.refresh_rate,
+                self.background_path,
+            ).run()
             pygame.quit()
 
     @staticmethod
     def get_outer_ip():
         return get("https://api.ipify.org").text
 
-    @ staticmethod
+    @staticmethod
     def get_local_ip():
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         return local_ip
 
     @staticmethod
-    def create_db_post(user_number: int, email: str, username: str, password: str, ip: str) -> dict:
+    def create_db_post(
+        user_number: int, email: str, username: str, password: str, ip: str
+    ) -> dict:
         """Returns a db post with the given parameters"""
         return {
             "_id": user_number,
@@ -334,7 +350,7 @@ class WelcomeScreen:
             "ip": ip,
             "invite": "",
             "invite_ip": "",
-            "online": True
+            "online": True,
         }
 
     def create_button(
@@ -365,7 +381,7 @@ class WelcomeScreen:
         text: str,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True
+        show: bool = True,
     ):
         """Creates a new textbox and appends it to the textbox dict"""
         self.textboxes[

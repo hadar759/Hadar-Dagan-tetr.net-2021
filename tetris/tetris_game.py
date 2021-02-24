@@ -418,8 +418,12 @@ class TetrisGame(Game):
             self.move_variables["manual_drop"] = False
         # When we've released a move button, check if we've activated the other direction's das
         # before completely stopping all move variables.
-        elif (self.last_pressed_key == pygame.K_RIGHT and not self.move_variables["left_das"] or
-              self.last_pressed_key == pygame.K_LEFT and not self.move_variables["right_das"]):
+        elif (
+            self.last_pressed_key == pygame.K_RIGHT
+            and not self.move_variables["left_das"]
+            or self.last_pressed_key == pygame.K_LEFT
+            and not self.move_variables["right_das"]
+        ):
             for key in self.move_variables:
                 self.move_variables[key] = False
 
@@ -587,9 +591,7 @@ class TetrisGame(Game):
             pygame.time.delay(delay)
 
     @staticmethod
-    def calculate_center_name_position(
-        x_space: int, y_space: int
-    ) -> Tuple[int, int]:
+    def calculate_center_name_position(x_space: int, y_space: int) -> Tuple[int, int]:
         """Returns the center position the text should be in"""
         return max(0, x_space), max(0, y_space)
 
