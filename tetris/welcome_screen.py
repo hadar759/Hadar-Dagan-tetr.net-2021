@@ -183,10 +183,7 @@ class WelcomeScreen:
             # Update the user's latest ip
             if user:
                 new_outer_ip = self.get_outer_ip()
-                self.server_communicator.update_outer_ip(
-                    user_identifier, password, new_outer_ip
-                )
-                self.server_communicator.update_online(user_identifier, True)
+                self.server_communicator.on_connection(user["username"], new_outer_ip)
                 MainMenu(
                     self.width,
                     self.height,

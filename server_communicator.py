@@ -1,4 +1,5 @@
 import json
+from typing import Dict
 
 from requests import post, get
 
@@ -12,6 +13,9 @@ class ServerCommunicator:
     @staticmethod
     def bool_to_string(condition: bool):
         return str(condition).lower()
+
+    def on_connection(self, username: str, ip: str):
+        post(f"{self.SERVER_DOMAIN}/users/connection?username={username}&ip={ip}")
 
     def get_invite_ip(self, username: str) -> str:
         return get(
@@ -54,18 +58,6 @@ class ServerCommunicator:
     def get_free_server(self) -> str:
         """Returns a random server ready for use"""
         return get(f"{self.SERVER_DOMAIN}/users/servers").text
-
-    def update_outer_ip(self, user_identifier: str, password: str, outer_ip: str):
-        """Updates the outer ip of a given user after a login"""
-        post(
-            f"{self.SERVER_DOMAIN}/users/outer-ip?user_identifier={user_identifier}&password={password}&ip={outer_ip}"
-        )
-
-    def update_local_ip(self, user_identifier: str, password: str, local_ip: str):
-        """Updates the local ip of a given user after a login"""
-        post(
-            f"{self.SERVER_DOMAIN}/users/local-ip?user_identifier={user_identifier}&password={password}&local_ip={local_ip}"
-        )
 
     def create_user(self, db_post: dict):
         """Adds a new user to the database"""

@@ -1,3 +1,4 @@
+import pickle
 import socket
 import time
 from typing import Optional, Tuple, Dict
@@ -67,14 +68,6 @@ class MainMenu:
                 run_count += 1
                 pygame.display.flip()
 
-    # TODO
-    # Check if the sockets are working (connecting to the server, i.e. the function below), maybe it's coded wrong,
-    # maybe i've fucked up the threads, maybe it's calling location is finnicky. Check it.
-    # Secondly, all games are clients now, which will connect to a separate server. Make that server (a class, which
-    # will be ran by the dynos in heroku), run it locally, test it, make sure it's working.
-    # Check all problems with the login - online, offline, getting a server, etc.
-    # I think that's all. Afterwards i've finished the connecting 2 computers part.
-
     def check_invite(self):
         invite = self.server_communicator.get_invite(self.user["username"]).replace(
             '"', ""
@@ -83,7 +76,7 @@ class MainMenu:
             self.display_invite(invite)
 
     def display_invite(self, inviter_name):
-        screen_corner_x = 1200
+        screen_corner_x = 1500
         screen_corner_y = 600
         button_height = 300
         button_width = 200
@@ -94,7 +87,9 @@ class MainMenu:
             Colors.BLACK,
             inviter_name,
         )
-        self.actions[inviter_name] = (self.accept_invite,)
+        self.actions["".join(letter for letter in inviter_name if letter.isalpha())] = (
+            self.accept_invite,
+        )
         x_height = 20
         x_width = 20
         self.create_button(
@@ -108,20 +103,15 @@ class MainMenu:
         )
         self.actions["X"] = (self.dismiss_invite,)
 
-    # TODO
-    # Make accept invite, add the invite and invite_ip field to the entries in the db
-    # Tweak the inviting part cause i changed it a bit now, test everything.
-    # Make the actual game server so players can play, and then i pretty much finished the connection part
-
     def accept_invite(self):
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
-        self.socket.send("accepted".encode())
-        self.start_client_game(invite_ip)
+        self.socket.connect((invite_ip, self.GAME_PORT))
+        self.socket.send(pickle.dumps(["accepted"]))
+        data = pickle.loads(self.socket.recv(1024))[0]
+        if data == "declined":
+            return
+        self.start_client_game(invite_ip, float(data))
         self.dismiss_invite()
-
-    # TODO
-    # Check if the dismiss invite works and everything is great. debug why it sometimes invites yourself.
-    # Handle the accept invite situation (i.e. holding a game, and check if it works when the game ends).
 
     def dismiss_invite(self):
         """Dismisses an invite from a player"""
@@ -129,7 +119,7 @@ class MainMenu:
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
         print(invite_ip)
         self.socket.connect((invite_ip, self.GAME_PORT))
-        self.socket.send("declined".encode())
+        self.socket.send(pickle.dumps(["declined"]))
         buttons = []
         actions = {}
         print(inviter_name)
@@ -154,24 +144,6 @@ class MainMenu:
         self.buttons = buttons
         self.actions = actions
         self.update_screen()
-
-    def handle_socket_info(self):
-        info = self.socket.recv(1024).decode()
-        server_ip = self.socket.getpeername()[0]
-        if info == "declined":
-            # Free the server's ip
-            self.server_communicator.finished_server(server_ip)
-            self.socket.close()
-            self.socket = socket.socket()
-            self.create_popup_button("Invitation declined")
-        elif info == "accepted":
-            client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
-            client = TetrisClient(client_game, server_ip)
-            client.run()
-
-    # TODO
-    # Make an "invite" field in the db which will contain the username of whoever's inviting you to a game, and it will
-    # check it after every "for event in pygame.events:", and display it. then work on connecting the 2 players.
 
     def update_screen(self):
         """Displays everything needed to be displayed on the screen"""
@@ -385,23 +357,11 @@ class MainMenu:
         self.display_all_buttons()
         pygame.display.flip()
 
-    def start_client_game(self, server_ip):
+    def start_client_game(self, server_ip, bag_seed):
         client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
-        client = TetrisClient(client_game, server_ip)
+        client_game.set_bag_seed(bag_seed)
+        client = TetrisClient(client_game, server_ip, self.socket)
         client.run()
-
-    # TODO delete this
-    def start_multiplayer(self, host: bool):
-        """Start a multiplayer game"""
-        if host:
-            server_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
-            server = TetrisServer(server_game)
-
-            server.run()
-        else:
-            client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
-            client = TetrisClient(client_game)
-            client.run()
 
     def start_game(self, mode, lines_or_level):
         """Start a generic game, given a mode and the optional starting lines or starting level"""
@@ -429,14 +389,14 @@ class MainMenu:
                 self.create_popup_button(server_ip)
                 self.reset_textboxes()
                 return
-            print(foe_name, server_ip)
             self.server_communicator.invite_user(
                 self.user["username"], foe_name, server_ip
             )
             self.socket.connect((server_ip, self.GAME_PORT))
-            data = self.socket.recv(1024).decode()
-            if data == "accepted":
-                self.start_client_game(server_ip)
+            # Accept the game on your end
+            data = pickle.loads(self.socket.recv(1024))[0]
+            if data != "declined":
+                self.start_client_game(server_ip, float(data))
             else:
                 self.socket.close()
                 self.socket = socket.socket()
@@ -445,25 +405,6 @@ class MainMenu:
         else:
             self.create_popup_button("Opponent not online")
             self.reset_textboxes()
-
-    def invite_player(self, foe_name):
-        self.server_communicator.invite_user(self.user["username"], foe_name)
-        # TODO make an invite field which will contain the username of the person who invited you
-        # in the db, check in the main menu if this field == "", otherwise display an invite.
-        # When you send an invite, you will open another thread with a udp server.
-        # If the other person accepted your invite, he will connect to the server (he will get your
-        # ip from the db, will compare your outer ips, and if they're the same
-        # connect to your local ip) and send you "start",
-        # and the game between you two will start, with you acting as the server.
-        # If he declined, he will send you "decline" and then you will get a notification
-        # That your opponent declined the invite
-        # Also add an "ingame" field to the db.
-
-    def setup_server(self):
-        server_ip = self.server_communicator.get_free_server()
-        server_ip = "10.100.102.17"
-        self.socket.connect((server_ip, self.GAME_PORT))
-        self.handle_socket_info()
 
     @staticmethod
     def get_outer_ip():
