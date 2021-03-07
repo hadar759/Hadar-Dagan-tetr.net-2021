@@ -1,3 +1,4 @@
+import copy
 from typing import Optional, Dict, List
 
 import uvicorn
@@ -27,8 +28,20 @@ class Server:
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
 
+    @router.get("/users/bolbol")
+    def bruh(self, username):
+        """FOR TESTING - REMOVE"""
+        return self.user_collection.dependency().find_one({"username": username})
+
+    @router.post("/users/connection")
+    def on_connection(self, username: str, ip: str):
+        new_query = {"$set": {"ip": ip, "invite": "", "invite_ip": "", "online": True}}
+        self.user_collection.dependency().update_one(
+            filter={"username": username}, update=new_query
+        )
+
     @router.get("/users/invite-ip")
-    def get_invite_ip(self, username):
+    def get_invite_ip(self, username: str):
         # Get the user
         user = self.user_collection.dependency().find_one({"username": username})
         return user["invite_ip"]
@@ -46,20 +59,6 @@ class Server:
     def get_invite(self, username: str) -> str:
         user = self.user_collection.dependency().find_one({"username": username})
         return user["invite"]
-
-    @router.post("/users/online")
-    def update_online(self, user_identifier: str, online: bool):
-        """Updates the player online status"""
-        # The given identifier is a username
-        if self.username_exists(user_identifier):
-            query = {"username": user_identifier}
-        # The given identifier is an email
-        else:
-            query = {"email": user_identifier}
-        # Switch the player's online state (if he was offline, they will log in and be online, and vice versa)
-        new_query = {"$set": {"online": online}}
-
-        self.user_collection.dependency().update_one(filter=query, update=new_query)
 
     @router.get("/users/online")
     def player_online(self, username: str) -> bool:
@@ -122,11 +121,6 @@ class Server:
             filter=self.SERVERS_QUERY, update=new_query
         )
 
-    @router.get("/users/len")
-    def get_document_count(self) -> int:
-        """Returns the number of documents in the collection. Mainly used for checking server status."""
-        return self.user_collection.dependency().estimated_document_count()
-
     @router.post("/users/outer-ip")
     def update_outer_ip(self, user_identifier: str, password: str, ip: str):
         """Updates the outer ip of a user on a new connection"""
@@ -138,15 +132,10 @@ class Server:
             filter={"username": user["username"]}, update=new_query
         )
 
-    @router.post("/users/local-ip")
-    def update_local_ip(self, user_identifier: str, password: str, local_ip: str):
-        """Updates the local ip of a user on a new connection"""
-        user = self.user_matches_password(user_identifier, password)
-
-        # old_query = {"local_ip": user["local_ip"]}
-        # new_query = {"$set": {"local_ip": local_ip}}
-
-        self.user_collection.dependency().update_one(old_query, new_query)
+    @router.get("/users/len")
+    def get_document_count(self) -> int:
+        """Returns the number of documents in the collection. Mainly used for checking server status."""
+        return self.user_collection.dependency().estimated_document_count()
 
     @router.post("/users")
     def create_user(self, user_field: Dict):

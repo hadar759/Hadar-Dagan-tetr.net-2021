@@ -3,13 +3,17 @@ Hadar Dagan
 31.5.2020
 v1.0
 """
+import pickle
+import threading
 from socket import socket
-from typing import Tuple, Optional, Dict
+from typing import Tuple, Optional, Dict, List
 import random
 
+from concurrent.futures import Executor
 import pygame
 from pygame import USEREVENT
 from pygamepp.game import Game
+from pygamepp.game_object import GameObject
 
 from tetris.pieces import *
 from tetris.pieces.tetris_piece import Piece
@@ -34,14 +38,20 @@ class TetrisGame(Game):
     TIME_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render(
         "TIME:", True, Colors.WHITE
     )
+
     GRAVITY_EVENT = USEREVENT + 1
     DAS_EVENT = USEREVENT + 2
     ARR_EVENT = USEREVENT + 3
     MANUAL_DROP = USEREVENT + 4
     LOCK_DELAY = USEREVENT + 5
+    DATA_EVENT = USEREVENT + 6
     LOWER_BORDER = 19
     # The first - base - amount of time it takes for a piece to drop one block (in ms)
     GRAVITY_BASE_TIME = 800
+    BLOCK_SIZE = 50
+    BASE_SCREEN_SIZE = 700
+    BORDER = 100
+    SCREEN_START = BASE_SCREEN_SIZE + BORDER
 
     def __init__(
         self,
@@ -51,9 +61,9 @@ class TetrisGame(Game):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
         lines_or_level: Optional[int] = None,
-        client_socket: Optional[socket] = None,
+        server_socket: Optional[socket] = None,
     ):
-        super().__init__(width, height, refresh_rate, background_path)
+        super().__init__(width + 1000, height, refresh_rate, background_path)
         self.mode = mode
         # The current piece the player is controlling
         self.cur_piece: Piece = None
@@ -71,7 +81,8 @@ class TetrisGame(Game):
         self.times_touching_ground = 0
         # A bag containing the next 7 pieces - according to tetris guideline
         self.cur_seven_bag = []
-        self.grid = TetrisGrid()
+        self.game_grid = TetrisGrid()
+        self.grids = [self.game_grid]
         # Every variable that has to do with moving the piece
         self.move_variables: Dict[str, bool] = {
             "right_das": False,
@@ -104,6 +115,19 @@ class TetrisGame(Game):
             "<class 'tetris.pieces.z_piece.ZPiece'>": pygame.image.load(
                 f"resources/zpiece-full-sprite{self.skin}.png"
             ),
+            "<class 'tetris.pieces.garbage_piece.GarbagePiece'>": pygame.image.load(
+                rf"./resources/garbage_piece_sprite{self.skin}.png"
+            ),
+        }
+        self.pieces = {
+            "I": pygame.image.load(f"resources/ipiece-sprite{self.skin}.png"),
+            "J": pygame.image.load(f"resources/jpiece-sprite{self.skin}.png"),
+            "O": pygame.image.load(f"resources/opiece-sprite{self.skin}.png"),
+            "L": pygame.image.load(f"resources/lpiece-sprite{self.skin}.png"),
+            "T": pygame.image.load(f"resources/tpiece-sprite{self.skin}.png"),
+            "S": pygame.image.load(f"resources/spiece-sprite{self.skin}.png"),
+            "Z": pygame.image.load(f"resources/zpiece-sprite{self.skin}.png"),
+            "G": pygame.image.load(f"resources/garbage_piece_sprite{self.skin}.png"),
         }
 
         if self.mode == "sprint":
@@ -122,9 +146,11 @@ class TetrisGame(Game):
             ).render("LINES:", True, Colors.WHITE)
         if self.mode == "multiplayer":
             # Multiplayer specific variables
-            self.client_socket = client_socket
+            self.server_socket = server_socket
             self.lines_to_be_sent = 0
             self.lines_received = 0
+            self.opp_screen = []
+            self.grids.append(TetrisGrid(x_offset=self.SCREEN_START))
 
     def run(self):
         # Every event that has to do with moving the piece
@@ -137,10 +163,14 @@ class TetrisGame(Game):
         self.set_event_handler(self.LOCK_DELAY, self.freeze_piece)
         self.set_event_handler(pygame.KEYUP, self.key_up)
         self.set_event_handler(pygame.KEYDOWN, self.key_pressed)
+        if self.mode == "multiplayer":
+            self.create_timer(self.DATA_EVENT, 2000)
+            self.set_event_handler(self.DATA_EVENT, self.handle_connection)
         self.running = True
 
         # Display the grid borders
-        self.grid.display_borders(self.screen)
+        self.game_grid.display_borders(self.screen)
+
         super().run()
 
     def start_of_loop(self):
@@ -149,16 +179,82 @@ class TetrisGame(Game):
         if self.cur_piece is None:
             self.generate_new_piece()
             # Clear the screen from the old next pieces
-            self.grid.reset_screen(self.screen)
-        if self.mode == "multiplayer":
-            # Receive the amount of lines to be received from the opponent
-            lines_received = self.client_socket.recv(2).decode()
-            # In case the opponent topped out (lost)
-            if lines_received == "W":
-                self.game_over(True)
-            # If we've received any lines, add them to the class variable
-            elif lines_received:
-                self.lines_received += int(lines_received)
+            self.reset_grids()
+
+    @staticmethod
+    def set_bag_seed(bag_seed):
+        """Set the bag seed for the game, so both multiplayer games will have the same seed"""
+        random.seed(bag_seed)
+
+    def reset_grids(self):
+        self.screen.fill(Colors.BLACK)
+        for grid in self.grids:
+            grid.display_borders(self.screen)
+
+    def handle_connection(self):
+        data = [self.get_my_screen(), self.lines_to_be_sent]
+        # Send the screen & lines to be sent to the opponent
+        print(len(pickle.dumps(data)))
+        self.server_socket.send(pickle.dumps(data))
+        self.lines_to_be_sent = 0
+
+        # Receive the screen and line data from the opponent
+        data_received = pickle.loads(self.server_socket.recv(25600))
+        # Get the opponent screen
+        screen_received = data_received[0]
+        # Get the amount of lines to be received from the opponent
+        lines_received = data_received[1]
+        # In case the opponent topped out (lost)
+        if screen_received == "Win":
+            self.game_over(True)
+        elif screen_received == "Lose":
+            self.game_over(False)
+
+        self.update_opp_screen(screen_received)
+        self.lines_received += int(lines_received)
+
+    def update_opp_screen(self, screen: List):
+        """Updates the opponent's screen"""
+        # TODO implement screen drawing
+        block_size = self.BLOCK_SIZE
+        cur_opp_screen = []
+        # go over every block of the opponent's screen
+        for row_index in range(len(screen)):
+            for column_index in range(len(screen[0])):
+                piece = screen[row_index][column_index]
+                # No piece there
+                if piece == "N":
+                    continue
+                piece_sprite = self.pieces[piece]
+                # Create a game object representing the piece
+                piece_obj = GameObject(
+                    piece_sprite,
+                    (
+                        self.SCREEN_START + block_size * column_index,
+                        block_size * row_index,
+                    ),
+                )
+                cur_opp_screen.append(piece_obj)
+        self.opp_screen = cur_opp_screen
+
+    def get_my_screen(self):
+        # 20 rows of 10 empty places - i.e. a default screen
+        screen_list = []
+        for row in range(20):
+            screen_list.append([])
+            for column in range(10):
+                screen_list[row].append("N")
+
+        # Populate the screen
+        for obj in self.game_objects:
+            if obj == self.cur_piece or obj == self.ghost_piece:
+                continue
+            for pos in obj.position:
+                piece_str = str(type(obj)).split(".")
+                piece_name = piece_str[-1][0]
+                screen_list[pos[0]][pos[1]] = piece_name
+
+        return screen_list
 
     def show_next_pieces(self):
         """Show 5 of the next pieces"""
@@ -184,7 +280,9 @@ class TetrisGame(Game):
     def update_ghost_position(self):
         """Changes the ghost position in accordance to the current piece position"""
         if self.cur_piece:
-            self.ghost_piece.position = self.cur_piece.get_lowest_position(self.grid)
+            self.ghost_piece.position = self.cur_piece.get_lowest_position(
+                self.game_grid
+            )
 
     def end_of_loop(self):
         """Every action that is to be done at the end of the loop - after event handling"""
@@ -216,17 +314,19 @@ class TetrisGame(Game):
             # Sprint specific functions
             self.show_time()
             self.show_lines()
+            if self.lines_cleared >= self.lines_to_finish:
+                # If the player had cleared the amount of lines needed, he has won
+                self.game_over(True)
+
+        elif self.mode == "multiplayer":
+            self.display_opp_screen()
 
         self.show_next_pieces()
 
-        if self.mode == "sprint" and self.lines_cleared >= self.lines_to_finish:
-            # If the player had cleared the amount of lines needed, he has won
-            self.game_over(True)
-
-        if self.mode == "multiplayer":
-            # Send the amount of lines needed to be sent to the opponent
-            self.client_socket.send(str(self.lines_to_be_sent).encode())
-            self.lines_to_be_sent = 0
+    def display_opp_screen(self):
+        """Displays the opponent's screen on the board"""
+        for obj in self.opp_screen:
+            obj.display_object(self.screen)
 
     def add_garbage(self):
         """Adds garbage to the board"""
@@ -238,7 +338,7 @@ class TetrisGame(Game):
 
         # Since we are about to move all the blocks on the screen up, we'll first unoccupy their
         # current position
-        for line in self.grid.blocks:
+        for line in self.game_grid.blocks:
             for block in line:
                 block.occupied = False
 
@@ -263,11 +363,11 @@ class TetrisGame(Game):
         # Reoccupy the blocks' positions
         for piece in self.game_objects:
             for pos in piece.position:
-                self.grid.occupy_block(pos)
+                self.game_grid.occupy_block(pos)
 
         # Reset the screen after the player has received garbage
         if self.lines_received > 0:
-            self.grid.reset_screen(self.screen)
+            self.reset_grids()
         # Reset the amount of lines that need to be received
         self.lines_received = 0
 
@@ -370,8 +470,8 @@ class TetrisGame(Game):
         # If the piece doesn't need to be frozen and it's not None (i.e. we have a current piece) -
         # gravitate it down
         if not self.should_freeze and self.cur_piece:
-            self.grid.reset_screen(self.screen)
-            self.cur_piece.gravitate(self.grid)
+            self.reset_grids()
+            self.cur_piece.gravitate(self.game_grid)
         # In order to give the player time to react and move the piece, the piece needs to gravitate
         # down while touching the ground at least once before it's frozen
         else:
@@ -441,43 +541,43 @@ class TetrisGame(Game):
         if self.move_variables["arr"] and self.cur_piece:
             # Move the piece to the right every 5 milliseconds
             if self.move_variables["right_das"]:
-                self.grid.reset_screen(self.screen)
-                self.cur_piece.move(pygame.K_RIGHT, self.grid)
+                self.reset_grids()
+                self.cur_piece.move(pygame.K_RIGHT, self.game_grid)
                 self.create_timer(self.DAS_EVENT, 5, True)
             # Move the piece to the left every 5 milliseconds
             elif self.move_variables["left_das"]:
-                self.grid.reset_screen(self.screen)
-                self.cur_piece.move(pygame.K_LEFT, self.grid)
+                self.reset_grids()
+                self.cur_piece.move(pygame.K_LEFT, self.game_grid)
                 self.create_timer(self.DAS_EVENT, 5, True)
         self.update_ghost_position()
 
     def key_right(self):
         """Move the piece one block to the right and start the ARR timer"""
-        self.grid.reset_screen(self.screen)
+        self.reset_grids()
         self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, 100, True)
         self.move_variables["key_down"] = True
         self.move_variables["right_das"] = True
-        self.cur_piece.move(pygame.K_RIGHT, self.grid)
+        self.cur_piece.move(pygame.K_RIGHT, self.game_grid)
 
     def key_left(self):
         """Move the piece to the left and start the ARR timer"""
-        self.grid.reset_screen(self.screen)
+        self.reset_grids()
         self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, 100, True)
         self.move_variables["key_down"] = True
         self.move_variables["left_das"] = True
-        self.cur_piece.move(pygame.K_LEFT, self.grid)
+        self.cur_piece.move(pygame.K_LEFT, self.game_grid)
 
     def key_z(self):
         """Rotate the piece counter-clockwise"""
-        self.grid.reset_screen(self.screen)
-        self.cur_piece.call_rotation_functions(pygame.K_z, self.grid)
+        self.reset_grids()
+        self.cur_piece.call_rotation_functions(pygame.K_z, self.game_grid)
 
     def key_x(self):
         """Rotate the piece clockwise"""
-        self.grid.reset_screen(self.screen)
-        self.cur_piece.call_rotation_functions(pygame.K_x, self.grid)
+        self.reset_grids()
+        self.cur_piece.call_rotation_functions(pygame.K_x, self.game_grid)
 
     def start_lock_delay(self):
         # Lock delay - the time it takes the piece to freeze
@@ -486,7 +586,7 @@ class TetrisGame(Game):
 
     def freeze_piece(self):
         """Freezes the current piece"""
-        self.grid.freeze_piece(self.cur_piece)
+        self.game_grid.freeze_piece(self.cur_piece)
         self.cur_piece = None
         self.should_freeze = False
 
@@ -497,8 +597,8 @@ class TetrisGame(Game):
                 return True
 
             elif (
-                self.grid.blocks[pos[0] + 1][pos[1]].occupied
-                or self.grid.blocks[pos[0]][pos[1]].occupied
+                self.game_grid.blocks[pos[0] + 1][pos[1]].occupied
+                or self.game_grid.blocks[pos[0]][pos[1]].occupied
             ):
                 if pos[0] <= 0:
                     self.game_over(False)
@@ -510,7 +610,13 @@ class TetrisGame(Game):
         if self.mode == "multiplayer":
             if not win:
                 # send the opponent the message that you've lost
-                self.client_socket.send("W".encode())
+                self.server_socket.send(
+                    pickle.dumps(
+                        [
+                            "W",
+                        ]
+                    )
+                )
 
         if self.mode == "sprint":
             # Calculate the end time
@@ -598,7 +704,7 @@ class TetrisGame(Game):
     def clear_lines(self):
         """Clear the lines needed to be cleared"""
         num_of_lines_cleared = 0
-        for index, line in enumerate(self.grid.blocks):
+        for index, line in enumerate(self.game_grid.blocks):
             should_clear = True
             for block in line:
                 # If a block in a line isn't occupied the line shouldn't be cleared
@@ -611,7 +717,7 @@ class TetrisGame(Game):
 
         # If there are any lines to be cleared, reset the screen
         if num_of_lines_cleared != 0:
-            self.grid.reset_screen(self.screen)
+            self.reset_grids()
 
         # Update the marathon level if needed
         if self.lines_cleared // 10 < (self.lines_cleared + num_of_lines_cleared) // 10:
@@ -644,7 +750,7 @@ class TetrisGame(Game):
             new_pos = []
             for pos in piece.position:
                 # Unoccupy the block's position
-                self.grid.blocks[pos[0]][pos[1]].occupied = False
+                self.game_grid.blocks[pos[0]][pos[1]].occupied = False
                 if pos[0] != line_num:
                     # Move every block above the line one space down
                     if pos[0] < line_num:
@@ -653,4 +759,4 @@ class TetrisGame(Game):
             # Update the piece's position
             piece.position = new_pos
             for pos in piece.position:
-                self.grid.occupy_block(pos)
+                self.game_grid.occupy_block(pos)

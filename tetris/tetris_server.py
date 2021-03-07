@@ -26,5 +26,5 @@ class TetrisServer:
         self.initialize_socket()
         self.client_socket, client_address = self.server_socket.accept()
         self.client_socket.send(str(0).encode())
-        self.tetris_game.client_socket = self.client_socket
+        self.tetris_game.server_socket = self.client_socket
         self.tetris_game.run()
