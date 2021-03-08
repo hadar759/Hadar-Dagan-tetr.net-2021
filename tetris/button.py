@@ -14,7 +14,8 @@ class Button:
         text: pygame.font,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
+        transparent: bool = False,
+        text_only: bool = False,
     ):
         # The first pixel of the button
         self.starting_x = starting_pixel[0]
@@ -27,9 +28,10 @@ class Button:
         self.text = text
         self.text_size = text_size
         self.text_color = text_color
-        self.show = show
+        self.transparent = transparent
+        self.text_only = text_only
         # The rendered text to display inside the button
-        self.rendered_text = self.render_input(text_size, text, text_color)
+        self.rendered_text = self.render_button(text_size, text, text_color)
 
     def inside_button(self, pixel: Tuple[int, int]):
         """Receives a coordinate and returns whether it's inside the button"""
@@ -38,7 +40,7 @@ class Button:
             and self.starting_y < pixel[1] < self.starting_y + self.height
         )
 
-    def render_input(self, font_size: int, inp: str, color):
+    def render_button(self, font_size: int, inp: str, color):
         """Renders a text given it's font and size"""
         return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
             inp, True, color

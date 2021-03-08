@@ -1,20 +1,18 @@
-import json
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple, Dict
 
 import pygame
 import socket
-import pymongo
-from pymongo.collection import Collection
-from pymongo import MongoClient
+
+from tetris.tetris_screen import TetrisScreen
 from tetris.main_menu import MainMenu
 from tetris.button import Button
 from tetris.colors import Colors
 from tetris.text_box import TextBox
-from requests import get, post
+from requests import get
 from server_communicator import ServerCommunicator
 
 
-class WelcomeScreen:
+class WelcomeScreen(TetrisScreen):
     """The starting screen of the game"""
 
     def __init__(
@@ -24,21 +22,11 @@ class WelcomeScreen:
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
-        self.width, self.height = width, height
-        self.refresh_rate = refresh_rate
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.background_image = (
-            pygame.image.load(background_path) if background_path else None
-        )
-        self.background_path = background_path
-        self.buttons: Dict[Button, callable] = {}
-        self.textboxes: Dict[TextBox, str] = {}
-
-        self.text_cursor_ticks = pygame.time.get_ticks()
+        super().__init__(width, height, refresh_rate, background_path)
         self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
 
     def run(self):
-        """Main loop of the main menu"""
+        """Main loop of the welcome screen"""
         # Set up the buttons and display them
         # Very specific numbers just so they exactly fill the blocks in the background pic hahaha
 
@@ -59,7 +47,7 @@ class WelcomeScreen:
             200,
             Colors.BLACK,
             "register",
-            func=self.register,
+            func=self.register_screen,
         )
 
         run = True
@@ -93,7 +81,7 @@ class WelcomeScreen:
                 if event.type == pygame.KEYDOWN:
                     for textbox in self.textboxes.keys():
                         if textbox.active:
-                            self.key_actions(textbox, event)
+                            self.textbox_key_actions(textbox, event)
                             break
 
     def login(self):
@@ -135,7 +123,7 @@ class WelcomeScreen:
             "Forgot your password?",
             18,
             Colors.BLUE,
-            False,
+            True,
         )
 
         # Continue button
@@ -185,10 +173,10 @@ class WelcomeScreen:
                 new_outer_ip = self.get_outer_ip()
                 self.server_communicator.on_connection(user["username"], new_outer_ip)
                 MainMenu(
-                    self.width,
-                    self.height,
                     user,
                     self.server_communicator,
+                    self.width,
+                    self.height,
                     self.refresh_rate,
                     self.background_path,
                 ).run()
@@ -220,7 +208,7 @@ class WelcomeScreen:
         """Returns whether a given string is an email address"""
         return "@" in inp
 
-    def register(self):
+    def register_screen(self):
         """Create the register screen - set up the correct buttons"""
         self.buttons = {}
         self.screen.blit(self.background_image, (0, 0))
@@ -349,171 +337,3 @@ class WelcomeScreen:
             "invite_ip": "",
             "online": True,
         }
-
-    def create_button(
-        self,
-        starting_pixel: Tuple[int, int],
-        width: int,
-        height: int,
-        color: int,
-        text: str,
-        text_size: int = 45,
-        text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
-        func: callable = lambda: None,
-    ):
-        """Creates a new button and appends it to the button dict"""
-        self.buttons[
-            Button(
-                starting_pixel, width, height, color, text, text_size, text_color, show
-            )
-        ] = func
-
-    def create_textbox(
-        self,
-        starting_pixel: Tuple[int, int],
-        width: int,
-        height: int,
-        color: int,
-        text: str,
-        text_size: int = 45,
-        text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
-    ):
-        """Creates a new textbox and appends it to the textbox dict"""
-        self.textboxes[
-            TextBox(
-                starting_pixel,
-                width,
-                height,
-                color,
-                text,
-                text_size,
-                text_color,
-                show,
-            )
-        ] = ""
-
-    def key_actions(self, textbox: TextBox, event: pygame.event.EventType):
-        textbox_text = self.textboxes[textbox]
-
-        # BACKSPACE/DELETE
-        if event.key == pygame.K_BACKSPACE or event.key == pygame.K_DELETE:
-            # We haven't entered any text
-            if textbox_text == textbox.text:
-                return
-            # Last letter
-            if len(textbox_text) <= 1:
-                self.textboxes[textbox] = textbox.text
-            # Just regular deleting
-            else:
-                self.textboxes[textbox] = textbox_text[:-1]
-
-        # ENTER
-        elif event.key == 13 or event.key == pygame.K_TAB:
-            # Move to the next textbox
-            self.textboxes[textbox] = self.textboxes[textbox].rstrip()
-            textbox.active = False
-            next_textbox = self.get_next_in_dict(self.textboxes, textbox)
-            try:
-                next_textbox.active = True
-            # In case there aren't any more textboxes
-            except AttributeError:
-                pass
-
-        # TEXT
-        else:
-            if self.textboxes[textbox] == textbox.text:
-                self.textboxes[textbox] = ""
-            self.textboxes[textbox] += event.unicode
-
-    def display_buttons(self):
-        """Display all buttons on the screen"""
-        for button in self.buttons.keys():
-            if button.show:
-                x = button.starting_x
-                y = button.starting_y
-                self.screen.fill(button.color, ((x, y), (button.width, button.height)))
-                self.show_text_in_button(button)
-
-    @staticmethod
-    def get_next_in_dict(dict: Dict, given_key):
-        key_index = -999
-
-        for index, key in enumerate(dict.keys()):
-            if key == given_key:
-                key_index = index
-
-            if index == key_index + 1:
-                return key
-
-    def display_textboxes(self):
-        """Display all buttons on the screen"""
-        for textbox in self.textboxes.keys():
-            if textbox.show:
-                x = textbox.starting_x
-                y = textbox.starting_y
-                self.screen.fill(
-                    textbox.color, ((x, y), (textbox.width, textbox.height))
-                )
-                self.show_text_in_textbox(textbox)
-
-    def show_text_in_buttons(self):
-        """Display the button's text for each of the buttons we have"""
-        for button in self.buttons.keys():
-            self.screen.blit(button.rendered_text, button.get_text_position())
-
-    def show_text_in_button(self, button):
-        self.screen.blit(button.rendered_text, button.get_text_position())
-
-    def show_text_in_textbox(self, textbox):
-        """Shows the fitting text in a textbox"""
-        inputted_text = self.textboxes[textbox]
-
-        if textbox.active:
-            # User entered no input - only display a cursor and nothing more
-            if inputted_text == textbox.text:
-                inputted_text = self.add_text_cursor("")
-            # Otherwise just add the cursor to the end of the user's input
-            else:
-                inputted_text = self.add_text_cursor(inputted_text)
-
-        # Textbox isn't active. Resets it in case we activated it and then left.
-        elif inputted_text == "|" or inputted_text == "":
-            self.textboxes[textbox] = textbox.text
-
-        textbox.rendered_text = textbox.render_input(
-            textbox.text_size, inputted_text, textbox.text_color
-        )
-        self.screen.blit(textbox.rendered_text, textbox.get_text_position())
-
-    def add_text_cursor(self, text):
-        """Adds a blinking text cursor to the end of a text"""
-        cur_ticks = pygame.time.get_ticks()
-        ticks_between_blinks = 700
-
-        # If less than 700 ticks passed display cursor
-        if cur_ticks - self.text_cursor_ticks < ticks_between_blinks:
-            text += "|"
-
-        # If more than 1400 ticks passed, reset the count so the cursor will be displayed again
-        elif cur_ticks - self.text_cursor_ticks > ticks_between_blinks * 2:
-            self.text_cursor_ticks = cur_ticks
-
-        return text
-
-    def reset_textboxes(self):
-        for textbox in self.textboxes:
-            self.textboxes[textbox] = ""
-            textbox.rendered_text = textbox.render_input(
-                textbox.text_size, textbox.text, textbox.text_color
-            )
-
-    def update_screen(self):
-        """Displays everything needed to be displayed on the screen"""
-        # Display the background image in case there is one
-        if self.background_image:
-            self.screen.blit(self.background_image, (0, 0))
-        self.display_textboxes()
-        self.display_buttons()
-        pygame.display.flip()

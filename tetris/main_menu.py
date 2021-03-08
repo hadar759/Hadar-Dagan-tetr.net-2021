@@ -2,22 +2,17 @@ import pickle
 import socket
 import time
 from typing import Optional, Tuple, Dict
-from requests import get, post
-import threading
 
-import concurrent.futures
 import pygame
 
 from server_communicator import ServerCommunicator
-from tetris.tetris_game import TetrisGame
-from tetris.button import Button
+from tetris.tetris_screen import TetrisScreen
 from tetris.colors import Colors
 from tetris.tetris_client import TetrisClient
-from tetris.tetris_server import TetrisServer
-from tetris.text_box import TextBox
+from tetris.tetris_game import TetrisGame
 
 
-class MainMenu:
+class MainMenu(TetrisScreen):
     """The starting screen of the game"""
 
     GAME_PORT = 44444
@@ -25,24 +20,16 @@ class MainMenu:
 
     def __init__(
         self,
-        width: int,
-        height: int,
         user: Dict,
         server_communicator: ServerCommunicator,
+        width: int,
+        height: int,
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
         skin: int = 1,
     ):
-        self.width, self.height = width, height
+        super().__init__(width, height, refresh_rate, background_path)
         self.user = user
-        self.refresh_rate = refresh_rate
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.background_image = (
-            pygame.image.load(background_path) if background_path else None
-        )
-        self.buttons = []
-        self.textboxes: Dict[TextBox] = {}
-        self.actions = {}
         self.skin = skin
         self.running = True
         self.text_cursor_ticks = pygame.time.get_ticks()
@@ -111,7 +98,6 @@ class MainMenu:
         if data == "declined":
             return
         self.start_client_game(invite_ip, float(data))
-        self.dismiss_invite()
 
     def dismiss_invite(self):
         """Dismisses an invite from a player"""
@@ -151,7 +137,7 @@ class MainMenu:
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
         self.display_textboxes()
-        self.display_all_buttons()
+        self.display_buttons()
         pygame.display.flip()
 
     def create_menu(self):
@@ -205,7 +191,7 @@ class MainMenu:
         self.actions[""] = self.start_game, "marathon"
         self.actions["L"] = self.start_game, "sprint"
 
-        self.display_all_buttons()
+        self.display_buttons()
 
     def handle_events(self, event: pygame.event, mouse_pos: Tuple[int, int]):
         """Responds to pygame events"""
@@ -219,7 +205,7 @@ class MainMenu:
         if event.type == pygame.KEYDOWN:
             for textbox in self.textboxes.keys():
                 if textbox.active:
-                    self.key_actions(textbox, event)
+                    self.textbox_key_actions(textbox, event)
                     break
 
         # In case the user pressed the mouse button
@@ -284,7 +270,7 @@ class MainMenu:
             cur_button_text,
         )
         self.actions[cur_button_text] = (self.multiplayer_continue,)
-        self.display_all_buttons()
+        self.display_buttons()
         self.display_textboxes()
         pygame.display.flip()
 
@@ -322,7 +308,7 @@ class MainMenu:
             Colors.BLACK,
             "1000L",
         )
-        self.display_all_buttons()
+        self.display_buttons()
         pygame.display.flip()
 
     def marathon(self):
@@ -354,7 +340,7 @@ class MainMenu:
                 Colors.BLACK,
                 str(i + 5),
             )
-        self.display_all_buttons()
+        self.display_buttons()
         pygame.display.flip()
 
     def start_client_game(self, server_ip, bag_seed):
@@ -405,191 +391,3 @@ class MainMenu:
         else:
             self.create_popup_button("Opponent not online")
             self.reset_textboxes()
-
-    @staticmethod
-    def get_outer_ip():
-        return get("https://api.ipify.org").text
-
-    @staticmethod
-    def get_local_ip():
-        hostname = socket.gethostname()
-        local_ip = socket.gethostbyname(hostname)
-        return local_ip
-
-    def create_button(
-        self,
-        starting_pixel: Tuple[int, int],
-        width: int,
-        height: int,
-        color: int,
-        text: str,
-        text_size: int = 45,
-        text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
-    ):
-        """Creates a new button and appends it to the button dict"""
-        self.buttons.append(
-            Button(
-                starting_pixel, width, height, color, text, text_size, text_color, show
-            )
-        )
-
-    def create_popup_button(self, text):
-        button_width = self.width // 2
-        button_height = self.height // 3
-        # Place the button in the middle of the screen
-        mid_x_pos = self.width // 2 - (button_width // 2)
-
-        self.create_button(
-            (mid_x_pos, self.height // 2 - button_height),
-            button_width,
-            button_height,
-            Colors.BLACK,
-            text,
-            38,
-            text_color=Colors.RED,
-        )
-        # TODO change this shitty solution
-        self.actions["".join(char for char in text.split() if char != " ")] = (
-            self.buttons.pop,
-        )
-        # self.actions[text] = self.buttons.pop,
-
-    def display_all_buttons(self):
-        """Displays all buttons on the screen"""
-        for button in self.buttons:
-            self.show_button(button)
-            self.show_text_in_button(button)
-
-    def show_button(self, button):
-        """Display a given button on the screen"""
-        x = button.starting_x
-        y = button.starting_y
-        self.screen.fill(button.color, ((x, y), (button.width, button.height)))
-
-    def show_text_in_button(self, button):
-        """Display a given button's text"""
-        self.screen.blit(button.rendered_text, button.get_text_position())
-
-    def create_textbox(
-        self,
-        starting_pixel: Tuple[int, int],
-        width: int,
-        height: int,
-        color: int,
-        text: str,
-        text_size: int = 45,
-        text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
-    ):
-        """Creates a new textbox and appends it to the textbox dict"""
-        self.textboxes[
-            TextBox(
-                starting_pixel,
-                width,
-                height,
-                color,
-                text,
-                text_size,
-                text_color,
-                show,
-            )
-        ] = ""
-
-    def display_textboxes(self):
-        """Display all buttons on the screen"""
-        for textbox in self.textboxes.keys():
-            if textbox.show:
-                x = textbox.starting_x
-                y = textbox.starting_y
-                self.screen.fill(
-                    textbox.color, ((x, y), (textbox.width, textbox.height))
-                )
-                self.show_text_in_textbox(textbox)
-
-    def show_text_in_textbox(self, textbox):
-        """Shows the fitting text in a textbox"""
-        inputted_text = self.textboxes[textbox]
-
-        if textbox.active:
-            # User entered no input - only display a cursor and nothing more
-            if inputted_text == textbox.text:
-                inputted_text = self.add_text_cursor("")
-            # Otherwise just add the cursor to the end of the user's input
-            else:
-                inputted_text = self.add_text_cursor(inputted_text)
-
-        # Textbox isn't active. Resets it in case we activated it and then left.
-        elif inputted_text == "|" or inputted_text == "":
-            self.textboxes[textbox] = textbox.text
-
-        textbox.rendered_text = textbox.render_input(
-            textbox.text_size, inputted_text, textbox.text_color
-        )
-        self.screen.blit(textbox.rendered_text, textbox.get_text_position())
-
-    def add_text_cursor(self, text):
-        """Adds a blinking text cursor to the end of a text"""
-        cur_ticks = pygame.time.get_ticks()
-        ticks_between_blinks = 700
-
-        # If less than 700 ticks passed display cursor
-        if cur_ticks - self.text_cursor_ticks < ticks_between_blinks:
-            text += "|"
-
-        # If more than 1400 ticks passed, reset the count so the cursor will be displayed again
-        elif cur_ticks - self.text_cursor_ticks > ticks_between_blinks * 2:
-            self.text_cursor_ticks = cur_ticks
-
-        return text
-
-    def reset_textboxes(self):
-        for textbox in self.textboxes:
-            self.textboxes[textbox] = ""
-            textbox.rendered_text = textbox.render_input(
-                textbox.text_size, textbox.text, textbox.text_color
-            )
-
-    def key_actions(self, textbox: TextBox, event: pygame.event.EventType):
-        textbox_text = self.textboxes[textbox]
-
-        # BACKSPACE/DELETE
-        if event.key == pygame.K_BACKSPACE or event.key == pygame.K_DELETE:
-            # We haven't entered any text
-            if textbox_text == textbox.text:
-                return
-            # Last letter
-            if len(textbox_text) <= 1:
-                self.textboxes[textbox] = textbox.text
-            # Just regular deleting
-            else:
-                self.textboxes[textbox] = textbox_text[:-1]
-
-        # ENTER
-        elif event.key == 13 or event.key == pygame.K_TAB:
-            # Move to the next textbox
-            self.textboxes[textbox] = self.textboxes[textbox].rstrip()
-            textbox.active = False
-            next_textbox = self.get_next_in_dict(self.textboxes, textbox)
-            try:
-                next_textbox.active = True
-            # In case there aren't any more textboxes
-            except AttributeError:
-                pass
-
-        # TEXT
-        else:
-            if self.textboxes[textbox] == textbox.text:
-                self.textboxes[textbox] = ""
-            self.textboxes[textbox] += event.unicode
-
-    @staticmethod
-    def get_next_in_dict(dict: Dict, given_key):
-        key_index = -999
-
-        for index, key in enumerate(dict.keys()):
-            if key == given_key:
-                key_index = index
-
-            if index == key_index + 1:
-                return key
