@@ -343,12 +343,6 @@ class MainMenu(TetrisScreen):
         self.display_buttons()
         pygame.display.flip()
 
-    def start_client_game(self, server_ip, bag_seed):
-        client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
-        client_game.set_bag_seed(bag_seed)
-        client = TetrisClient(client_game, server_ip, self.socket)
-        client.run()
-
     def start_game(self, mode, lines_or_level):
         """Start a generic game, given a mode and the optional starting lines or starting level"""
         self.running = False

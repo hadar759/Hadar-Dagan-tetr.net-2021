@@ -15,10 +15,11 @@ class TextBox(Button):
         text: pygame.font,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
-        transparent: bool = True,
+        transparent: bool = False,
+        text_only: bool = False
     ):
         super().__init__(
-            starting_pixel, width, height, color, text, text_size, text_color, transparent
+            starting_pixel, width, height, color, text, text_size, text_color, transparent, text_only
         )
         self.text_cursor_ticks = pygame.time.get_ticks()
         self.active = False
@@ -38,10 +39,10 @@ class TextBox(Button):
         elif inputted_text == "":
             return self.text
 
-        self.rendered_text = self.render_button(
-            self.text_size, displayed_text, self.text_color
+        self.rendered_text = self.render_button_text(
+            displayed_text, self.text_size, self.text_color
         )
-        screen.blit(self.rendered_text, self.get_text_position())
+        screen.blit(self.rendered_text, self.get_middle_text_position())
         return inputted_text
 
     def add_text_cursor(self, text):

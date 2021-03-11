@@ -54,7 +54,8 @@ class TetrisScreen:
         text: str,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
-        show: bool = True,
+        transparent: bool = False,
+        text_only: bool = False
     ):
         """Creates a new textbox and appends it to the textbox dict"""
         self.textboxes[
@@ -66,7 +67,8 @@ class TetrisScreen:
                 text,
                 text_size,
                 text_color,
-                show,
+                transparent,
+                text_only
             )
         ] = ""
 
@@ -127,7 +129,7 @@ class TetrisScreen:
     def display_buttons(self):
         """Display all buttons on the screen"""
         for button in self.buttons.keys():
-            if button.transparent:
+            if not button.transparent:
                 x = button.starting_x
                 y = button.starting_y
                 if button.transparent:
@@ -150,27 +152,28 @@ class TetrisScreen:
     def display_textboxes(self):
         """Display all buttons on the screen"""
         for textbox in self.textboxes.keys():
-            if textbox.transparent:
+            if not textbox.transparent:
                 x = textbox.starting_x
                 y = textbox.starting_y
-                self.screen.fill(
-                    textbox.color, ((x, y), (textbox.width, textbox.height))
-                )
+                if not textbox.text_only:
+                    self.screen.fill(
+                        textbox.color, ((x, y), (textbox.width, textbox.height))
+                    )
                 self.textboxes[textbox] = textbox.show_text_in_textbox(self.textboxes[textbox], self.screen)
 
     def show_text_in_buttons(self):
         """Display the button's text for each of the buttons we have"""
         for button in self.buttons.keys():
-            self.screen.blit(button.rendered_text, button.get_text_position())
+            self.show_text_in_button(button)
 
     def show_text_in_button(self, button):
-        self.screen.blit(button.rendered_text, button.get_text_position())
+        self.screen.blit(button.rendered_text, button.get_middle_text_position())
 
     def reset_textboxes(self):
         for textbox in self.textboxes:
             self.textboxes[textbox] = ""
-            textbox.rendered_text = textbox.render_button(
-                textbox.text_size, textbox.text, textbox.text_color
+            textbox.rendered_text = textbox.render_button_text(
+                textbox.text, textbox.text_size, textbox.text_color
             )
 
     def update_screen(self):
@@ -180,5 +183,9 @@ class TetrisScreen:
             self.screen.blit(self.background_image, (0, 0))
         self.display_textboxes()
         self.display_buttons()
+        self.drawings()
         pygame.display.flip()
+
+    def drawings(self):
+        pass
 

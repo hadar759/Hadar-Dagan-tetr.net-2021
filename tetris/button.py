@@ -31,7 +31,7 @@ class Button:
         self.transparent = transparent
         self.text_only = text_only
         # The rendered text to display inside the button
-        self.rendered_text = self.render_button(text_size, text, text_color)
+        self.rendered_text = self.render_button_text()
 
     def inside_button(self, pixel: Tuple[int, int]):
         """Receives a coordinate and returns whether it's inside the button"""
@@ -40,10 +40,16 @@ class Button:
             and self.starting_y < pixel[1] < self.starting_y + self.height
         )
 
-    def render_button(self, font_size: int, inp: str, color):
+    def render_button_text(self, inp: str = None, font_size: int = None, text_color: Tuple = None):
         """Renders a text given it's font and size"""
+        if not inp:
+            inp = self.text
+        if not font_size:
+            font_size = self.text_size
+        if not text_color:
+            text_color = self.text_color
         return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
-            inp, True, color
+            inp, True, text_color
         )
 
     def calculate_center_text_position(
@@ -52,9 +58,12 @@ class Button:
         """Returns the center position the text should be in"""
         return max(0, x_space), max(0, y_space)
 
-    def get_text_position(self):
+    def get_middle_text_position(self):
         """Returns the optimal position for the text"""
         return self.calculate_center_text_position(
             self.starting_x + self.width // 2 - self.rendered_text.get_rect()[2] // 2,
             self.starting_y + self.height // 2 - self.rendered_text.get_rect()[3] // 2,
         )
+
+    def get_left_text_position(self):
+        return self.starting_x, self.starting_y

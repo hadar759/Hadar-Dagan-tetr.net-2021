@@ -62,7 +62,6 @@ class WelcomeScreen(TetrisScreen):
 
                 # In case the user pressed the mouse button
                 if event.type == pygame.MOUSEBUTTONDOWN:
-
                     for textbox in self.textboxes.keys():
                         # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
                         if textbox.inside_button(mouse_pos):

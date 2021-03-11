@@ -5,6 +5,7 @@ v1.0
 """
 import pickle
 import threading
+import time
 from socket import socket
 from typing import Tuple, Optional, Dict, List
 import random
@@ -64,6 +65,7 @@ class TetrisGame(Game):
         server_socket: Optional[socket] = None,
     ):
         super().__init__(width + 1000, height, refresh_rate, background_path)
+        print("hello?")
         self.mode = mode
         # The current piece the player is controlling
         self.cur_piece: Piece = None
@@ -194,7 +196,6 @@ class TetrisGame(Game):
     def handle_connection(self):
         data = [self.get_my_screen(), self.lines_to_be_sent]
         # Send the screen & lines to be sent to the opponent
-        print(len(pickle.dumps(data)))
         self.server_socket.send(pickle.dumps(data))
         self.lines_to_be_sent = 0
 
@@ -209,9 +210,9 @@ class TetrisGame(Game):
             self.game_over(True)
         elif screen_received == "Lose":
             self.game_over(False)
-
-        self.update_opp_screen(screen_received)
-        self.lines_received += int(lines_received)
+        else:
+            self.update_opp_screen(screen_received)
+            self.lines_received += int(lines_received)
 
     def update_opp_screen(self, screen: List):
         """Updates the opponent's screen"""
