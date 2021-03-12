@@ -12,9 +12,10 @@ router = InferringRouter()
 
 
 def get_collection():
-    # TODO change this from being hardcoded
+    with open(r"./mongodb.txt", "r") as pass_file:
+        pass_text = pass_file.read()
     client = MongoClient(
-        "mongodb+srv://hadar759:noamhadar126@tetr-net.kcot4.mongodb.net/tetr-net?retryWrites=true&w=majority"
+        pass_text
     )
     db = client["tetris"]
     collection = db["users"]
