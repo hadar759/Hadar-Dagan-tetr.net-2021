@@ -14,6 +14,38 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
+    def update_player_num(self, ip, player_num):
+        post(f"{self.SERVER_DOMAIN}/users/rooms/player-num?ip={ip}&player_num={player_num}")
+
+    def create_room(self, room: Dict):
+        """Adds a new room to the database"""
+        post(f"{self.SERVER_DOMAIN}/users/rooms", data=json.dumps(room))
+
+    def add_game(self, username: str, win: bool):
+        """Updates the user's stats after a game is played"""
+        post(f"{self.SERVER_DOMAIN}/users/games?username={username}&win={win}")
+
+    def update_sprint(self, username: str, time: float):
+        """Updates the user top sprint time to the given time, and returns true if it's a new fastest time"""
+        return post(f"{self.SERVER_DOMAIN}/users/sprint?username={username}&cur_time={time}").text == "true"
+
+    def update_marathon(self, username: str, score: int):
+        """Updates the top marathon score, and returns true if it's a new high score"""
+        return post(f"{self.SERVER_DOMAIN}/users/marathon?username={username}&score={score}").text == "true"
+
+    def update_apm(self, username: str, attacks: int, time: float):
+        """Updates the apm for the player"""
+        # Add the game to the players list of games, and make the apm the attacks / the time in mins
+        apm = (attacks / time) * 60
+        post(f"{self.SERVER_DOMAIN}/users/apm?username={username}&apm={apm}")
+
+    def get_rooms(self):
+        """Returns the list containing all active rooms"""
+        rooms = get(f"{self.SERVER_DOMAIN}/users/rooms")
+        return (
+            json.loads(rooms.content)
+        )
+
     def on_connection(self, username: str, ip: str):
         post(f"{self.SERVER_DOMAIN}/users/connection?username={username}&ip={ip}")
 
@@ -42,7 +74,7 @@ class ServerCommunicator:
     def update_online(self, username: str, online: bool):
         """Changes the online state of a given player"""
         post(
-            f"{self.SERVER_DOMAIN}/users/online?user_identifier={username}&online={self.bool_to_string(online)}"
+            f"{self.SERVER_DOMAIN}/users/online?username={username}&online={self.bool_to_string(online)}"
         )
 
     def is_online(self, foe_name: str) -> bool:

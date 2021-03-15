@@ -48,9 +48,14 @@ class Button:
             font_size = self.text_size
         if not text_color:
             text_color = self.text_color
-        return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
-            inp, True, text_color
-        )
+        try:
+            return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
+                inp, True, text_color
+            )
+        except UnicodeError:
+            return pygame.font.Font("./resources/seguisym.ttf", font_size).render(
+                inp, True, text_color
+            )
 
     def calculate_center_text_position(
         self, x_space: int, y_space: int
@@ -67,3 +72,29 @@ class Button:
 
     def get_left_text_position(self):
         return self.starting_x, self.starting_y
+
+    def get_mid_left_text_position(self):
+        return self.starting_x, max(0, self.starting_y + self.height // 2 - self.rendered_text.get_rect()[3] // 2)
+
+    def clicked(self, screen):
+        # Do not show the button
+        if self.transparent:
+            return
+        button_color = self.color
+        self.color = Colors.CLICKED_GREY
+        # Do not color the button in
+        if not self.text_only:
+            self.color_button(screen)
+        self.show_text_in_button(screen)
+        # Update the button
+        pygame.display.flip()
+        # Return the button to it's previous condition
+        self.color = button_color
+
+    def show_text_in_button(self, screen):
+        """Shows text inside the button"""
+        screen.blit(self.rendered_text, self.get_middle_text_position())
+
+    def color_button(self, screen):
+        """Colors the button in on the screen"""
+        screen.fill(self.color, ((self.starting_x, self.starting_y), (self.width, self.height)))

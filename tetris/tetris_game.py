@@ -6,6 +6,7 @@ v1.0
 import pickle
 import threading
 import time
+import math
 from socket import socket
 from typing import Tuple, Optional, Dict, List
 import random
@@ -15,6 +16,7 @@ import pygame
 from pygame import USEREVENT
 from pygamepp.game import Game
 from pygamepp.game_object import GameObject
+from server_communicator import ServerCommunicator
 
 from tetris.pieces import *
 from tetris.pieces.tetris_piece import Piece
@@ -46,6 +48,7 @@ class TetrisGame(Game):
     MANUAL_DROP = USEREVENT + 4
     LOCK_DELAY = USEREVENT + 5
     DATA_EVENT = USEREVENT + 6
+    GAME_OVER_EVENT = USEREVENT + 7
     LOWER_BORDER = 19
     # The first - base - amount of time it takes for a piece to drop one block (in ms)
     GRAVITY_BASE_TIME = 800
@@ -59,14 +62,17 @@ class TetrisGame(Game):
         width: int,
         height: int,
         mode: str,
+        server_communicator: ServerCommunicator,
+        username: str,
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
         lines_or_level: Optional[int] = None,
         server_socket: Optional[socket] = None,
     ):
         super().__init__(width + 1000, height, refresh_rate, background_path)
-        print("hello?")
         self.mode = mode
+        self.server_communicator = server_communicator
+        self.username = username
         # The current piece the player is controlling
         self.cur_piece: Piece = None
         # The ghost piece of the current piece
@@ -75,8 +81,10 @@ class TetrisGame(Game):
         self.gravity_time = self.GRAVITY_BASE_TIME
         # Game stats
         self.lines_cleared = 0
+        self.total_attacks = 0
         self.level = 0
         self.score = 0
+        self.starting_time = pygame.time.get_ticks()
         # Whether the current piece should be frozen
         self.should_freeze = False
         # How many 'gravity_time's the current piece touched the ground without being frozen
@@ -134,7 +142,6 @@ class TetrisGame(Game):
 
         if self.mode == "sprint":
             # Sprint specific variables
-            self.starting_time = pygame.time.get_ticks()
             self.lines_to_finish = lines_or_level
             self.line_text = pygame.font.Font(
                 "./resources/joystix-monospace.ttf", 19
@@ -153,8 +160,10 @@ class TetrisGame(Game):
             self.lines_received = 0
             self.opp_screen = []
             self.grids.append(TetrisGrid(x_offset=self.SCREEN_START))
+            self.win = False
 
     def run(self):
+        self.running = True
         # Every event that has to do with moving the piece
         self.create_timer(self.GRAVITY_EVENT, self.gravity_time)
         self.set_event_handler(self.GRAVITY_EVENT, self.gravitate)
@@ -166,9 +175,7 @@ class TetrisGame(Game):
         self.set_event_handler(pygame.KEYUP, self.key_up)
         self.set_event_handler(pygame.KEYDOWN, self.key_pressed)
         if self.mode == "multiplayer":
-            self.create_timer(self.DATA_EVENT, 2000)
-            self.set_event_handler(self.DATA_EVENT, self.handle_connection)
-        self.running = True
+            threading.Thread(target=self.handle_connection).start()
 
         # Display the grid borders
         self.game_grid.display_borders(self.screen)
@@ -194,29 +201,36 @@ class TetrisGame(Game):
             grid.display_borders(self.screen)
 
     def handle_connection(self):
-        data = [self.get_my_screen(), self.lines_to_be_sent]
-        # Send the screen & lines to be sent to the opponent
-        self.server_socket.send(pickle.dumps(data))
-        self.lines_to_be_sent = 0
+        while self.running:
+            data = [self.get_my_screen(), self.lines_to_be_sent]
+            # Send the screen & lines to be sent to the opponent
+            self.server_socket.send(pickle.dumps(data))
+            self.lines_to_be_sent = 0
 
-        # Receive the screen and line data from the opponent
-        data_received = pickle.loads(self.server_socket.recv(25600))
-        # Get the opponent screen
-        screen_received = data_received[0]
-        # Get the amount of lines to be received from the opponent
-        lines_received = data_received[1]
-        # In case the opponent topped out (lost)
-        if screen_received == "Win":
-            self.game_over(True)
-        elif screen_received == "Lose":
-            self.game_over(False)
-        else:
-            self.update_opp_screen(screen_received)
-            self.lines_received += int(lines_received)
+            try:
+                # Receive the screen and line data from the opponent
+                data_received = pickle.loads(self.server_socket.recv(25600))
+            except pickle.UnpicklingError:
+                self.running = False
+                break
+            # Get the opponent screen
+            screen_received = data_received[0]
+            # Get the amount of lines to be received from the opponent
+            lines_received = data_received[1]
+            # In case the opponent topped out (lost)
+            if screen_received == "Win":
+                self.win = True
+                self.create_timer(self.GAME_OVER_EVENT, 20)
+                self.set_event_handler(self.GAME_OVER_EVENT, self.game_over)
+            elif screen_received == "Lose":
+                self.create_timer(self.GAME_OVER_EVENT, 20)
+                self.set_event_handler(self.GAME_OVER_EVENT, self.game_over)
+            else:
+                self.update_opp_screen(screen_received)
+                self.lines_received += int(lines_received)
 
     def update_opp_screen(self, screen: List):
         """Updates the opponent's screen"""
-        # TODO implement screen drawing
         block_size = self.BLOCK_SIZE
         cur_opp_screen = []
         # go over every block of the opponent's screen
@@ -299,9 +313,8 @@ class TetrisGame(Game):
                 elif self.lines_to_be_sent > 0:
                     self.lines_to_be_sent -= self.lines_received
                     self.lines_received = 0
-
-            # Add the garbage to the screen
-            self.add_garbage()
+                # Add the garbage to the screen
+                self.add_garbage()
 
         self.clear_lines()
 
@@ -418,7 +431,7 @@ class TetrisGame(Game):
 
     def get_current_time_since_start(self):
         """Returns the amount of time in seconds since the game started"""
-        return (pygame.time.get_ticks() - self.starting_time) // 1000
+        return (pygame.time.get_ticks() - self.starting_time) / 1000
 
     def show_score(self):
         """Displays the current score on the screen"""
@@ -428,7 +441,7 @@ class TetrisGame(Game):
 
     def show_time(self):
         """Displays the current amount of time since the start on the screen"""
-        seconds = self.render_input(20, str(self.get_current_time_since_start()))
+        seconds = self.render_input(20, str(round(self.get_current_time_since_start())))
         self.screen.fill(
             0x000000,
             [
@@ -606,8 +619,14 @@ class TetrisGame(Game):
                 return True
         return False
 
-    def game_over(self, win: bool):
+    def game_over(self, win: bool = None):
         """End the game"""
+        if win is None:
+            win = self.win
+        # Calculate the end time
+        game_time = self.get_current_time_since_start()
+        new_top = False
+
         if self.mode == "multiplayer":
             if not win:
                 # send the opponent the message that you've lost
@@ -618,10 +637,17 @@ class TetrisGame(Game):
                         ]
                     )
                 )
+            threading.Thread(target=self.server_communicator.add_game, args=(self.username, win,)).start()
+            threading.Thread(target=self.server_communicator.update_apm, args=(self.username, self.total_attacks, game_time,)).start()
 
-        if self.mode == "sprint":
-            # Calculate the end time
-            final_time = self.get_current_time_since_start()
+
+        elif self.mode == "sprint" and self.lines_to_finish == 40 and win:
+            new_top = self.server_communicator.update_sprint(self.username, game_time)
+
+        elif self.mode == "marathon":
+            new_top = self.server_communicator.update_marathon(self.username, self.score)
+
+        self.running = False
 
         # Cinematic effects
         pygame.time.wait(1000)
@@ -652,7 +678,7 @@ class TetrisGame(Game):
         self.fade(7)
 
         # Stop the game, and load the end screen
-        self.running = False
+
         self.background_image = pygame.image.load("resources/end-screen.png")
         self.screen = pygame.display.set_mode(
             (self.background_image.get_size()[0], self.background_image.get_size()[1])
@@ -664,21 +690,28 @@ class TetrisGame(Game):
             self.screen.blit(self.render_input(50, "SCORE:"), (300, 75))
             self.screen.blit(self.render_input(50, str(self.score)), (550, 75))
             self.screen.blit(self.render_input(50, f"LEVEL:{self.level}"), (300, 150))
+            if new_top:
+                self.screen.blit(self.render_input(70, "NEW HIGHSCORE!!"), (self.width // 2 - 750, self.height // 2 - 200))
         elif self.mode == "sprint":
             rendered_time_text = self.render_input(50, "TIME:")
             self.screen.blit(rendered_time_text, (300, 75))
-            rendered_time = self.render_input(50, str(final_time))
+            rendered_time = self.render_input(50, str(game_time))
             self.screen.blit(rendered_time, (515, 75))
             self.screen.blit(
                 self.render_input(50, "Seconds"),
                 (530 + rendered_time.get_rect()[2], 75),
             )
+            if new_top:
+                self.screen.blit(self.render_input(70, "NEW FASTEST TIME"), (self.width // 2 - 800, self.height // 2 - 200))
+        elif self.mode == "multiplayer":
+            self.server_socket.send("Ready%@".encode())
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds
         pygame.time.wait(5000)
 
         self.running = False
+
 
     @staticmethod
     def render_input(font_size: int, inp):
@@ -737,12 +770,9 @@ class TetrisGame(Game):
 
         # Update the amount of lines needed to be sent according to the amount of lines cleared
         if self.mode == "multiplayer":
-            if num_of_lines_cleared == 2:
-                self.lines_to_be_sent = 1
-            elif num_of_lines_cleared == 3:
-                self.lines_to_be_sent = 2
-            elif num_of_lines_cleared >= 4:
-                self.lines_to_be_sent = 4 + (num_of_lines_cleared - 4) // 2
+            # Just a more elegant way to send 1 line for 2 cleared, 2 for 3, and 4 for 4
+            self.lines_to_be_sent += math.floor((num_of_lines_cleared / 2) ** 2)
+            self.total_attacks += self.lines_to_be_sent
 
     def clear_line(self, line_num):
         """Clear a single line"""

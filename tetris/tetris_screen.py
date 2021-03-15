@@ -21,9 +21,12 @@ class TetrisScreen:
             pygame.image.load(background_path) if background_path else None
         )
         self.background_path = background_path
+        self.running = True
         self.buttons: Dict[Button, callable] = {}
         self.textboxes: Dict[TextBox, str] = {}
         self.actions = {}
+        self.mouse_pos = ()
+
 
     def create_button(
         self,
@@ -35,15 +38,16 @@ class TetrisScreen:
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
         transparent: bool = False,
-        func: callable = lambda: None,
-        text_only: bool = False
+        func: callable = None,
+        text_only: bool = False,
+        args: Tuple = ()
     ):
         """Creates a new button and appends it to the button dict"""
         self.buttons[
             Button(
                 starting_pixel, width, height, color, text, text_size, text_color, transparent, text_only
             )
-        ] = func
+        ] = (func, args)
 
     def create_textbox(
         self,
@@ -86,11 +90,10 @@ class TetrisScreen:
             text,
             38,
             text_color=Colors.RED,
+            func=self.buttons.pop
         )
         # TODO change this shitty solution
-        self.actions["".join(char for char in text.split() if char != " ")] = (
-            self.buttons.pop,
-        )
+
         # self.actions[text] = self.buttons.pop,
 
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
@@ -130,13 +133,9 @@ class TetrisScreen:
         """Display all buttons on the screen"""
         for button in self.buttons.keys():
             if not button.transparent:
-                x = button.starting_x
-                y = button.starting_y
-                if button.transparent:
-                    continue
                 if not button.text_only:
-                    self.screen.fill(button.color, ((x, y), (button.width, button.height)))
-                self.show_text_in_button(button)
+                    button.color_button(self.screen)
+                button.show_text_in_button(self.screen)
 
     @staticmethod
     def get_next_in_dict(dict: Dict, given_key):
@@ -166,8 +165,6 @@ class TetrisScreen:
         for button in self.buttons.keys():
             self.show_text_in_button(button)
 
-    def show_text_in_button(self, button):
-        self.screen.blit(button.rendered_text, button.get_middle_text_position())
 
     def reset_textboxes(self):
         for textbox in self.textboxes:
@@ -189,3 +186,6 @@ class TetrisScreen:
     def drawings(self):
         pass
 
+    def update_mouse_pos(self):
+        while self.running:
+            self.mouse_pos = pygame.mouse.get_pos()

@@ -7,3 +7,4 @@ from .tetris_grid import TetrisGrid
 from .tetris_game import TetrisGame
 from .welcome_screen import WelcomeScreen
 from .tetris_screen import TetrisScreen
+from .waiting_room import WaitingRoom

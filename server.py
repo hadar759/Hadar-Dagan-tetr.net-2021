@@ -1,5 +1,7 @@
-import copy
+import os
+import subprocess
 from typing import Optional, Dict, List
+import time
 
 import uvicorn
 from pymongo import MongoClient
@@ -29,10 +31,80 @@ class Server:
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
 
-    @router.get("/users/bolbol")
-    def bruh(self, username):
-        """FOR TESTING - REMOVE"""
-        return self.user_collection.dependency().find_one({"username": username})
+    @router.post("/users/rooms/player-num")
+    def update_player_num(self, ip, player_num):
+        self.user_collection.dependency().find_one_and_update({"ip": ip}, update={"$set": {"player_num": player_num}})
+
+    @router.post("/users/rooms")
+    def create_room(self, room: Dict):
+        self.user_collection.dependency().insert_one(room)
+
+    @router.get("/users/rooms")
+    def get_rooms(self):
+        rooms = self.user_collection.dependency().find({"type": "room"})
+        return list(rooms)
+
+    @router.post("/users/games")
+    def add_game(self, username: str, win: bool):
+        """Updates the game and win count for a user"""
+        user = self.user_by_username(username)
+        # Add a game played to the user's query
+        new_query = {"$set": {"games": user["games"] + 1}}
+        # Add a win to the user's query
+        if win:
+            new_query["wins"] = user["wins"] + 1
+        self.user_collection.dependency().update_one(filter={"username": username}, update=new_query)
+
+    @router.post("/users/sprint")
+    def update_sprint(self, username: str, cur_time: float):
+        user = self.user_by_username(username)
+
+        user_time = user["40l"].split(":")
+        old_time = 0
+        # Time str to secs
+        for i in range(len(user_time)):
+            old_time += float(user_time[-i - 1]) * 60 ** i
+
+        # From seconds to string
+        time_format = "%S"
+        if cur_time >= 60:
+            time_format = "%M:" + time_format
+        if cur_time >= 3600:
+            time_format = "%H:" + time_format
+        time_str = time.strftime(time_format, time.gmtime(cur_time)) + "." + str(cur_time).split(".")[1][:3]
+
+        update_query = {"$set": {"40l": time_str}}
+        # User score a faster best time
+        if old_time == 0 or cur_time < old_time:
+            self.user_collection.dependency().update_one(filter={"username": username}, update=update_query)
+            return True
+        return False
+
+    @router.post("/users/marathon")
+    def update_marathon(self, username: str, score: int):
+        user = self.user_by_username(username)
+
+        update_query = {"$set": {"marathon": score}}
+        old_score = user["marathon"]
+        # User scored a higher score
+        if old_score == 0 or old_score < score:
+            self.user_collection.dependency().update_one(filter={"username": username}, update=update_query)
+            return True
+        return False
+
+    @router.post("/users/apm")
+    def update_apm(self, username: str, apm: float):
+        user = self.user_by_username(username)
+        games: list = user["apm_games"]
+
+        if len(games) > 9:
+            games = games[len(games) - 9:]
+        games.append(apm)
+        # Calculate the avg of the past 10 games
+        avg_apm = round(sum(games) / len(games), 3)
+
+        update_query = {"$set": {"apm_games": games, "apm": avg_apm}}
+        self.user_collection.dependency().update_one(filter={"username": username}, update=update_query)
 
     @router.post("/users/connection")
     def on_connection(self, username: str, ip: str):
@@ -44,7 +116,7 @@ class Server:
     @router.get("/users/invite-ip")
     def get_invite_ip(self, username: str):
         # Get the user
-        user = self.user_collection.dependency().find_one({"username": username})
+        user = self.user_by_username(username)
         return user["invite_ip"]
 
     @router.post("/users/invites")
@@ -58,16 +130,21 @@ class Server:
 
     @router.get("/users/invites")
     def get_invite(self, username: str) -> str:
-        user = self.user_collection.dependency().find_one({"username": username})
+        user = self.user_by_username(username)
         return user["invite"]
 
     @router.get("/users/online")
     def player_online(self, username: str) -> bool:
         """Returns whether a player is online or not"""
         if self.username_exists(username):
-            player = self.user_collection.dependency().find_one({"username": username})
+            player = self.user_by_username(username)
             return player["online"]
         return False
+
+    @router.post("/users/online")
+    def update_online(self, username: str, online: bool):
+        self.user_collection.dependency().find_one_and_update(filter={"username": username},
+                                                              update={"$set": {"online": online}})
 
     @router.get("/users/servers")
     def get_free_server(self) -> str:
@@ -171,7 +248,7 @@ class Server:
     def username_exists(self, username: str) -> bool:
         """Returns whether a user with a given username exists in the db"""
         return (
-            self.user_collection.dependency().find_one({"username": username})
+            self.user_by_username(username)
             is not None
         )
 
@@ -182,7 +259,10 @@ class Server:
             {"username": user_identifier, "password": password}
         ) or self.user_collection.dependency().find_one(
             {"email": user_identifier, "password": password}
-        )
+        ) or {}
+
+    def user_by_username(self, username):
+        return self.user_collection.dependency().find_one({"username": username})
 
 
 app.include_router(router)
@@ -190,4 +270,5 @@ app.include_router(router)
 
 if __name__ == "__main__":
     # Run Server
-    uvicorn.run(app)
+    subprocess.call("uvicorn server:app --host 0.0.0.0 --port 8000")
+    #uvicorn.run(app)

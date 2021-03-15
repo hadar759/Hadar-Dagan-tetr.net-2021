@@ -6,8 +6,9 @@ from typing import Optional, Dict, List
 
 import pygame
 
-from tetris import TetrisScreen, TetrisClient, TetrisGame
-from tetris.main_menu import MainMenu
+from tetris.tetris_screen import TetrisScreen
+from tetris.tetris_client import TetrisClient
+from tetris.tetris_game import TetrisGame
 from tetris.button import Button
 from tetris.colors import Colors
 from tetris.text_box import TextBox
@@ -18,6 +19,7 @@ from server_communicator import ServerCommunicator
 class WaitingRoom(TetrisScreen):
     """The starting screen of the game"""
     LETTER_SIZE = 15
+    GAME_PORT = 44444
 
     def __init__(
         self,
@@ -25,6 +27,7 @@ class WaitingRoom(TetrisScreen):
         is_admin: bool,
         room_name: str,
         server_socket: socket.socket,
+        server_communicator: ServerCommunicator,
         width: int,
         height: int,
         refresh_rate: int = 60,
@@ -36,6 +39,7 @@ class WaitingRoom(TetrisScreen):
         self.room_name = room_name
         self.sock = server_socket
         self.user = user
+        self.server_communicator = server_communicator
 
         self.running = True
         self.text_cursor_ticks = pygame.time.get_ticks()
@@ -47,19 +51,40 @@ class WaitingRoom(TetrisScreen):
         self.create_room()
         self.establish_connection()
         threading.Thread(target=self.recv_chat).start()
+        threading.Thread(target=self.update_mouse_pos).start()
         while self.running:
             self.update_screen()
-            mouse_pos = pygame.mouse.get_pos()
+
+            # Start the game, and restart the waiting room once it ends
+            if self.start_args:
+                self.running = False
+                self.start_client_game(*self.start_args)
+                print("here")
+                self.running = True
+                self.start_args = ()
+                self.handle_buttons_when_ready()
+                for user in self.ready_players:
+                    self.handle_buttons_when_ready(user)
+                self.screen = pygame.display.set_mode((self.width, self.height))
+                threading.Thread(target=self.recv_chat).start()
+                threading.Thread(target=self.update_mouse_pos).start()
 
             for event in pygame.event.get():
+                if not self.mouse_pos:
+                    continue
+
                 if event.type == pygame.QUIT:
                     self.quit()
+                    self.running = False
+                    self.server_communicator.update_online(self.user["username"], False)
+                    pygame.quit()
+                    exit()
 
                 # In case the user pressed the mouse button
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for textbox in self.textboxes.keys():
                         # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
-                        if textbox.inside_button(mouse_pos):
+                        if textbox.inside_button(self.mouse_pos):
                             # Make the textbox writeable
                             textbox.active = True
                         else:
@@ -67,10 +92,11 @@ class WaitingRoom(TetrisScreen):
 
                     for button in self.buttons.keys():
                         # Check if the click is inside the button area (i.e. whether the button was clicked)
-                        if button.inside_button(mouse_pos):
-                            self.buttons[button]()
-                            # TODO maybe not do that, could fuck up another screen
-                            # break
+                        if button.inside_button(self.mouse_pos):
+                            func, args = self.buttons[button]
+                            if not func:
+                                continue
+                            func(*args)
 
                 # If the user typed something
                 if event.type == pygame.KEYDOWN:
@@ -78,19 +104,8 @@ class WaitingRoom(TetrisScreen):
                         if textbox.active:
                             self.textbox_key_actions(textbox, event)
 
-                # Start the game, and restart the waiting room once it ends
-                if self.start_args:
-                    self.start_client_game(*self.start_args)
-                    self.start_args = ()
-                    self.handle_buttons_when_ready()
-                    for user in self.ready_players:
-                        self.handle_buttons_when_ready(user)
-                    self.screen = pygame.display.set_mode((self.width, self.height))
-                    threading.Thread(target=self.recv_chat).start()
-
-                # TODO connect to the main menu
-                #  maybe make more buttons in the middle like game settings, and maybe make it
-                #  more than 2 players
+                #  TODO maybe make more buttons in the middle like game settings AND INVITE, and maybe make it
+                #   more than 2 players
 
     def establish_connection(self):
         """Sends and receives the appropriate data from the server on connection"""
@@ -106,8 +121,28 @@ class WaitingRoom(TetrisScreen):
         # Send the server our username
         self.sock.send(self.user["username"].encode())
 
+    def challenge_player(self):
+        foe_name = list(self.textboxes.values())[1]
+
+        # Entered invalid foe name
+        if foe_name == self.user[
+            "username"
+        ] or foe_name in self.players or not self.server_communicator.username_exists(foe_name):
+            self.create_popup_button(r"Invalid Username Entered")
+
+        elif self.server_communicator.is_online(foe_name):
+            server_ip = self.sock.getpeername()[1]
+            self.server_communicator.invite_user(
+                self.user["username"], foe_name, server_ip
+            )
+
+        else:
+            self.create_popup_button("Opponent not online")
+
+        self.textboxes[(list(self.textboxes.keys()))[1]] = ""
+
     def start_client_game(self, server_ip, bag_seed):
-        client_game = TetrisGame(500 + 200, 1000, "multiplayer", 75)
+        client_game = TetrisGame(500 + 200, 1000, "multiplayer", self.server_communicator, self.user["username"], 75)
         client_game.set_bag_seed(bag_seed)
         client = TetrisClient(client_game, server_ip, self.sock)
         client.run()
@@ -118,6 +153,7 @@ class WaitingRoom(TetrisScreen):
         while True:
             try:
                 msg = self.sock.recv(1024).decode()
+                print(msg)
             # Messages from last game (the tetris game which just ended)
             except UnicodeDecodeError:
                 print("skipped")
@@ -125,14 +161,18 @@ class WaitingRoom(TetrisScreen):
             # Game started
             if msg == "started":
                 self.sock.send("got info".encode())
-                bag_seed = pickle.loads(self.sock.recv(1024))
-                self.start_args = (self.sock.getpeername()[0], float(bag_seed[0]))
+                bag_seed = self.sock.recv(1024).decode()
+                self.start_args = (self.sock.getpeername()[0], float(bag_seed))
                 break
             # Someone readied
             elif msg[:len("Ready%")] == "Ready%":
+                # Only the username
                 msg = msg.replace("Ready%", "")
                 if msg != self.user["username"]:
+                    # Change the screen to show the ready from the user
                     self.pressed_ready(msg)
+                    # Add the user to the ready players list
+                    self.ready_players.append(msg)
                 continue
             # Message is a player name - i.e. a player has just joined/disconnected
             elif ":" not in msg:
@@ -340,6 +380,7 @@ class WaitingRoom(TetrisScreen):
         self.running = False
         self.sock.detach()
 
+
     def display_players(self):
         player_name_width = 330
         player_name_height = 100
@@ -456,3 +497,7 @@ class WaitingRoom(TetrisScreen):
             if button.text == text:
                 return button
         return None
+
+    def update_mouse_pos(self):
+        while self.running and not self.start_args:
+            self.mouse_pos = pygame.mouse.get_pos()

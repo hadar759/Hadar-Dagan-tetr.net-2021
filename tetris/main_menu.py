@@ -1,5 +1,6 @@
 import pickle
 import socket
+import threading
 import time
 from typing import Optional, Tuple, Dict
 
@@ -10,6 +11,7 @@ from tetris.tetris_screen import TetrisScreen
 from tetris.colors import Colors
 from tetris.tetris_client import TetrisClient
 from tetris.tetris_game import TetrisGame
+from tetris.waiting_room import WaitingRoom
 
 
 class MainMenu(TetrisScreen):
@@ -29,9 +31,9 @@ class MainMenu(TetrisScreen):
         skin: int = 1,
     ):
         super().__init__(width, height, refresh_rate, background_path)
+        self.buttons = {}
         self.user = user
         self.skin = skin
-        self.running = True
         self.text_cursor_ticks = pygame.time.get_ticks()
         self.server_communicator = server_communicator
         self.socket = socket.socket()
@@ -41,18 +43,23 @@ class MainMenu(TetrisScreen):
         while True:
             self.create_menu()
             self.running = True
-            pygame.display.flip()
-            run_count = 0
+            old_time = round(time.time())
+            threading.Thread(target=self.update_mouse_pos).start()
 
             while self.running:
                 self.update_screen()
-                mouse_pos = pygame.mouse.get_pos()
+
                 for event in pygame.event.get():
-                    self.handle_events(event, mouse_pos)
-                if round(time.time()) % 10 == 0:
+                    # Different event, but mouse pos was initiated
+                    if self.mouse_pos:
+                        self.handle_events(event)
+
+                # Display invites
+                cur_time = round(time.time())
+                if cur_time % 20 == 0 and cur_time != old_time:
+                    old_time = cur_time
                     # threading.Thread(target=self.check_invite).start()
-                    self.check_invite()
-                run_count += 1
+                    threading.Thread(target=self.check_invite).start()
                 pygame.display.flip()
 
     def check_invite(self):
@@ -73,10 +80,9 @@ class MainMenu(TetrisScreen):
             button_height,
             Colors.BLACK,
             inviter_name,
+            func=self.accept_invite
         )
-        self.actions["".join(letter for letter in inviter_name if letter.isalpha())] = (
-            self.accept_invite,
-        )
+
         x_height = 20
         x_width = 20
         self.create_button(
@@ -87,27 +93,21 @@ class MainMenu(TetrisScreen):
             "X",
             text_size=20,
             text_color=Colors.RED,
+            func=self.dismiss_invite
         )
-        self.actions["X"] = (self.dismiss_invite,)
 
     def accept_invite(self):
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
-        self.socket.connect((invite_ip, self.GAME_PORT))
-        self.socket.send(pickle.dumps(["accepted"]))
-        data = pickle.loads(self.socket.recv(1024))[0]
-        if data == "declined":
-            return
-        self.start_client_game(invite_ip, float(data))
+        room = {"name": "test private room", "ip": invite_ip}
+        self.connect_to_room(room)
 
     def dismiss_invite(self):
         """Dismisses an invite from a player"""
+        # TODO Do something with a declination
         inviter_name = self.server_communicator.get_invite(self.user["username"])
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
-        print(invite_ip)
-        self.socket.connect((invite_ip, self.GAME_PORT))
         self.socket.send(pickle.dumps(["declined"]))
-        buttons = []
-        actions = {}
+        buttons = {}
         print(inviter_name)
         for button in self.buttons:
             if button.text == "X":
@@ -123,12 +123,8 @@ class MainMenu(TetrisScreen):
             elif button.text == inviter_name:
                 continue
             else:
-                buttons.append(button)
-                actions[button.text] = self.actions[button.text]
-        print(buttons)
-        print(actions)
+                buttons[button] = self.buttons[button]
         self.buttons = buttons
-        self.actions = actions
         self.update_screen()
 
     def update_screen(self):
@@ -155,8 +151,8 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             cur_button_text,
+            func=self.sprint
         )
-        self.actions[cur_button_text] = (self.sprint,)
 
         cur_button_text = "marathon"
         self.create_button(
@@ -165,8 +161,8 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             cur_button_text,
+            func=self.marathon
         )
-        self.actions[cur_button_text] = (self.marathon,)
 
         cur_button_text = "multiplayer"
         self.create_button(
@@ -175,8 +171,8 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             cur_button_text,
+            func=self.multiplayer
         )
-        self.actions[cur_button_text] = (self.multiplayer,)
 
         cur_button_text = self.user["username"]
         self.create_button(
@@ -185,19 +181,15 @@ class MainMenu(TetrisScreen):
             100,
             Colors.BLACK,
             cur_button_text,
+            func=self.user_profile
         )
-        self.actions[cur_button_text] = (self.user_profile,)
-
-        self.actions[""] = self.start_game, "marathon"
-        self.actions["L"] = self.start_game, "sprint"
 
         self.display_buttons()
 
-    def handle_events(self, event: pygame.event, mouse_pos: Tuple[int, int]):
+    def handle_events(self, event: pygame.event):
         """Responds to pygame events"""
         if event.type == pygame.QUIT:
-            self.running = False
-            self.server_communicator.update_online(self.user["username"], False)
+            self.quit()
             pygame.quit()
             exit()
 
@@ -213,42 +205,132 @@ class MainMenu(TetrisScreen):
             for button in self.buttons:
                 # Check if the click is inside the button area (i.e. the button was clicked)
                 # Otherwise skip
-                if not button.inside_button(mouse_pos):
+                if not button.inside_button(self.mouse_pos):
                     continue
-                text_in_button = ""
-                numbers_in_button = ""
-                # Parse the text inside the button
-                for char in button.text:
-                    if char.isdigit():
-                        numbers_in_button += char
-                    elif not char.isspace():
-                        text_in_button += char
+                # Change the button color
+                button.clicked(self.screen)
                 # Get the correct response using to the button
-                func = self.actions.get(text_in_button)
+                func, args = self.buttons[button]
                 # User pressed a button with no response function
                 if not func:
                     continue
-                # The function takes no variables
-                if len(func) == 1:
-                    func[0]()
-                # The function takes variables
-                else:
-                    func[0](*func[1:], numbers_in_button)
+                func(*args)
+                break
 
             for textbox in self.textboxes.keys():
                 # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
-                if textbox.inside_button(mouse_pos):
+                if textbox.inside_button(self.mouse_pos):
                     # Make the textbox writeable
                     textbox.active = True
                 else:
                     textbox.active = False
 
+    def quit(self):
+        self.buttons = {}
+        self.textboxes = {}
+        self.running = False
+        self.server_communicator.update_online(self.user["username"], False)
+
     def user_profile(self):
         print(f"you've entered {self.user['username']}'s user profile")
 
+    def create_room_list(self):
+        # Reset the screen
+        self.buttons = {}
+        self.textboxes = {}
+
+        title_width = self.width
+        title_height = 300
+        cur_x = 0
+        cur_y = 0
+        # Create the screen title
+        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK, "ROOM LIST", 70,
+                           Colors.PURPLE, text_only=True)
+
+        function_button_width = 75
+        function_button_height = 75
+        # Create the add room button
+        self.create_button((cur_x, cur_y), function_button_width, function_button_height, Colors.BLACK, "+", 70,
+                           Colors.WHITE, func=self.create_room)
+        # Create the back button
+        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height, Colors.BLACK, "->", 55,
+                           Colors.WHITE, func=self.quit)
+
+        cur_y += title_height - function_button_height - 10
+
+        # Create the scroll up button
+        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
+                           Colors.BLACK, "↑", 55, Colors.WHITE, func=self.scroll_up)
+
+        # Create the scroll down button
+        self.create_button((self.width - function_button_width, self.height - function_button_height), function_button_width,
+                           function_button_height,
+                           Colors.BLACK, "↓", 55, Colors.WHITE, func=self.scroll_down)
+
+        cur_y += function_button_height + 10
+
+        room_button_width = self.width
+        room_button_height = 200
+        player_button_width = 50
+        player_button_height = 200
+        for room in self.server_communicator.get_rooms():
+            self.create_button((cur_x, cur_y), room_button_width, room_button_height, Colors.BLACK,
+                               " ".join(list(room["name"])), text_color=Colors.WHITE, func=self.connect_to_room, args=(room,))
+            last_button = list(self.buttons.keys())[-1]
+            last_button.get_middle_text_position = last_button.get_mid_left_text_position
+            self.create_button((cur_x + room_button_width - player_button_width - 20, cur_y), player_button_width, player_button_height,
+                               Colors.BLACK, str(room["player_num"]), text_size=70, text_color=Colors.WHITE, text_only=True)
+            cur_y += room_button_height + 10
+
+    def scroll_up(self):
+        print("You've tried to scroll up!")
+
+    def scroll_down(self):
+        print("You've tried to scroll down!")
+
+    def create_room(self):
+        print("You've tried to create a room!")
+
+    def connect_to_room(self, room: Dict):
+        sock = socket.socket()
+        sock.connect((room["ip"], 44444))
+        # Start the main menu
+        waiting_room = WaitingRoom(self.user,
+                           False, room["name"], sock, self.server_communicator,
+                           self.width, self.height, 75, "resources/tetris_background.jpg"
+                           )
+        waiting_room.run()
+
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
-        self.buttons = []
+        self.buttons = {}
+        self.reset_textboxes()
+        if self.background_image:
+            self.screen.blit(self.background_image, (0, 0))
+
+        # TODO Get the rooms array from the database or something and call create_room_button on every room
+        #  or whatever
+        self.create_button(
+            (self.width // 2 - 250, self.height // 2 - 200),
+            500,
+            200,
+            Colors.WHITE,
+            "Room List",
+            text_color=Colors.GREY,
+            func=self.create_room_list
+        )
+
+        cur_button_text = "Challenge"
+        self.display_buttons()
+        self.display_textboxes()
+        pygame.display.flip()
+
+    def display_rooms(self):
+        rooms = self.server_communicator.get_rooms()
+
+    def old_multiplayer(self):
+        """Create the multiplayer screen - set up the correct buttons"""
+        self.buttons = {}
         self.reset_textboxes()
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
@@ -268,15 +350,15 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             cur_button_text,
+#            func=self.multiplayer_continue
         )
-        self.actions[cur_button_text] = (self.multiplayer_continue,)
         self.display_buttons()
         self.display_textboxes()
         pygame.display.flip()
 
     def sprint(self):
         """Create the sprint screen - set up the correct buttons"""
-        self.buttons = []
+        self.buttons = {}
         self.reset_textboxes()
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
@@ -286,6 +368,8 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             "20L",
+            func=self.start_game,
+            args=("sprint", 20)
         )
         self.create_button(
             (self.width // 2 - 257, self.height // 8 * 3 - 81),
@@ -293,6 +377,8 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             "40L",
+            func=self.start_game,
+            args=("sprint", 40)
         )
         self.create_button(
             (self.width // 2 - 257, self.height // 8 * 5 - 86),
@@ -300,6 +386,8 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             "100L",
+            func=self.start_game,
+            args=("sprint", 100)
         )
         self.create_button(
             (self.width // 2 - 257, self.height // 8 * 7 - 85),
@@ -307,13 +395,15 @@ class MainMenu(TetrisScreen):
             200,
             Colors.BLACK,
             "1000L",
+            func=self.start_game,
+            args=("sprint", 1000)
         )
         self.display_buttons()
         pygame.display.flip()
 
     def marathon(self):
         """Create the marathon screen - set up the correct buttons"""
-        self.buttons = []
+        self.buttons = {}
         self.reset_textboxes()
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
@@ -329,6 +419,8 @@ class MainMenu(TetrisScreen):
                 button_height,
                 Colors.BLACK,
                 str(i),
+                func=self.start_game,
+                args=("marathon", i)
             )
         # Second line of buttons
         row_height = row_height + button_height + 100
@@ -339,6 +431,8 @@ class MainMenu(TetrisScreen):
                 button_height,
                 Colors.BLACK,
                 str(i + 5),
+                func=self.start_game,
+                args=("marathon", i + 5)
             )
         self.display_buttons()
         pygame.display.flip()
@@ -346,42 +440,7 @@ class MainMenu(TetrisScreen):
     def start_game(self, mode, lines_or_level):
         """Start a generic game, given a mode and the optional starting lines or starting level"""
         self.running = False
-        self.buttons = []
+        self.buttons = {}
         self.reset_textboxes()
-        game = TetrisGame(500 + 200, 1000, mode, 75, lines_or_level=int(lines_or_level))
+        game = TetrisGame(500 + 200, 1000, mode, self.server_communicator, self.user["username"], 75, lines_or_level=int(lines_or_level))
         game.run()
-
-    def multiplayer_continue(self):
-        foe_name = list(self.textboxes.values())[0]
-
-        # Entered invalid foe name
-        if foe_name == self.user[
-            "username"
-        ] or not self.server_communicator.username_exists(foe_name):
-            self.create_popup_button(r"Invalid Username Entered")
-            self.reset_textboxes()
-
-        elif self.server_communicator.is_online(foe_name):
-            # Get a server to play on
-            server_ip = self.server_communicator.get_free_server().replace('"', "")
-            # Error message
-            if "server" in server_ip:
-                self.create_popup_button(server_ip)
-                self.reset_textboxes()
-                return
-            self.server_communicator.invite_user(
-                self.user["username"], foe_name, server_ip
-            )
-            self.socket.connect((server_ip, self.GAME_PORT))
-            # Accept the game on your end
-            data = pickle.loads(self.socket.recv(1024))[0]
-            if data != "declined":
-                self.start_client_game(server_ip, float(data))
-            else:
-                self.socket.close()
-                self.socket = socket.socket()
-                self.create_popup_button("Invite declined")
-
-        else:
-            self.create_popup_button("Opponent not online")
-            self.reset_textboxes()

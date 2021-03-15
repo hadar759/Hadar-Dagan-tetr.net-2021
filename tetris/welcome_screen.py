@@ -1,3 +1,4 @@
+import threading
 from typing import Optional, Tuple, Dict
 
 import pygame
@@ -50,15 +51,13 @@ class WelcomeScreen(TetrisScreen):
             func=self.register_screen,
         )
 
-        run = True
-
-        while run:
+        while self.running:
             self.update_screen()
             mouse_pos = pygame.mouse.get_pos()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    run = False
+                    self.running = False
 
                 # In case the user pressed the mouse button
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -73,7 +72,9 @@ class WelcomeScreen(TetrisScreen):
                     for button in self.buttons.keys():
                         # Check if the click is inside the button area (i.e. whether the button was clicked)
                         if button.inside_button(mouse_pos):
-                            self.buttons[button]()
+                            button.clicked(self.screen)
+                            # Execute the function which the button controls
+                            self.buttons[button][0]()
                             break
 
                 # If the user typed something
@@ -145,8 +146,6 @@ class WelcomeScreen(TetrisScreen):
         password = user_inputs[1]
         valid_user = True
 
-        self.reset_textboxes()
-
         if user_identifier == "":
             self.create_popup_button(r"Please enter Username\Email")
             valid_user = False
@@ -158,32 +157,23 @@ class WelcomeScreen(TetrisScreen):
         if not valid_user:
             return
 
-        # TODO CHANGE
-        user_exists = self.server_communicator.user_identifier_exists(user_identifier)
-
-        # Given user doesn't exist in the database
-        if not user_exists:
-            self.create_popup_button(r"Username\Email doesn't exist")
-
+        user = self.server_communicator.get_user(user_identifier, password)
+        # Update the user's latest ip
+        if user:
+            new_outer_ip = self.get_outer_ip()
+            threading.Thread(target=self.server_communicator.on_connection, args=(user["username"], new_outer_ip,)).start()
+            MainMenu(
+                user,
+                self.server_communicator,
+                self.width,
+                self.height,
+                self.refresh_rate,
+                self.background_path,
+            ).run()
+            pygame.quit()
         else:
-            user = self.server_communicator.get_user(user_identifier, password)
-            # Update the user's latest ip
-            if user:
-                new_outer_ip = self.get_outer_ip()
-                self.server_communicator.on_connection(user["username"], new_outer_ip)
-                MainMenu(
-                    user,
-                    self.server_communicator,
-                    self.width,
-                    self.height,
-                    self.refresh_rate,
-                    self.background_path,
-                ).run()
-                pygame.quit()
-
-            # User exists but the password doesn't match
-            else:
-                self.create_popup_button(r"Wrong Password")
+            self.reset_textboxes()
+            self.create_popup_button("Invalid credentials")
 
     def create_popup_button(self, text):
         button_width = self.width // 2
@@ -302,12 +292,12 @@ class WelcomeScreen(TetrisScreen):
             )
             self.server_communicator.create_user(user_post)
             MainMenu(
-                self.width,
-                self.height,
                 user_post,
                 self.server_communicator,
+                self.width,
+                self.height,
                 self.refresh_rate,
-                self.background_path,
+                self.background_path
             ).run()
             pygame.quit()
 
@@ -328,6 +318,7 @@ class WelcomeScreen(TetrisScreen):
         """Returns a db post with the given parameters"""
         return {
             "_id": user_number,
+            "type": "user",
             "email": email,
             "username": username,
             "password": password,
@@ -335,4 +326,10 @@ class WelcomeScreen(TetrisScreen):
             "invite": "",
             "invite_ip": "",
             "online": True,
+            "40l": "0",
+            "marathon": 0,
+            "apm_games": [],
+            "apm": 0.0,
+            "wins": 0,
+            "games": 0
         }
