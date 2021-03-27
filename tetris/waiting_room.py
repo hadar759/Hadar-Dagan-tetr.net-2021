@@ -6,7 +6,7 @@ from typing import Optional, Dict, List
 
 import pygame
 
-from tetris.tetris_screen import TetrisScreen
+from tetris.menu_screen import MenuScreen
 from tetris.tetris_client import TetrisClient
 from tetris.tetris_game import TetrisGame
 from tetris.button import Button
@@ -16,7 +16,7 @@ from requests import get
 from server_communicator import ServerCommunicator
 
 
-class WaitingRoom(TetrisScreen):
+class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
     LETTER_SIZE = 15
     GAME_PORT = 44444
@@ -50,8 +50,8 @@ class WaitingRoom(TetrisScreen):
     def run(self):
         self.create_room()
         self.establish_connection()
-        threading.Thread(target=self.recv_chat).start()
-        threading.Thread(target=self.update_mouse_pos).start()
+        threading.Thread(target=self.recv_chat, daemon=True).start()
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
         while self.running:
             self.update_screen()
 
@@ -59,15 +59,15 @@ class WaitingRoom(TetrisScreen):
             if self.start_args:
                 self.running = False
                 self.start_client_game(*self.start_args)
-                print("here")
                 self.running = True
                 self.start_args = ()
                 self.handle_buttons_when_ready()
                 for user in self.ready_players:
                     self.handle_buttons_when_ready(user)
+                self.ready_players = []
                 self.screen = pygame.display.set_mode((self.width, self.height))
-                threading.Thread(target=self.recv_chat).start()
-                threading.Thread(target=self.update_mouse_pos).start()
+                threading.Thread(target=self.recv_chat, daemon=True).start()
+                threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             for event in pygame.event.get():
                 if not self.mouse_pos:
@@ -113,6 +113,7 @@ class WaitingRoom(TetrisScreen):
         self.players = pickle.loads(self.sock.recv(25600))
         # Send confirmation to server
         self.sock.send("received".encode())
+        self.display_players()
         # Receive the ready players list from the server
         self.ready_players = pickle.loads(self.sock.recv(25600))
         # Display player readiness
@@ -148,8 +149,6 @@ class WaitingRoom(TetrisScreen):
         client.run()
 
     def recv_chat(self):
-        last_button = self.find_button_by_text("Chat")
-        starting_x = last_button.starting_x
         while True:
             try:
                 msg = self.sock.recv(1024).decode()
@@ -176,12 +175,17 @@ class WaitingRoom(TetrisScreen):
                 continue
             # Message is a player name - i.e. a player has just joined/disconnected
             elif ":" not in msg:
+                if msg == "closed":
+                    self.quit()
+                    return
                 # Player disconnected
                 if msg[0] == "!":
                     self.players.pop(msg[1:])
-                    name_button = self.find_button_by_text(msg[1:])
-                    self.buttons.pop(name_button)
-                    self.buttons = {button: self.buttons[button] for button in self.buttons if button.starting_y != name_button.starting_y + 20}
+                    wins_button = self.find_button_by_text("Wins")
+                    self.buttons = {button: self.buttons[button] for button in self.buttons if
+                                    button.starting_x >= wins_button.starting_x + 80 or button.starting_y <= wins_button.starting_y}
+                    for button in self.buttons:
+                        print(button.text, button.starting_y, button.starting_x)
                     self.display_players()
                 # Player joined
                 else:
@@ -191,6 +195,8 @@ class WaitingRoom(TetrisScreen):
                     self.display_players()
                 continue
 
+            last_button = self.find_button_by_text("Chat")
+            starting_x = last_button.starting_x
             button_width = list(self.textboxes.keys())[0].width
             button_height = self.LETTER_SIZE * 2
             # Last button is a message
@@ -499,5 +505,5 @@ class WaitingRoom(TetrisScreen):
         return None
 
     def update_mouse_pos(self):
-        while self.running and not self.start_args:
+        while self.running:
             self.mouse_pos = pygame.mouse.get_pos()

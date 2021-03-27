@@ -206,7 +206,7 @@ class TetrisGame(Game):
             # Send the screen & lines to be sent to the opponent
             self.server_socket.send(pickle.dumps(data))
             self.lines_to_be_sent = 0
-
+            # TODO find out why it's getting lagged everytime we drop a piece
             try:
                 # Receive the screen and line data from the opponent
                 data_received = pickle.loads(self.server_socket.recv(25600))
@@ -637,6 +637,9 @@ class TetrisGame(Game):
                         ]
                     )
                 )
+            else:
+                # For socket cleanup
+                self.server_socket.send("random data".encode())
             threading.Thread(target=self.server_communicator.add_game, args=(self.username, win,)).start()
             threading.Thread(target=self.server_communicator.update_apm, args=(self.username, self.total_attacks, game_time,)).start()
 
@@ -703,8 +706,6 @@ class TetrisGame(Game):
             )
             if new_top:
                 self.screen.blit(self.render_input(70, "NEW FASTEST TIME"), (self.width // 2 - 800, self.height // 2 - 200))
-        elif self.mode == "multiplayer":
-            self.server_socket.send("Ready%@".encode())
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds

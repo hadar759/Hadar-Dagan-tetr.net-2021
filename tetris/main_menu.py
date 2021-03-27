@@ -5,16 +5,18 @@ import time
 from typing import Optional, Tuple, Dict
 
 import pygame
+from requests import get
 
 from server_communicator import ServerCommunicator
-from tetris.tetris_screen import TetrisScreen
+from tetris.menu_screen import MenuScreen
 from tetris.colors import Colors
 from tetris.tetris_client import TetrisClient
+from game_server import GameServer
 from tetris.tetris_game import TetrisGame
 from tetris.waiting_room import WaitingRoom
 
 
-class MainMenu(TetrisScreen):
+class MainMenu(MenuScreen):
     """The starting screen of the game"""
 
     GAME_PORT = 44444
@@ -44,7 +46,7 @@ class MainMenu(TetrisScreen):
             self.create_menu()
             self.running = True
             old_time = round(time.time())
-            threading.Thread(target=self.update_mouse_pos).start()
+            threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             while self.running:
                 self.update_screen()
@@ -59,7 +61,7 @@ class MainMenu(TetrisScreen):
                 if cur_time % 20 == 0 and cur_time != old_time:
                     old_time = cur_time
                     # threading.Thread(target=self.check_invite).start()
-                    threading.Thread(target=self.check_invite).start()
+                    threading.Thread(target=self.check_invite, daemon=True).start()
                 pygame.display.flip()
 
     def check_invite(self):
@@ -191,7 +193,7 @@ class MainMenu(TetrisScreen):
         if event.type == pygame.QUIT:
             self.quit()
             pygame.quit()
-            exit()
+            quit()
 
         # If the user typed something
         if event.type == pygame.KEYDOWN:
@@ -267,20 +269,13 @@ class MainMenu(TetrisScreen):
                            function_button_height,
                            Colors.BLACK, "↓", 55, Colors.WHITE, func=self.scroll_down)
 
+        cur_y += 10
+
+        self.create_button((cur_x, cur_y), function_button_width, function_button_height, Colors.BLACK, "⟳", 70, Colors.WHITE, func=self.create_room_list)
+
         cur_y += function_button_height + 10
 
-        room_button_width = self.width
-        room_button_height = 200
-        player_button_width = 50
-        player_button_height = 200
-        for room in self.server_communicator.get_rooms():
-            self.create_button((cur_x, cur_y), room_button_width, room_button_height, Colors.BLACK,
-                               " ".join(list(room["name"])), text_color=Colors.WHITE, func=self.connect_to_room, args=(room,))
-            last_button = list(self.buttons.keys())[-1]
-            last_button.get_middle_text_position = last_button.get_mid_left_text_position
-            self.create_button((cur_x + room_button_width - player_button_width - 20, cur_y), player_button_width, player_button_height,
-                               Colors.BLACK, str(room["player_num"]), text_size=70, text_color=Colors.WHITE, text_only=True)
-            cur_y += room_button_height + 10
+        self.display_rooms(cur_x, cur_y)
 
     def scroll_up(self):
         print("You've tried to scroll up!")
@@ -289,9 +284,96 @@ class MainMenu(TetrisScreen):
         print("You've tried to scroll down!")
 
     def create_room(self):
-        print("You've tried to create a room!")
+        self.buttons = {}
+        self.textboxes = {}
+
+        title_width = self.width
+        title_height = 200
+        cur_x = 0
+        cur_y = 0
+
+        function_button_width = 75
+        function_button_height = 75
+        # Create the back button
+        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
+                           Colors.BLACK, "->", 55,
+                           Colors.WHITE, func=self.quit)
+
+        # Create the screen title
+        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK, "CREATE A ROOM", 70,
+                           Colors.PURPLE, text_only=True)
+        cur_y += title_height
+
+        textbox_width = 1000
+        label_width = 300
+        textbox_height = 130
+        cur_x = 100
+        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK, "Room name:", text_only=True)
+        name_box = self.create_textbox((cur_x + label_width + 100, cur_y), textbox_width,
+                                       textbox_height, Colors.BLACK, "")
+        self.textboxes[name_box] = f"{self.user['username']}'s room"
+        cur_y += textbox_height + 20
+
+        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK, "Min apm:", text_only=True)
+        name_box = self.create_textbox((cur_x + label_width + 100, cur_y), textbox_width,
+                                       textbox_height, Colors.BLACK, "")
+        self.textboxes[name_box] = "0"
+        cur_y += textbox_height + 20
+
+        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK, "Max apm:", text_only=True)
+        name_box = self.create_textbox((cur_x + label_width + 100, cur_y), textbox_width,
+                                       textbox_height, Colors.BLACK, "")
+        self.textboxes[name_box] = "999"
+        cur_y += textbox_height + 20
+
+        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK, "Private:", text_only=True)
+        button = self.create_button((cur_x + label_width + 100, cur_y + 40), 50, 50, Colors.BLACK, "❌", 45, Colors.RED)
+        self.buttons[button] = (self.change_binary_button, (button,))
+        cur_y += textbox_height + 20
+
+        continue_width = label_width + 200
+        self.create_button((self.width // 2 - label_width // 2, cur_y), continue_width, textbox_height, Colors.BLACK,
+                           "CONTINUE", text_color=Colors.WHITE, func=self.create_continue)
+
+    def create_continue(self):
+        textbox_values = list(self.textboxes.values())
+        room_name = textbox_values[0]
+        min_apm = textbox_values[1]
+        max_apm = textbox_values[2]
+        private = not list(self.buttons.keys())[-2].text == "❌"
+        if not min_apm or not max_apm or not min_apm.isdigit() or not max_apm.isdigit():
+            self.textboxes = {}
+            self.buttons = {}
+            self.create_room()
+            self.create_popup_button("Invalid settings")
+            return
+        min_apm = int(min_apm)
+        max_apm = int(max_apm)
+        room_server = GameServer(self.get_inner_ip(), room_name, min_apm, max_apm, private, self.user["username"])
+        threading.Thread(target=room_server.run).start()
+        self.connect_to_room({"ip": room_server.server_ip, "name": room_server.room_name})
+
+
+    @staticmethod
+    def get_outer_ip():
+        return get("https://api.ipify.org").text
+
+    @staticmethod
+    def get_inner_ip():
+        return socket.gethostbyname(socket.gethostname())
+
+
+    def change_binary_button(self, button):
+        if button.text == "❌":
+            button.text_color = Colors.GREEN
+            button.text = "✔"
+        elif button.text == "✔":
+            button.text_color = Colors.RED
+            button.text = "❌"
+        button.rendered_text = button.render_button_text()
 
     def connect_to_room(self, room: Dict):
+        self.running = False
         sock = socket.socket()
         sock.connect((room["ip"], 44444))
         # Start the main menu
@@ -300,6 +382,9 @@ class MainMenu(TetrisScreen):
                            self.width, self.height, 75, "resources/tetris_background.jpg"
                            )
         waiting_room.run()
+        self.running = True
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        self.create_room_list()
 
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
@@ -320,13 +405,28 @@ class MainMenu(TetrisScreen):
             func=self.create_room_list
         )
 
-        cur_button_text = "Challenge"
         self.display_buttons()
         self.display_textboxes()
         pygame.display.flip()
 
-    def display_rooms(self):
-        rooms = self.server_communicator.get_rooms()
+    def display_rooms(self, cur_x, cur_y):
+        room_button_width = self.width
+        room_button_height = 200
+        player_button_width = 50
+        player_button_height = 200
+        for room in self.server_communicator.get_rooms():
+            if room["private"]:
+                continue
+            self.create_button((cur_x, cur_y), room_button_width, room_button_height, Colors.BLACK,
+                               " ".join(list(room["name"])), text_color=Colors.WHITE, func=self.connect_to_room,
+                               args=(room,))
+            last_button = list(self.buttons.keys())[-1]
+            last_button.get_middle_text_position = last_button.get_mid_left_text_position
+            self.create_button((cur_x + room_button_width - player_button_width - 20, cur_y), player_button_width,
+                               player_button_height,
+                               Colors.BLACK, str(room["player_num"]), text_size=70, text_color=Colors.WHITE,
+                               text_only=True)
+            cur_y += room_button_height + 10
 
     def old_multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""

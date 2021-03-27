@@ -1,10 +1,11 @@
 import threading
+import time
 from typing import Optional, Tuple, Dict
 
 import pygame
 import socket
 
-from tetris.tetris_screen import TetrisScreen
+from tetris.menu_screen import MenuScreen
 from tetris.main_menu import MainMenu
 from tetris.button import Button
 from tetris.colors import Colors
@@ -13,7 +14,7 @@ from requests import get
 from server_communicator import ServerCommunicator
 
 
-class WelcomeScreen(TetrisScreen):
+class WelcomeScreen(MenuScreen):
     """The starting screen of the game"""
 
     def __init__(
@@ -51,19 +52,25 @@ class WelcomeScreen(TetrisScreen):
             func=self.register_screen,
         )
 
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+
         while self.running:
             self.update_screen()
-            mouse_pos = pygame.mouse.get_pos()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    pygame.quit()
                     self.running = False
+                    quit()
+
+                if not self.mouse_pos:
+                    continue
 
                 # In case the user pressed the mouse button
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for textbox in self.textboxes.keys():
                         # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
-                        if textbox.inside_button(mouse_pos):
+                        if textbox.inside_button(self.mouse_pos):
                             # Make the textbox writeable
                             textbox.active = True
                         else:
@@ -71,7 +78,7 @@ class WelcomeScreen(TetrisScreen):
 
                     for button in self.buttons.keys():
                         # Check if the click is inside the button area (i.e. whether the button was clicked)
-                        if button.inside_button(mouse_pos):
+                        if button.inside_button(self.mouse_pos):
                             button.clicked(self.screen)
                             # Execute the function which the button controls
                             self.buttons[button][0]()
@@ -141,6 +148,7 @@ class WelcomeScreen(TetrisScreen):
 
     def login_continue(self):
         """Process the login info given"""
+
         user_inputs = tuple(self.textboxes.values())
         user_identifier = user_inputs[0]
         password = user_inputs[1]
@@ -158,10 +166,12 @@ class WelcomeScreen(TetrisScreen):
             return
 
         user = self.server_communicator.get_user(user_identifier, password)
+
         # Update the user's latest ip
         if user:
+            self.running = False
             new_outer_ip = self.get_outer_ip()
-            threading.Thread(target=self.server_communicator.on_connection, args=(user["username"], new_outer_ip,)).start()
+            threading.Thread(target=self.server_communicator.on_connection, args=(user["username"], new_outer_ip,), daemon=True).start()
             MainMenu(
                 user,
                 self.server_communicator,
@@ -171,6 +181,7 @@ class WelcomeScreen(TetrisScreen):
                 self.background_path,
             ).run()
             pygame.quit()
+            self.running = True
         else:
             self.reset_textboxes()
             self.create_popup_button("Invalid credentials")
@@ -290,7 +301,7 @@ class WelcomeScreen(TetrisScreen):
             user_post = self.create_db_post(
                 user_number, email, username, password, self.get_outer_ip()
             )
-            self.server_communicator.create_user(user_post)
+            threading.Thread(target=self.server_communicator.create_user(user_post), daemon=True).start()
             MainMenu(
                 user_post,
                 self.server_communicator,

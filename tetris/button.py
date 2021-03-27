@@ -48,11 +48,11 @@ class Button:
             font_size = self.text_size
         if not text_color:
             text_color = self.text_color
-        try:
+        if inp.isascii():
             return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
                 inp, True, text_color
             )
-        except UnicodeError:
+        else:
             return pygame.font.Font("./resources/seguisym.ttf", font_size).render(
                 inp, True, text_color
             )

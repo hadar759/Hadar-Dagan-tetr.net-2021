@@ -6,5 +6,5 @@ from .tetris_client import TetrisClient
 from .tetris_grid import TetrisGrid
 from .tetris_game import TetrisGame
 from .welcome_screen import WelcomeScreen
-from .tetris_screen import TetrisScreen
+from .menu_screen import MenuScreen
 from .waiting_room import WaitingRoom

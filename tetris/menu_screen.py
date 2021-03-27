@@ -6,7 +6,7 @@ from tetris import Button, Colors
 from tetris import TextBox
 
 
-class TetrisScreen:
+class MenuScreen:
     def __init__(
         self,
         width: int,
@@ -27,7 +27,6 @@ class TetrisScreen:
         self.actions = {}
         self.mouse_pos = ()
 
-
     def create_button(
         self,
         starting_pixel: Tuple[int, int],
@@ -43,11 +42,14 @@ class TetrisScreen:
         args: Tuple = ()
     ):
         """Creates a new button and appends it to the button dict"""
-        self.buttons[
-            Button(
+        button = Button(
                 starting_pixel, width, height, color, text, text_size, text_color, transparent, text_only
             )
+        self.buttons[
+            button
         ] = (func, args)
+
+        return button
 
     def create_textbox(
         self,
@@ -60,10 +62,9 @@ class TetrisScreen:
         text_color: Tuple[int, int, int] = Colors.WHITE,
         transparent: bool = False,
         text_only: bool = False
-    ):
+    ) -> TextBox:
         """Creates a new textbox and appends it to the textbox dict"""
-        self.textboxes[
-            TextBox(
+        box = TextBox(
                 starting_pixel,
                 width,
                 height,
@@ -74,7 +75,10 @@ class TetrisScreen:
                 transparent,
                 text_only
             )
+        self.textboxes[
+            box
         ] = ""
+        return box
 
     def create_popup_button(self, text):
         button_width = self.width // 2
@@ -90,7 +94,7 @@ class TetrisScreen:
             text,
             38,
             text_color=Colors.RED,
-            func=self.buttons.pop
+            func=self.buttons.popitem
         )
         # TODO change this shitty solution
 

@@ -12,25 +12,29 @@ from server_communicator import ServerCommunicator
 class GameServer:
     SERVER_PORT = 44444
 
-    def __init__(self, server_ip):
-        self.client_list = []
+    def __init__(self, server_ip: str, room_name: str, min_apm: int = 0, max_apm: int = 999, private: bool = False, admin=""):
+        self.client_list: List[socket.socket] = []
         self.players = {}
         self.players_wins = {}
         self.ready_clients = []
         self.responses_list = []
         self.data_dict = {}
         self.game_running = False
-        self.room_name = ""
+        self.room_name = room_name
+        self.admin = admin
 
         self.server_socket = socket.socket()
         self.server_ip = server_ip
         self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
 
+        # Add the room to the database
+        self.server_communicator.create_room(self.create_db_post(room_name, server_ip, min_apm, max_apm, private))
+
     def run(self):
         self.server_socket.bind((self.server_ip, self.SERVER_PORT))
         self.server_socket.listen(1)
         # Always accept new clients
-        threading.Thread(target=self.connect_clients).start()
+        threading.Thread(target=self.connect_clients, daemon=True).start()
         while True:
             if not self.client_list:
                 continue
@@ -54,6 +58,9 @@ class GameServer:
                 self.handle_read(read_list)
                 self.handle_write(write_list)
 
+    def remove_server(self):
+        self.server_communicator.remove_room(self.room_name)
+
     @staticmethod
     def notify_client_of_game_start(client, time_at_start):
         client.send("started".encode())
@@ -63,6 +70,7 @@ class GameServer:
     def handle_read(self, read_list: List[socket.socket]):
         """Handles reading from the clients"""
         for client in read_list:
+            print("reading...")
             data = client.recv(25600)
 
             if not self.game_running:
@@ -90,8 +98,8 @@ class GameServer:
                         if other_client is client:
                             continue
                         other_client.send(pickle.dumps(["Win", 0]))
-                    client.send(pickle.dumps(["Lose", 0]))
                     self.game_over()
+                    return
 
                 # Send the screen from one client to another
                 else:
@@ -110,6 +118,11 @@ class GameServer:
 
         # Client disconnected
         elif data == "disconnect":
+            closed = False
+            # This was the admin
+            if self.players[client] == self.admin:
+                self.remove_server()
+                closed = True
             self.client_list.remove(client)
             player_name = self.players[client]
             self.players.pop(client)
@@ -118,19 +131,21 @@ class GameServer:
             self.players_wins.pop(player_name)
 
             for other_client in self.client_list:
-                other_client.send(f"!{player_name}".encode())
+                text_to_send = "closed" if closed else f"!{player_name}"
+                other_client.send(text_to_send.encode())
             # Update the removed player in the database
             threading.Thread(target=self.update_player_num).start()
             return
-        # If it's just a normal message, send it to every client
+        # Send the message to every client
         for other_client in self.client_list:
             self.data_dict[other_client] = data.encode()
 
-    # TODO and also fix room crashing after 2 games
+    # TODO fix the bug where it sometimes won't start or something, also optimize for school
     def game_over(self):
         """End the game"""
         self.game_running = False
         for client in self.client_list:
+            print(f"emptied {self.players[client]}")
             client.recv(25600)
         self.data_dict = {}
         self.ready_clients = []
@@ -172,12 +187,12 @@ class GameServer:
         print(len(self.client_list))
         self.server_communicator.update_player_num(self.server_ip, len(self.client_list))
 
-    def create_db_post(self, ip: str, min_apm: int = 0, max_apm: int = 999, private: bool = False) -> dict:
+    def create_db_post(self, room_name, ip: str, min_apm: int = 0, max_apm: int = 999, private: bool = False) -> dict:
         """Returns a db post with the given parameters"""
         return {
             "_id": self.server_communicator.estimated_document_count(),
             "type": "room",
-            "name": "Test room",
+            "name": room_name,
             "ip": ip,
             "player_num": 0,
             "min_apm": min_apm,
@@ -186,10 +201,13 @@ class GameServer:
         }
 
 
+def get_inner_ip():
+    return socket.gethostbyname(socket.gethostname())
+
+
 if __name__ == "__main__":
-    ip = "10.100.102.17"
-    #ip = "172.19.230.76"
-    server = GameServer(ip)
+    ip = get_inner_ip()
+    server = GameServer(ip, "test room")
     # Add the room to the database
     #server.server_communicator.create_room(server.create_db_post(ip))
     server.run()

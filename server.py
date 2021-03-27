@@ -31,6 +31,10 @@ class Server:
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
 
+    @router.post("/users/rooms/delete")
+    def delete_room(self, room_name):
+        self.user_collection.dependency().find_one_and_delete(filter={"type": "room", "name": room_name})
+
     @router.post("/users/rooms/player-num")
     def update_player_num(self, ip, player_num):
         self.user_collection.dependency().find_one_and_update({"ip": ip}, update={"$set": {"player_num": player_num}})

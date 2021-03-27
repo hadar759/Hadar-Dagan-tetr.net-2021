@@ -14,6 +14,9 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
+    def remove_room(self, room_name):
+        post(f"{self.SERVER_DOMAIN}/users/rooms/delete?room_name={room_name}")
+
     def update_player_num(self, ip, player_num):
         post(f"{self.SERVER_DOMAIN}/users/rooms/player-num?ip={ip}&player_num={player_num}")
 
