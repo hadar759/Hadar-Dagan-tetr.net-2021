@@ -175,7 +175,7 @@ class MainMenu(MenuScreen):
             200,
             Colors.BLACK,
             cur_button_text,
-            func=self.multiplayer
+            func=self.create_room_list
         )
 
         cur_button_text = self.user["username"]

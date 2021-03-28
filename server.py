@@ -135,7 +135,9 @@ class Server:
     @router.get("/users/invites")
     def get_invite(self, username: str) -> str:
         user = self.user_by_username(username)
-        return user["invite"]
+        invite = user["invite"]
+        self.user_collection.dependency().update_one(filter=user, update={"$set": {"invite": ""}})
+        return invite
 
     @router.get("/users/online")
     def player_online(self, username: str) -> bool:
