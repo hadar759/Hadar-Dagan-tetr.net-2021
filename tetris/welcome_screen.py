@@ -1,17 +1,15 @@
+import socket
 import threading
-import time
-from typing import Optional, Tuple, Dict
+from typing import Optional
 
 import pygame
-import socket
-
-from tetris.menu_screen import MenuScreen
-from tetris.main_menu import MainMenu
-from tetris.button import Button
-from tetris.colors import Colors
-from tetris.text_box import TextBox
 from requests import get
+import hashlib
+
 from server_communicator import ServerCommunicator
+from tetris.colors import Colors
+from tetris.main_menu import MainMenu
+from tetris.menu_screen import MenuScreen
 
 
 class WelcomeScreen(MenuScreen):
@@ -112,13 +110,14 @@ class WelcomeScreen(MenuScreen):
         )
 
         # Password Button
-        self.create_textbox(
+        pass_box = self.create_textbox(
             (mid_x_pos, self.height // 10 + button_height * 3),
             button_width,
             button_height,
             Colors.WHITE,
             "Password",
             text_color=Colors.GREY,
+            is_pass=True
         )
 
         # Forgot your password button
@@ -165,6 +164,7 @@ class WelcomeScreen(MenuScreen):
         if not valid_user:
             return
 
+        password = hashlib.md5(password.encode()).hexdigest()
         user = self.server_communicator.get_user(user_identifier, password)
 
         # Update the user's latest ip
@@ -245,6 +245,7 @@ class WelcomeScreen(MenuScreen):
             Colors.WHITE,
             "Password",
             text_color=Colors.GREY,
+            is_pass=True
         )
 
         # Continue button
@@ -297,6 +298,8 @@ class WelcomeScreen(MenuScreen):
 
         # Add the valid user to the DB
         if valid_user:
+            password = hashlib.md5(password.encode()).hexdigest()
+            print(password)
             user_number = self.server_communicator.estimated_document_count()
             user_post = self.create_db_post(
                 user_number, email, username, password, self.get_outer_ip()

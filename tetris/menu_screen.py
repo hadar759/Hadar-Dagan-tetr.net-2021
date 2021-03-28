@@ -61,7 +61,8 @@ class MenuScreen:
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
         transparent: bool = False,
-        text_only: bool = False
+        text_only: bool = False,
+        is_pass: bool = False
     ) -> TextBox:
         """Creates a new textbox and appends it to the textbox dict"""
         box = TextBox(
@@ -73,7 +74,8 @@ class MenuScreen:
                 text_size,
                 text_color,
                 transparent,
-                text_only
+                text_only,
+                is_pass
             )
         self.textboxes[
             box
