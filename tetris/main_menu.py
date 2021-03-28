@@ -285,6 +285,7 @@ class MainMenu(MenuScreen):
         self.display_rooms(cur_x, cur_y)
 
     def refresh_rooms(self):
+        self.room_offset = 0
         self.public_room_list = self.server_communicator.get_rooms()
         self.display_room_list_screen()
 
@@ -375,9 +376,11 @@ class MainMenu(MenuScreen):
             return
         min_apm = int(min_apm)
         max_apm = int(max_apm)
+        self.running = False
         room_server = GameServer(self.get_inner_ip(), room_name, min_apm, max_apm, private, self.user["username"])
         threading.Thread(target=room_server.run).start()
         self.connect_to_room({"ip": room_server.server_ip, "name": room_server.room_name})
+        self.running = True
 
 
     @staticmethod
