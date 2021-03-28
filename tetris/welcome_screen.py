@@ -76,7 +76,7 @@ class WelcomeScreen(MenuScreen):
                         else:
                             textbox.active = False
 
-                    for button in self.buttons.keys():
+                    for button in reversed(self.buttons.keys()):
                         # Check if the click is inside the button area (i.e. whether the button was clicked)
                         if button.inside_button(self.mouse_pos):
                             button.clicked(self.screen)

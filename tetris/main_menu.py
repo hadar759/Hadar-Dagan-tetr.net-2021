@@ -39,6 +39,8 @@ class MainMenu(MenuScreen):
         self.text_cursor_ticks = pygame.time.get_ticks()
         self.server_communicator = server_communicator
         self.socket = socket.socket()
+        self.room_offset = 0
+        self.public_room_list = []
 
     def run(self):
         """Main loop of the main menu"""
@@ -204,7 +206,7 @@ class MainMenu(MenuScreen):
 
         # In case the user pressed the mouse button
         if event.type == self.BUTTON_PRESS:
-            for button in self.buttons:
+            for button in reversed(self.buttons):
                 # Check if the click is inside the button area (i.e. the button was clicked)
                 # Otherwise skip
                 if not button.inside_button(self.mouse_pos):
@@ -237,6 +239,10 @@ class MainMenu(MenuScreen):
         print(f"you've entered {self.user['username']}'s user profile")
 
     def create_room_list(self):
+        self.public_room_list = self.server_communicator.get_rooms()
+        self.display_room_list_screen()
+
+    def display_room_list_screen(self):
         # Reset the screen
         self.buttons = {}
         self.textboxes = {}
@@ -271,17 +277,31 @@ class MainMenu(MenuScreen):
 
         cur_y += 10
 
-        self.create_button((cur_x, cur_y), function_button_width, function_button_height, Colors.BLACK, "⟳", 70, Colors.WHITE, func=self.create_room_list)
+        self.create_button((cur_x, cur_y), function_button_width, function_button_height, Colors.BLACK,
+                           "⟳", 70, Colors.WHITE, func=self.refresh_rooms)
 
         cur_y += function_button_height + 10
 
         self.display_rooms(cur_x, cur_y)
 
+    def refresh_rooms(self):
+        self.public_room_list = self.server_communicator.get_rooms()
+        self.display_room_list_screen()
+
     def scroll_up(self):
-        print("You've tried to scroll up!")
+        if self.room_offset == 0:
+            self.create_popup_button("Can't scroll up")
+            return
+        self.room_offset -= 1
+        self.display_room_list_screen()
 
     def scroll_down(self):
-        print("You've tried to scroll down!")
+        offset = self.room_offset
+        self.room_offset += 1
+        self.display_room_list_screen()
+        # Offset hasn't changed, i.e. we're at the end of the room list
+        if offset == self.room_offset:
+            self.create_popup_button("Can't scroll down more")
 
     def create_room(self):
         self.buttons = {}
@@ -338,6 +358,12 @@ class MainMenu(MenuScreen):
     def create_continue(self):
         textbox_values = list(self.textboxes.values())
         room_name = textbox_values[0]
+        if len(room_name) > 23:
+            self.textboxes = {}
+            self.buttons = {}
+            self.create_room()
+            self.create_popup_button("Room name too long")
+            return
         min_apm = textbox_values[1]
         max_apm = textbox_values[2]
         private = not list(self.buttons.keys())[-2].text == "❌"
@@ -362,7 +388,6 @@ class MainMenu(MenuScreen):
     def get_inner_ip():
         return socket.gethostbyname(socket.gethostname())
 
-
     def change_binary_button(self, button):
         if button.text == "❌":
             button.text_color = Colors.GREEN
@@ -384,7 +409,7 @@ class MainMenu(MenuScreen):
         waiting_room.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
-        self.create_room_list()
+        self.display_room_list_screen()
 
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
@@ -411,12 +436,12 @@ class MainMenu(MenuScreen):
 
     def display_rooms(self, cur_x, cur_y):
         room_button_width = self.width
-        room_button_height = 200
+        room_button_height = 190
         player_button_width = 50
         player_button_height = 200
-        for room in self.server_communicator.get_rooms():
-            if room["private"]:
-                continue
+        self.room_offset = min(len(self.public_room_list) - 3, self.room_offset)
+        for room in self.public_room_list[self.room_offset:self.room_offset + 3]:
+            print(room["name"])
             self.create_button((cur_x, cur_y), room_button_width, room_button_height, Colors.BLACK,
                                " ".join(list(room["name"])), text_color=Colors.WHITE, func=self.connect_to_room,
                                args=(room,))
