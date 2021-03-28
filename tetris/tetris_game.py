@@ -222,9 +222,11 @@ class TetrisGame(Game):
                 self.win = True
                 self.create_timer(self.GAME_OVER_EVENT, 20)
                 self.set_event_handler(self.GAME_OVER_EVENT, self.game_over)
+                return
             elif screen_received == "Lose":
                 self.create_timer(self.GAME_OVER_EVENT, 20)
                 self.set_event_handler(self.GAME_OVER_EVENT, self.game_over)
+                return
             else:
                 self.update_opp_screen(screen_received)
                 self.lines_received += int(lines_received)
@@ -606,6 +608,9 @@ class TetrisGame(Game):
 
     def should_freeze_piece(self):
         """Returns whether the current piece can, and should, be frozen"""
+        if not self.cur_piece:
+            return
+
         for pos in self.cur_piece.position:
             if pos[0] >= self.LOWER_BORDER:
                 return True
@@ -642,7 +647,6 @@ class TetrisGame(Game):
                 self.server_socket.send("random data".encode())
             threading.Thread(target=self.server_communicator.add_game, args=(self.username, win,)).start()
             threading.Thread(target=self.server_communicator.update_apm, args=(self.username, self.total_attacks, game_time,)).start()
-
 
         elif self.mode == "sprint" and self.lines_to_finish == 40 and win:
             new_top = self.server_communicator.update_sprint(self.username, game_time)
@@ -711,8 +715,7 @@ class TetrisGame(Game):
         # Show the ending screen for 5 seconds
         pygame.time.wait(5000)
 
-        self.running = False
-
+        return
 
     @staticmethod
     def render_input(font_size: int, inp):

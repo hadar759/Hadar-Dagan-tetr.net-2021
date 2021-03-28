@@ -70,7 +70,6 @@ class GameServer:
     def handle_read(self, read_list: List[socket.socket]):
         """Handles reading from the clients"""
         for client in read_list:
-            print("reading...")
             data = client.recv(25600)
 
             if not self.game_running:
@@ -207,6 +206,7 @@ def get_inner_ip():
 
 if __name__ == "__main__":
     ip = get_inner_ip()
+    print("server starts on", ip)
     server = GameServer(ip, "test room")
     # Add the room to the database
     #server.server_communicator.create_room(server.create_db_post(ip))
