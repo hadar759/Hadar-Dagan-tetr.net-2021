@@ -85,7 +85,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.BLACK_BUTTON,
             inviter_name,
-            func=self.accept_invite
+            func=self.accept_invite,
         )
 
         x_height = 20
@@ -98,7 +98,7 @@ class MainMenu(MenuScreen):
             "X",
             text_size=20,
             text_color=Colors.RED,
-            func=self.dismiss_invite
+            func=self.dismiss_invite,
         )
 
     def accept_invite(self):
@@ -160,7 +160,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.YELLOW_BUTTON,
             cur_button_text,
-            func=self.sprint
+            func=self.sprint,
         )
         cur_y += button_offset
 
@@ -171,7 +171,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.DEEP_BLUE_BUTTON,
             cur_button_text,
-            func=self.marathon
+            func=self.marathon,
         )
         cur_y += button_offset
 
@@ -182,7 +182,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.PINKISH_BUTTON,
             cur_button_text,
-            func=self.create_room_list
+            func=self.create_room_list,
         )
         cur_y += button_offset
 
@@ -193,11 +193,8 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.GREEN_BUTTON,
             cur_button_text,
-            func=self.create_leaderboard
+            func=self.create_leaderboard,
         )
-
-
-
 
         cur_button_text = self.user["username"]
         self.create_button(
@@ -207,7 +204,7 @@ class MainMenu(MenuScreen):
             Colors.BLACK_BUTTON,
             cur_button_text,
             func=self.user_profile,
-            args = (self.user["username"],)
+            args=(self.user["username"],),
         )
 
         self.display_buttons()
@@ -268,15 +265,30 @@ class MainMenu(MenuScreen):
         cur_x = 0
         cur_y = 0
         # Create the screen title
-        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK_BUTTON, "LEADERBOARD", 70,
-                           Colors.WHITE, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "LEADERBOARD",
+            70,
+            Colors.WHITE,
+            text_only=True,
+        )
 
         function_button_width = 75
         function_button_height = 75
         # Create the back button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         cur_y += title_height
 
@@ -291,7 +303,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.GREEN_BUTTON,
             cur_button_text,
-            func=self.sprint_leaderboard_menu
+            func=self.sprint_leaderboard_menu,
         )
         cur_y += button_offset
 
@@ -302,7 +314,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.GREEN_BUTTON,
             cur_button_text,
-            func=self.marathon_leaderboard
+            func=self.marathon_leaderboard,
         )
         cur_y += button_offset
 
@@ -313,7 +325,7 @@ class MainMenu(MenuScreen):
             button_height,
             Colors.GREEN_BUTTON,
             cur_button_text,
-            func=self.apm_leaderboard
+            func=self.apm_leaderboard,
         )
 
     def sprint_leaderboard_menu(self):
@@ -324,15 +336,30 @@ class MainMenu(MenuScreen):
         cur_x = 0
         cur_y = 0
         # Create the screen title
-        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK_BUTTON, "SPRINT LEADERBOARD", 70,
-                           Colors.PURPLE, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "SPRINT LEADERBOARD",
+            70,
+            Colors.PURPLE,
+            text_only=True,
+        )
 
         function_button_width = 75
         function_button_height = 75
         # Create the back button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         cur_y += title_height - 15
 
@@ -348,7 +375,7 @@ class MainMenu(MenuScreen):
             Colors.GREEN_BUTTON,
             cur_button_text,
             func=self.sprint_leaderboard,
-            args=(20,)
+            args=(20,),
         )
         cur_y += button_offset
 
@@ -360,7 +387,7 @@ class MainMenu(MenuScreen):
             Colors.GREEN_BUTTON,
             cur_button_text,
             func=self.sprint_leaderboard,
-            args=(40,)
+            args=(40,),
         )
         cur_y += button_offset
 
@@ -372,7 +399,7 @@ class MainMenu(MenuScreen):
             Colors.GREEN_BUTTON,
             cur_button_text,
             func=self.sprint_leaderboard,
-            args=(100,)
+            args=(100,),
         )
         cur_y += button_offset
 
@@ -384,7 +411,7 @@ class MainMenu(MenuScreen):
             Colors.GREEN_BUTTON,
             cur_button_text,
             func=self.sprint_leaderboard,
-            args=(1000,)
+            args=(1000,),
         )
 
     def sprint_leaderboard(self, line_num):
@@ -409,29 +436,68 @@ class MainMenu(MenuScreen):
         cur_x = 0
         cur_y = 0
         # Create the screen title
-        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK_BUTTON, f"{score_type.upper()} LEADERBOARD", 70,
-                           Colors.PURPLE, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            f"{score_type.upper()} LEADERBOARD",
+            70,
+            Colors.PURPLE,
+            text_only=True,
+        )
 
         function_button_width = 75
         function_button_height = 75
         # Create the back button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         cur_y += title_height - function_button_height - 10
 
         # Create the scroll up button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "↑", 55, Colors.WHITE, func=self.scroll_leaderboard_up,
-                           args=(user_arr, cur_x, cur_y, score_type,))
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "↑",
+            55,
+            Colors.WHITE,
+            func=self.scroll_leaderboard_up,
+            args=(
+                user_arr,
+                cur_x,
+                cur_y,
+                score_type,
+            ),
+        )
 
         # Create the scroll down button
-        self.create_button((self.width - function_button_width, self.height - function_button_height),
-                           function_button_width,
-                           function_button_height,
-                           Colors.BLACK_BUTTON, "↓", 55, Colors.WHITE, func=self.scroll_leaderboard_down,
-                           args=(user_arr, cur_x, cur_y, score_type,))
+        self.create_button(
+            (self.width - function_button_width, self.height - function_button_height),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "↓",
+            55,
+            Colors.WHITE,
+            func=self.scroll_leaderboard_down,
+            args=(
+                user_arr,
+                cur_x,
+                cur_y,
+                score_type,
+            ),
+        )
 
         self.display_leaderboard_entries(user_arr, cur_x, cur_y, score_type)
 
@@ -443,21 +509,46 @@ class MainMenu(MenuScreen):
         position_width = 150
         cur_y += 80
         self.leaderboard_offset = min(len(user_arr) - 4, self.leaderboard_offset)
-        for index, user in enumerate(user_arr[self.leaderboard_offset:self.leaderboard_offset + 4]):
+        for index, user in enumerate(
+            user_arr[self.leaderboard_offset : self.leaderboard_offset + 4]
+        ):
             print(user)
-            self.create_button((cur_x, cur_y), position_width, entry_height, Colors.BLACK_BUTTON,
-                               f"{index + self.leaderboard_offset + 1}.", text_size=50, text_color=Colors.WHITE)
+            self.create_button(
+                (cur_x, cur_y),
+                position_width,
+                entry_height,
+                Colors.BLACK_BUTTON,
+                f"{index + self.leaderboard_offset + 1}.",
+                text_size=50,
+                text_color=Colors.WHITE,
+            )
 
-            self.create_button((cur_x + position_width, cur_y), entry_width, entry_height, Colors.BLACK_BUTTON,
-                               " " + user["username"], text_size=50, text_color=Colors.GREEN, func=self.user_profile,
-                               args=(user["username"],))
+            self.create_button(
+                (cur_x + position_width, cur_y),
+                entry_width,
+                entry_height,
+                Colors.BLACK_BUTTON,
+                " " + user["username"],
+                text_size=50,
+                text_color=Colors.GREEN,
+                func=self.user_profile,
+                args=(user["username"],),
+            )
 
             last_button = list(self.buttons.keys())[-1]
-            last_button.get_middle_text_position = last_button.get_mid_left_text_position
-            self.create_button((cur_x + entry_width - score_width * 7, cur_y - 8), score_width,
-                               score_height,
-                               Colors.BLACK_BUTTON, str(user[score_type]), text_size=70, text_color=Colors.RED,
-                               text_only=True)
+            last_button.get_middle_text_position = (
+                last_button.get_mid_left_text_position
+            )
+            self.create_button(
+                (cur_x + entry_width - score_width * 7, cur_y - 8),
+                score_width,
+                score_height,
+                Colors.BLACK_BUTTON,
+                str(user[score_type]),
+                text_size=70,
+                text_color=Colors.RED,
+                text_only=True,
+            )
             cur_y += entry_height + 10
 
     def scroll_leaderboard_up(self, user_arr, cur_x, cur_y, score_type):
@@ -470,13 +561,14 @@ class MainMenu(MenuScreen):
 
     def scroll_leaderboard_down(self, user_arr, cur_x, cur_y, score_type):
         offset = self.leaderboard_offset
-        self.leaderboard_offset = self.leaderboard_offset = min(len(user_arr) - 4, self.leaderboard_offset + 1)
+        self.leaderboard_offset = self.leaderboard_offset = min(
+            len(user_arr) - 4, self.leaderboard_offset + 1
+        )
         # Offset hasn't changed, i.e. we're at the end of the room list
         if offset == self.leaderboard_offset:
             self.create_popup_button("Can't scroll down more")
         else:
             self.display_leaderboard_entries(user_arr, cur_x, cur_y, score_type)
-
 
     def create_room_list(self):
         self.public_room_list = self.server_communicator.get_rooms()
@@ -492,33 +584,80 @@ class MainMenu(MenuScreen):
         cur_x = 0
         cur_y = 0
         # Create the screen title
-        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK_BUTTON, "ROOM LIST", 70,
-                           Colors.PURPLE, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "ROOM LIST",
+            70,
+            Colors.PURPLE,
+            text_only=True,
+        )
 
         function_button_width = 75
         function_button_height = 75
         # Create the add room button
-        self.create_button((cur_x, cur_y), function_button_width, function_button_height, Colors.BLACK_BUTTON, "+", 70,
-                           Colors.WHITE, func=self.create_room)
+        self.create_button(
+            (cur_x, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "+",
+            70,
+            Colors.WHITE,
+            func=self.create_room,
+        )
         # Create the back button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height, Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         cur_y += title_height - function_button_height - 10
 
         # Create the scroll up button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "↑", 55, Colors.WHITE, func=self.scroll_rooms_up)
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "↑",
+            55,
+            Colors.WHITE,
+            func=self.scroll_rooms_up,
+        )
 
         # Create the scroll down button
-        self.create_button((self.width - function_button_width, self.height - function_button_height), function_button_width,
-                           function_button_height,
-                           Colors.BLACK_BUTTON, "↓", 55, Colors.WHITE, func=self.scroll_rooms_down)
+        self.create_button(
+            (self.width - function_button_width, self.height - function_button_height),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "↓",
+            55,
+            Colors.WHITE,
+            func=self.scroll_rooms_down,
+        )
 
         cur_y += 10
 
-        self.create_button((cur_x, cur_y), function_button_width, function_button_height, Colors.BLACK_BUTTON,
-                           "⟳", 70, Colors.WHITE, func=self.refresh_rooms)
+        self.create_button(
+            (cur_x, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "⟳",
+            70,
+            Colors.WHITE,
+            func=self.refresh_rooms,
+        )
 
         cur_y += function_button_height + 10
 
@@ -557,45 +696,118 @@ class MainMenu(MenuScreen):
         function_button_width = 75
         function_button_height = 75
         # Create the back button
-        self.create_button((self.width - function_button_width, cur_y), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, cur_y),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         # Create the screen title
-        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK_BUTTON, "CREATE A ROOM", 70,
-                           Colors.PURPLE, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "CREATE A ROOM",
+            70,
+            Colors.PURPLE,
+            text_only=True,
+        )
         cur_y += title_height
 
         textbox_width = 1000
         label_width = 300
         textbox_height = 130
         cur_x = 100
-        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK_BUTTON, "Room name:", text_only=True)
-        name_box = self.create_textbox((cur_x + label_width + 100, cur_y), textbox_width,
-                                       textbox_height, Colors.BLACK_BUTTON, "")
+        self.create_button(
+            (cur_x, cur_y),
+            label_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "Room name:",
+            text_only=True,
+        )
+        name_box = self.create_textbox(
+            (cur_x + label_width + 100, cur_y),
+            textbox_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "",
+        )
         self.textboxes[name_box] = f"{self.user['username']}'s room"
         cur_y += textbox_height + 20
 
-        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK_BUTTON, "Min apm:", text_only=True)
-        name_box = self.create_textbox((cur_x + label_width + 100, cur_y), textbox_width,
-                                       textbox_height, Colors.BLACK_BUTTON, "")
+        self.create_button(
+            (cur_x, cur_y),
+            label_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "Min apm:",
+            text_only=True,
+        )
+        name_box = self.create_textbox(
+            (cur_x + label_width + 100, cur_y),
+            textbox_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "",
+        )
         self.textboxes[name_box] = "0"
         cur_y += textbox_height + 20
 
-        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK_BUTTON, "Max apm:", text_only=True)
-        name_box = self.create_textbox((cur_x + label_width + 100, cur_y), textbox_width,
-                                       textbox_height, Colors.BLACK_BUTTON, "")
+        self.create_button(
+            (cur_x, cur_y),
+            label_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "Max apm:",
+            text_only=True,
+        )
+        name_box = self.create_textbox(
+            (cur_x + label_width + 100, cur_y),
+            textbox_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "",
+        )
         self.textboxes[name_box] = "999"
         cur_y += textbox_height + 20
 
-        self.create_button((cur_x, cur_y), label_width, textbox_height, Colors.BLACK_BUTTON, "Private:", text_only=True)
-        button = self.create_button((cur_x + label_width + 100, cur_y + 40), 50, 50, Colors.BLACK_BUTTON, "❌", 45, Colors.RED)
+        self.create_button(
+            (cur_x, cur_y),
+            label_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "Private:",
+            text_only=True,
+        )
+        button = self.create_button(
+            (cur_x + label_width + 100, cur_y + 40),
+            50,
+            50,
+            Colors.BLACK_BUTTON,
+            "❌",
+            45,
+            Colors.RED,
+        )
         self.buttons[button] = (self.change_binary_button, (button,))
         cur_y += textbox_height + 20
 
         continue_width = label_width + 200
-        self.create_button((self.width // 2 - label_width // 2, cur_y), continue_width, textbox_height, Colors.BLACK_BUTTON,
-                           "CONTINUE", text_color=Colors.WHITE, func=self.create_continue)
+        self.create_button(
+            (self.width // 2 - label_width // 2, cur_y),
+            continue_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "CONTINUE",
+            text_color=Colors.WHITE,
+            func=self.create_continue,
+        )
 
     def create_continue(self):
         textbox_values = list(self.textboxes.values())
@@ -618,11 +830,20 @@ class MainMenu(MenuScreen):
         min_apm = int(min_apm)
         max_apm = int(max_apm)
         self.running = False
-        room_server = GameServer(self.get_inner_ip(), False, room_name, min_apm, max_apm, private, self.user["username"])
+        room_server = GameServer(
+            self.get_inner_ip(),
+            False,
+            room_name,
+            min_apm,
+            max_apm,
+            private,
+            self.user["username"],
+        )
         threading.Thread(target=room_server.run).start()
-        self.connect_to_room({"ip": room_server.server_ip, "name": room_server.room_name})
+        self.connect_to_room(
+            {"ip": room_server.server_ip, "name": room_server.room_name}
+        )
         self.running = True
-
 
     @staticmethod
     def get_outer_ip():
@@ -646,10 +867,17 @@ class MainMenu(MenuScreen):
         sock = socket.socket()
         sock.connect((room["ip"], 44444))
         # Start the main menu
-        waiting_room = WaitingRoom(self.user,
-                           False, room["name"], sock, self.server_communicator,
-                           self.width, self.height, 75, "resources/tetris_background.jpg"
-                           )
+        waiting_room = WaitingRoom(
+            self.user,
+            False,
+            room["name"],
+            sock,
+            self.server_communicator,
+            self.width,
+            self.height,
+            75,
+            "resources/tetris_background.jpg",
+        )
         waiting_room.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
@@ -669,7 +897,7 @@ class MainMenu(MenuScreen):
             Colors.WHITE_BUTTON,
             "Room List",
             text_color=Colors.GREY,
-            func=self.create_room_list
+            func=self.create_room_list,
         )
 
         self.display_buttons()
@@ -682,17 +910,32 @@ class MainMenu(MenuScreen):
         player_button_width = 50
         player_button_height = 200
         self.room_offset = min(len(self.public_room_list) - 3, self.room_offset)
-        for room in self.public_room_list[self.room_offset:self.room_offset + 3]:
+        for room in self.public_room_list[self.room_offset : self.room_offset + 3]:
             print(room["name"])
-            self.create_button((cur_x, cur_y), room_button_width, room_button_height, Colors.BLACK_BUTTON,
-                               " ".join(list(room["name"])), text_color=Colors.WHITE, func=self.connect_to_room,
-                               args=(room,))
+            self.create_button(
+                (cur_x, cur_y),
+                room_button_width,
+                room_button_height,
+                Colors.BLACK_BUTTON,
+                " ".join(list(room["name"])),
+                text_color=Colors.WHITE,
+                func=self.connect_to_room,
+                args=(room,),
+            )
             last_button = list(self.buttons.keys())[-1]
-            last_button.get_middle_text_position = last_button.get_mid_left_text_position
-            self.create_button((cur_x + room_button_width - player_button_width - 20, cur_y), player_button_width,
-                               player_button_height,
-                               Colors.BLACK_BUTTON, str(room["player_num"]), text_size=70, text_color=Colors.WHITE,
-                               text_only=True)
+            last_button.get_middle_text_position = (
+                last_button.get_mid_left_text_position
+            )
+            self.create_button(
+                (cur_x + room_button_width - player_button_width - 20, cur_y),
+                player_button_width,
+                player_button_height,
+                Colors.BLACK_BUTTON,
+                str(room["player_num"]),
+                text_size=70,
+                text_color=Colors.WHITE,
+                text_only=True,
+            )
             cur_y += room_button_height + 10
 
     def old_multiplayer(self):
@@ -717,7 +960,7 @@ class MainMenu(MenuScreen):
             200,
             Colors.BLACK_BUTTON,
             cur_button_text,
-#            func=self.multiplayer_continue
+            #            func=self.multiplayer_continue
         )
         self.display_buttons()
         self.display_textboxes()
@@ -733,9 +976,16 @@ class MainMenu(MenuScreen):
         function_button_width = 75
         function_button_height = 75
         # Create the back button
-        self.create_button((self.width - function_button_width, 0), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, 0),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         self.create_button(
             (self.width // 2 - 257, self.height // 8 - 85),
@@ -744,7 +994,7 @@ class MainMenu(MenuScreen):
             Colors.YELLOW_BUTTON,
             "20L",
             func=self.start_game,
-            args=("sprint", 20)
+            args=("sprint", 20),
         )
         self.create_button(
             (self.width // 2 - 257, self.height // 8 * 3 - 81),
@@ -753,7 +1003,7 @@ class MainMenu(MenuScreen):
             Colors.YELLOW_BUTTON,
             "40L",
             func=self.start_game,
-            args=("sprint", 40)
+            args=("sprint", 40),
         )
         self.create_button(
             (self.width // 2 - 257, self.height // 8 * 5 - 86),
@@ -762,7 +1012,7 @@ class MainMenu(MenuScreen):
             Colors.YELLOW_BUTTON,
             "100L",
             func=self.start_game,
-            args=("sprint", 100)
+            args=("sprint", 100),
         )
         self.create_button(
             (self.width // 2 - 257, self.height // 8 * 7 - 85),
@@ -771,7 +1021,7 @@ class MainMenu(MenuScreen):
             Colors.YELLOW_BUTTON,
             "1000L",
             func=self.start_game,
-            args=("sprint", 1000)
+            args=("sprint", 1000),
         )
         self.display_buttons()
         pygame.display.flip()
@@ -786,17 +1036,32 @@ class MainMenu(MenuScreen):
         function_button_width = 75
         function_button_height = 75
         # Create the back button
-        self.create_button((self.width - function_button_width, 0), function_button_width, function_button_height,
-                           Colors.BLACK_BUTTON, "->", 55,
-                           Colors.WHITE, func=self.quit)
+        self.create_button(
+            (self.width - function_button_width, 0),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            55,
+            Colors.WHITE,
+            func=self.quit,
+        )
 
         title_width = self.width
         title_height = 200
         cur_x = 0
         cur_y = 0
         # Create the screen title
-        self.create_button((cur_x, cur_y), title_width, title_height, Colors.BLACK_BUTTON, "CHOOSE A STARTING LEVEL", 70,
-                           Colors.WHITE, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "CHOOSE A STARTING LEVEL",
+            70,
+            Colors.WHITE,
+            text_only=True,
+        )
 
         button_height = 200
         button_width = 200
@@ -811,7 +1076,7 @@ class MainMenu(MenuScreen):
                 Colors.DEEP_BLUE_BUTTON,
                 str(i),
                 func=self.start_game,
-                args=("marathon", i)
+                args=("marathon", i),
             )
             if i % 2 == 0:
                 btn.color = btn.get_clicked_color(btn.color)
@@ -825,7 +1090,7 @@ class MainMenu(MenuScreen):
                 Colors.DEEP_BLUE_BUTTON,
                 str(i + 5),
                 func=self.start_game,
-                args=("marathon", i + 5)
+                args=("marathon", i + 5),
             )
             if i % 2 == 1:
                 btn.color = btn.get_clicked_color(btn.color)
@@ -838,5 +1103,13 @@ class MainMenu(MenuScreen):
         self.running = False
         self.buttons = {}
         self.reset_textboxes()
-        game = TetrisGame(500 + 200, 1000, mode, self.server_communicator, self.user["username"], 75, lines_or_level=int(lines_or_level))
+        game = TetrisGame(
+            500 + 200,
+            1000,
+            mode,
+            self.server_communicator,
+            self.user["username"],
+            75,
+            lines_or_level=int(lines_or_level),
+        )
         game.run()

@@ -118,7 +118,7 @@ class WelcomeScreen(MenuScreen):
             Colors.WHITE_BUTTON,
             "Password",
             text_color=Colors.GREY,
-            is_pass=True
+            is_pass=True,
         )
 
         # Forgot your password button
@@ -172,7 +172,14 @@ class WelcomeScreen(MenuScreen):
         if user:
             self.running = False
             new_outer_ip = self.get_outer_ip()
-            threading.Thread(target=self.server_communicator.on_connection, args=(user["username"], new_outer_ip,), daemon=True).start()
+            threading.Thread(
+                target=self.server_communicator.on_connection,
+                args=(
+                    user["username"],
+                    new_outer_ip,
+                ),
+                daemon=True,
+            ).start()
             MainMenu(
                 user,
                 self.server_communicator,
@@ -246,7 +253,7 @@ class WelcomeScreen(MenuScreen):
             Colors.WHITE_BUTTON,
             "Password",
             text_color=Colors.GREY,
-            is_pass=True
+            is_pass=True,
         )
 
         # Continue button
@@ -305,14 +312,16 @@ class WelcomeScreen(MenuScreen):
             user_post = DBPostCreator.create_user_post(
                 user_number, email, username, password, self.get_outer_ip()
             )
-            threading.Thread(target=self.server_communicator.create_user(user_post), daemon=True).start()
+            threading.Thread(
+                target=self.server_communicator.create_user(user_post), daemon=True
+            ).start()
             MainMenu(
                 user_post,
                 self.server_communicator,
                 self.width,
                 self.height,
                 self.refresh_rate,
-                self.background_path
+                self.background_path,
             ).run()
             pygame.quit()
 

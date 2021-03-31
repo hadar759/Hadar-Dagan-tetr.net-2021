@@ -39,15 +39,21 @@ class MenuScreen:
         transparent: bool = False,
         func: callable = None,
         text_only: bool = False,
-        args: Tuple = ()
+        args: Tuple = (),
     ):
         """Creates a new button and appends it to the button dict"""
         button = Button(
-                starting_pixel, width, height, color, text, text_size, text_color, transparent, text_only
-            )
-        self.buttons[
-            button
-        ] = (func, args)
+            starting_pixel,
+            width,
+            height,
+            color,
+            text,
+            text_size,
+            text_color,
+            transparent,
+            text_only,
+        )
+        self.buttons[button] = (func, args)
 
         return button
 
@@ -62,24 +68,22 @@ class MenuScreen:
         text_color: Tuple[int, int, int] = Colors.WHITE,
         transparent: bool = False,
         text_only: bool = False,
-        is_pass: bool = False
+        is_pass: bool = False,
     ) -> TextBox:
         """Creates a new textbox and appends it to the textbox dict"""
         box = TextBox(
-                starting_pixel,
-                width,
-                height,
-                color,
-                text,
-                text_size,
-                text_color,
-                transparent,
-                text_only,
-                is_pass
-            )
-        self.textboxes[
-            box
-        ] = ""
+            starting_pixel,
+            width,
+            height,
+            color,
+            text,
+            text_size,
+            text_color,
+            transparent,
+            text_only,
+            is_pass,
+        )
+        self.textboxes[box] = ""
         return box
 
     def create_popup_button(self, text):
@@ -96,7 +100,7 @@ class MenuScreen:
             text,
             38,
             text_color=Colors.RED,
-            func=self.buttons.popitem
+            func=self.buttons.popitem,
         )
 
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
@@ -159,7 +163,9 @@ class MenuScreen:
                 y = textbox.starting_y
                 if not textbox.text_only:
                     textbox.color_button(self.screen)
-                self.textboxes[textbox] = textbox.show_text_in_textbox(self.textboxes[textbox], self.screen)
+                self.textboxes[textbox] = textbox.show_text_in_textbox(
+                    self.textboxes[textbox], self.screen
+                )
 
     def show_text_in_buttons(self):
         """Display the button's text for each of the buttons we have"""

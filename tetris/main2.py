@@ -29,7 +29,6 @@ def main():
     )
     menu.run()
 
-
     """user32 = ctypes.windll.user32
     # Get the width and height of the screen
     width = user32.GetSystemMetrics(0)

@@ -17,10 +17,18 @@ class TextBox(Button):
         text_color: Tuple[int, int, int] = Colors.WHITE,
         transparent: bool = False,
         text_only: bool = False,
-        is_pass: bool = False
+        is_pass: bool = False,
     ):
         super().__init__(
-            starting_pixel, width, height, color, text, text_size, text_color, transparent, text_only
+            starting_pixel,
+            width,
+            height,
+            color,
+            text,
+            text_size,
+            text_color,
+            transparent,
+            text_only,
         )
         self.text_cursor_ticks = pygame.time.get_ticks()
         self.active = False

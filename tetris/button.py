@@ -40,7 +40,9 @@ class Button:
             and self.starting_y < pixel[1] < self.starting_y + self.height
         )
 
-    def render_button_text(self, inp: str = None, font_size: int = None, text_color: Tuple = None):
+    def render_button_text(
+        self, inp: str = None, font_size: int = None, text_color: Tuple = None
+    ):
         """Renders a text given it's font and size"""
         if not inp:
             inp = self.text
@@ -49,9 +51,9 @@ class Button:
         if not text_color:
             text_color = self.text_color
         if inp.isascii():
-            return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
-                inp, True, text_color
-            )
+            return pygame.font.Font(
+                "./resources/joystix-monospace.ttf", font_size
+            ).render(inp, True, text_color)
         else:
             return pygame.font.Font("./resources/seguisym.ttf", font_size).render(
                 inp, True, text_color
@@ -74,7 +76,10 @@ class Button:
         return self.starting_x, self.starting_y
 
     def get_mid_left_text_position(self):
-        return self.starting_x, max(0, self.starting_y + self.height // 2 - self.rendered_text.get_rect()[3] // 2)
+        return self.starting_x, max(
+            0,
+            self.starting_y + self.height // 2 - self.rendered_text.get_rect()[3] // 2,
+        )
 
     def clicked(self, screen):
         # Do not show the button
@@ -95,7 +100,10 @@ class Button:
 
     def get_clicked_color(self, button_color):
         """Returns the button color if it were to be clicked"""
-        return {key: tuple([min(255, val + 15) for val in button_color[key]]) for key in button_color}
+        return {
+            key: tuple([min(255, val + 15) for val in button_color[key]])
+            for key in button_color
+        }
 
     def show_text_in_button(self, screen):
         """Shows text inside the button"""
@@ -105,33 +113,40 @@ class Button:
         """Colors the button in on the screen"""
         border_size = 10
         # Fill in the main button
-        screen.fill(self.color["button"], ((self.starting_x + border_size, self.starting_y + border_size),
-                                           (self.width - border_size, self.height - border_size)))
+        screen.fill(
+            self.color["button"],
+            (
+                (self.starting_x + border_size, self.starting_y + border_size),
+                (self.width - border_size, self.height - border_size),
+            ),
+        )
         # Make it 3d
         for i in range(border_size):
             # Create the upper side
             screen.fill(
                 self.color["upper"],
-                ((self.starting_x + i, self.starting_y + i),
-                 (self.width - i * 2, 1))
+                ((self.starting_x + i, self.starting_y + i), (self.width - i * 2, 1)),
             )
 
             # Create the left and right sides
             screen.fill(
                 self.color["side"],
-                ((self.starting_x + i, self.starting_y + i),
-                 (1, self.height - i * 2))
+                ((self.starting_x + i, self.starting_y + i), (1, self.height - i * 2)),
             )
 
             screen.fill(
                 self.color["side"],
-                ((self.starting_x + self.width - i, self.starting_y + i),
-                 (1, self.height - i * 2))
+                (
+                    (self.starting_x + self.width - i, self.starting_y + i),
+                    (1, self.height - i * 2),
+                ),
             )
 
             # Create the bottom
             screen.fill(
                 self.color["bottom"],
-                ((self.starting_x + i, self.starting_y + self.height - i),
-                 (self.width - i * 2, 1))
+                (
+                    (self.starting_x + i, self.starting_y + self.height - i),
+                    (self.width - i * 2, 1),
+                ),
             )

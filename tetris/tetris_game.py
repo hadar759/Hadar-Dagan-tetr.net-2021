@@ -644,14 +644,31 @@ class TetrisGame(Game):
             else:
                 # For socket cleanup
                 self.server_socket.send("random data".encode())
-            threading.Thread(target=self.server_communicator.add_game, args=(self.username, win,)).start()
-            threading.Thread(target=self.server_communicator.update_apm, args=(self.username, self.total_attacks, game_time,)).start()
+            threading.Thread(
+                target=self.server_communicator.add_game,
+                args=(
+                    self.username,
+                    win,
+                ),
+            ).start()
+            threading.Thread(
+                target=self.server_communicator.update_apm,
+                args=(
+                    self.username,
+                    self.total_attacks,
+                    game_time,
+                ),
+            ).start()
 
-        elif self.mode == "sprint"  and win:
-            new_top = self.server_communicator.update_sprint(self.username, game_time, self.lines_to_finish)
+        elif self.mode == "sprint" and win:
+            new_top = self.server_communicator.update_sprint(
+                self.username, game_time, self.lines_to_finish
+            )
 
         elif self.mode == "marathon":
-            new_top = self.server_communicator.update_marathon(self.username, self.score)
+            new_top = self.server_communicator.update_marathon(
+                self.username, self.score
+            )
 
         self.running = False
 
@@ -697,7 +714,10 @@ class TetrisGame(Game):
             self.screen.blit(self.render_input(50, str(self.score)), (550, 75))
             self.screen.blit(self.render_input(50, f"LEVEL:{self.level}"), (300, 150))
             if new_top:
-                self.screen.blit(self.render_input(70, "NEW HIGHSCORE!!"), (self.width // 2 - 750, self.height // 2 - 200))
+                self.screen.blit(
+                    self.render_input(70, "NEW HIGHSCORE!!"),
+                    (self.width // 2 - 750, self.height // 2 - 200),
+                )
         elif self.mode == "sprint":
             rendered_time_text = self.render_input(50, "TIME:")
             self.screen.blit(rendered_time_text, (300, 75))
@@ -708,7 +728,10 @@ class TetrisGame(Game):
                 (530 + rendered_time.get_rect()[2], 75),
             )
             if new_top:
-                self.screen.blit(self.render_input(70, "NEW FASTEST TIME"), (self.width // 2 - 800, self.height // 2 - 200))
+                self.screen.blit(
+                    self.render_input(70, "NEW FASTEST TIME"),
+                    (self.width // 2 - 800, self.height // 2 - 200),
+                )
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds

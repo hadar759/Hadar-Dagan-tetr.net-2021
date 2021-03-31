@@ -13,7 +13,16 @@ from server_communicator import ServerCommunicator
 class GameServer:
     SERVER_PORT = 44444
 
-    def __init__(self, server_ip: str, default: bool, room_name: str, min_apm: int = 0, max_apm: int = 999, private: bool = False, admin=""):
+    def __init__(
+        self,
+        server_ip: str,
+        default: bool,
+        room_name: str,
+        min_apm: int = 0,
+        max_apm: int = 999,
+        private: bool = False,
+        admin="",
+    ):
         self.client_list: List[socket.socket] = []
         self.players = {}
         self.players_wins = {}
@@ -30,8 +39,16 @@ class GameServer:
 
         # Add the room to the database
         self.server_communicator.create_room(
-            DBPostCreator.create_room_post(self.server_communicator.estimated_document_count(),
-                                           default, room_name, server_ip, min_apm, max_apm, private))
+            DBPostCreator.create_room_post(
+                self.server_communicator.estimated_document_count(),
+                default,
+                room_name,
+                server_ip,
+                min_apm,
+                max_apm,
+                private,
+            )
+        )
 
     def run(self):
         self.server_socket.bind((self.server_ip, self.SERVER_PORT))
@@ -50,7 +67,13 @@ class GameServer:
                 time_at_start = str(time.time())
                 # Notify each client of game start
                 for client in self.ready_clients:
-                    threading.Thread(target=self.notify_client_of_game_start, args=(client, time_at_start,)).start()
+                    threading.Thread(
+                        target=self.notify_client_of_game_start,
+                        args=(
+                            client,
+                            time_at_start,
+                        ),
+                    ).start()
                 # Start the game
                 self.game_running = True
             # Pass information between the players
@@ -112,7 +135,7 @@ class GameServer:
 
     def handle_message(self, data, client):
         # The client pressed the ready button
-        if data[0:len("Ready%")] == "Ready%":
+        if data[0 : len("Ready%")] == "Ready%":
             if client in self.ready_clients:
                 self.ready_clients.remove(client)
             else:
@@ -187,7 +210,9 @@ class GameServer:
 
     def update_player_num(self):
         print(len(self.client_list))
-        self.server_communicator.update_player_num(self.server_ip, len(self.client_list))
+        self.server_communicator.update_player_num(
+            self.server_ip, len(self.client_list)
+        )
 
 
 def get_inner_ip():
@@ -199,5 +224,5 @@ if __name__ == "__main__":
     print("server starts on", ip)
     server = GameServer(ip, True, "test room")
     # Add the room to the database
-    #server.server_communicator.create_room(DBPostCreator.create_db_post(ip))
+    # server.server_communicator.create_room(DBPostCreator.create_db_post(ip))
     server.run()

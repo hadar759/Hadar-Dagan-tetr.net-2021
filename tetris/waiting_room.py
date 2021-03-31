@@ -18,6 +18,7 @@ from server_communicator import ServerCommunicator
 
 class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
+
     LETTER_SIZE = 15
     GAME_PORT = 44444
 
@@ -129,9 +130,11 @@ class WaitingRoom(MenuScreen):
         foe_name = list(self.textboxes.values())[0]
 
         # Entered invalid foe name
-        if foe_name == self.user[
-            "username"
-        ] or foe_name in self.players or not self.server_communicator.username_exists(foe_name):
+        if (
+            foe_name == self.user["username"]
+            or foe_name in self.players
+            or not self.server_communicator.username_exists(foe_name)
+        ):
             self.create_popup_button(r"Invalid Username Entered")
 
         elif self.server_communicator.is_online(foe_name):
@@ -146,7 +149,14 @@ class WaitingRoom(MenuScreen):
         self.textboxes[(list(self.textboxes.keys()))[0]] = ""
 
     def start_client_game(self, server_ip, bag_seed):
-        client_game = TetrisGame(500 + 200, 1000, "multiplayer", self.server_communicator, self.user["username"], 75)
+        client_game = TetrisGame(
+            500 + 200,
+            1000,
+            "multiplayer",
+            self.server_communicator,
+            self.user["username"],
+            75,
+        )
         client_game.set_bag_seed(bag_seed)
         client = TetrisClient(client_game, server_ip, self.sock)
         client.run()
@@ -167,7 +177,7 @@ class WaitingRoom(MenuScreen):
                 self.start_args = (self.sock.getpeername()[0], float(bag_seed))
                 break
             # Someone readied
-            elif msg[:len("Ready%")] == "Ready%":
+            elif msg[: len("Ready%")] == "Ready%":
                 # Only the username
                 msg = msg.replace("Ready%", "")
                 if msg != self.user["username"]:
@@ -185,8 +195,12 @@ class WaitingRoom(MenuScreen):
                 if msg[0] == "!":
                     self.players.pop(msg[1:])
                     wins_button = self.find_button_by_text("Wins")
-                    self.buttons = {button: self.buttons[button] for button in self.buttons if
-                                    button.starting_x >= wins_button.starting_x + 80 or button.starting_y <= wins_button.starting_y}
+                    self.buttons = {
+                        button: self.buttons[button]
+                        for button in self.buttons
+                        if button.starting_x >= wins_button.starting_x + 80
+                        or button.starting_y <= wins_button.starting_y
+                    }
                     for button in self.buttons:
                         print(button.text, button.starting_y, button.starting_x)
                     self.display_players()
@@ -199,8 +213,7 @@ class WaitingRoom(MenuScreen):
                     self.display_players()
                     msg = f"{msg} has entered the room"
 
-            #last_button = list(self.buttons.keys())[-1]
-
+            # last_button = list(self.buttons.keys())[-1]
 
             if not self.last_message:
                 ref_button = self.find_button_by_text("Chat")
@@ -218,8 +231,9 @@ class WaitingRoom(MenuScreen):
             messages = []
             sentence = ""
             for word in msg.split(" "):
-                rendered_sentence = pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
-                    sentence + word, True, Colors.WHITE_BUTTON)
+                rendered_sentence = pygame.font.Font(
+                    "./resources/joystix-monospace.ttf", font_size
+                ).render(sentence + word, True, Colors.WHITE_BUTTON)
                 if rendered_sentence.get_rect()[2] > button_width:
                     messages.append(sentence)
                     sentence = ""
@@ -227,15 +241,28 @@ class WaitingRoom(MenuScreen):
             messages.append(sentence.strip())
             for msg in messages:
                 cur_y += button_height
-                self.last_message = self.create_button((cur_x, cur_y), button_width, button_height, Colors.BLACK_BUTTON, msg + " ", font_size,
-                                                       text_only=True)
+                self.last_message = self.create_button(
+                    (cur_x, cur_y),
+                    button_width,
+                    button_height,
+                    Colors.BLACK_BUTTON,
+                    msg + " ",
+                    font_size,
+                    text_only=True,
+                )
             last_button = list(self.buttons.keys())[-1]
             last_button.get_middle_text_position = last_button.get_left_text_position
 
-            pixels_out_of_bound = last_button.starting_y + button_height - (self.height - 300)
+            pixels_out_of_bound = (
+                last_button.starting_y + button_height - (self.height - 300)
+            )
             # Message appears out of bounds
             if pixels_out_of_bound >= 0:
-                messages = [button for button in self.buttons.keys() if ":" in button.text or "has joined" in button.text]
+                messages = [
+                    button
+                    for button in self.buttons.keys()
+                    if ":" in button.text or "has joined" in button.text
+                ]
                 num_to_remove = 0
                 for msg in messages:
                     if msg.starting_y - messages[0].starting_y > pixels_out_of_bound:
@@ -265,11 +292,20 @@ class WaitingRoom(MenuScreen):
                 message_index += 1
 
             # Remove the message
-            if message_index <= num_to_remove and last_message and not button.text.isdigit() and button.text_only:
+            if (
+                message_index <= num_to_remove
+                and last_message
+                and not button.text.isdigit()
+                and button.text_only
+            ):
                 messages_to_be_removed.append(button)
 
             # We removed enough, move the message up
-            if message_index > num_to_remove and not button.text.isdigit() and button.text_only:
+            if (
+                message_index > num_to_remove
+                and not button.text.isdigit()
+                and button.text_only
+            ):
                 button.starting_y = button.starting_y - height_difference
 
         # Remove the messages from the screen
@@ -312,7 +348,7 @@ class WaitingRoom(MenuScreen):
         if text_length > textbox.width - self.LETTER_SIZE * 2:
             dif = text_length - textbox.width + self.LETTER_SIZE * 2
             # Remove all characters which slipped
-            self.textboxes[textbox] = self.textboxes[textbox][dif // self.LETTER_SIZE:]
+            self.textboxes[textbox] = self.textboxes[textbox][dif // self.LETTER_SIZE :]
         # Textbox resetted, reset the message as well
         if self.textboxes[textbox] == textbox.text or not self.textboxes[textbox]:
             self.message = ""
@@ -324,7 +360,9 @@ class WaitingRoom(MenuScreen):
         textbox_len = len(self.textboxes[textbox])
         # Not all of the text is displayed atm, display some of the older text
         if len(self.message) > textbox_len:
-            self.textboxes[textbox] = self.message[-textbox_len - 1] + self.textboxes[textbox]
+            self.textboxes[textbox] = (
+                self.message[-textbox_len - 1] + self.textboxes[textbox]
+            )
         # Delete from message as well
         self.message = self.message[:-1]
         self.textboxes[textbox] = self.textboxes[textbox][:-1]
@@ -339,21 +377,49 @@ class WaitingRoom(MenuScreen):
         cur_x = 0
         cur_y = 0
         # Create the players label
-        self.create_button((cur_x, cur_y), button_width, button_height, Colors.BLACK_BUTTON, "Players", text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            button_width,
+            button_height,
+            Colors.BLACK_BUTTON,
+            "Players",
+            text_only=True,
+        )
         cur_x += button_width
 
         # Create the room name label
-        self.create_button((cur_x, cur_y), button_width * 2, button_height, Colors.BLACK_BUTTON, self.room_name, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            button_width * 2,
+            button_height,
+            Colors.BLACK_BUTTON,
+            self.room_name,
+            text_only=True,
+        )
         cur_x += button_width * 2
 
         # Create the chat label
-        self.create_button((cur_x - 20, cur_y), button_width, button_height, Colors.BLACK_BUTTON, "Chat", text_only=True)
+        self.create_button(
+            (cur_x - 20, cur_y),
+            button_width,
+            button_height,
+            Colors.BLACK_BUTTON,
+            "Chat",
+            text_only=True,
+        )
         cur_x = 0
         cur_y += button_height - 110
 
         # Create the name label
-        self.create_button((cur_x, cur_y), button_width // 3 * 2 + 25, button_height // 2 - 10, Colors.BLACK_BUTTON, "Name",
-                           text_size=45, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            button_width // 3 * 2 + 25,
+            button_height // 2 - 10,
+            Colors.BLACK_BUTTON,
+            "Name",
+            text_size=45,
+            text_only=True,
+        )
 
         player_name_width = 330
         player_name_height = 100
@@ -363,43 +429,93 @@ class WaitingRoom(MenuScreen):
         y_offset = -30
         player_win_width = 50
         player_win_height = 50
-        self.create_player_buttons(player_x, x_offset, player_y, y_offset,
-                                   player_name_width, player_name_height, player_win_width, player_win_height)
+        self.create_player_buttons(
+            player_x,
+            x_offset,
+            player_y,
+            y_offset,
+            player_name_width,
+            player_name_height,
+            player_win_width,
+            player_win_height,
+        )
 
         cur_x += button_width // 3 * 2
 
         # Create the wins label
-        self.create_button((cur_x, cur_y), button_width // 3 + 50, button_height // 2 - 10, Colors.BLACK_BUTTON, "Wins",
-                           text_size=30, text_only=True)
+        self.create_button(
+            (cur_x, cur_y),
+            button_width // 3 + 50,
+            button_height // 2 - 10,
+            Colors.BLACK_BUTTON,
+            "Wins",
+            text_size=30,
+            text_only=True,
+        )
 
         button_width = math.floor(button_width * 1.2)
         button_height = button_height - 50
         cur_x = self.width // 2 - button_width // 2
         cur_y = self.height - button_height
-        self.create_button((cur_x, cur_y), button_width, button_height, Colors.RED, "Ready?",
-                           text_size=45, func=self.pressed_ready)
+        self.create_button(
+            (cur_x, cur_y),
+            button_width,
+            button_height,
+            Colors.RED,
+            "Ready?",
+            text_size=45,
+            func=self.pressed_ready,
+        )
 
         challenge_width = 500
         challenge_height = 100
         cur_x = self.width // 2 - challenge_width // 2
         cur_y = self.height // 2 - challenge_height * 2
-        self.create_textbox((cur_x, cur_y), challenge_width, challenge_height, Colors.WHITE_BUTTON, "Opponent name", text_color=Colors.BLACK_BUTTON)
+        self.create_textbox(
+            (cur_x, cur_y),
+            challenge_width,
+            challenge_height,
+            Colors.WHITE_BUTTON,
+            "Opponent name",
+            text_color=Colors.BLACK_BUTTON,
+        )
         cur_y += challenge_height + 20
 
-        self.create_button((cur_x + challenge_width // 4, cur_y), challenge_width // 2, challenge_height, Colors.BLACK_BUTTON, "Invite", func=threading.Thread(target=self.challenge_player).start)
+        self.create_button(
+            (cur_x + challenge_width // 4, cur_y),
+            challenge_width // 2,
+            challenge_height,
+            Colors.BLACK_BUTTON,
+            "Invite",
+            func=threading.Thread(target=self.challenge_player).start,
+        )
 
         textbox_width = 365
         textbox_height = 50
         cur_x = self.width - textbox_width
         cur_y = self.height - textbox_height
-        self.create_textbox((cur_x, cur_y), textbox_width, textbox_height, Colors.BLACK_BUTTON, "message...", 20, Colors.WHITE_BUTTON)
+        self.create_textbox(
+            (cur_x, cur_y),
+            textbox_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "message...",
+            20,
+            Colors.WHITE_BUTTON,
+        )
 
         back_arrow_width = 60
         back_arrow_height = 50
         back_arrow_x = self.width - back_arrow_width - 10
         back_arrow_y = 0
-        self.create_button((back_arrow_x, back_arrow_y), back_arrow_width, back_arrow_height, Colors.BLACK_BUTTON, "->",
-                           func=self.quit)
+        self.create_button(
+            (back_arrow_x, back_arrow_y),
+            back_arrow_width,
+            back_arrow_height,
+            Colors.BLACK_BUTTON,
+            "->",
+            func=self.quit,
+        )
 
     def quit(self):
         self.sock.send("disconnect".encode())
@@ -415,11 +531,28 @@ class WaitingRoom(MenuScreen):
         y_offset = -30
         player_win_width = 50
         player_win_height = 50
-        self.create_player_buttons(player_x, x_offset, player_y, y_offset,
-                                   player_name_width, player_name_height, player_win_width, player_win_height)
+        self.create_player_buttons(
+            player_x,
+            x_offset,
+            player_y,
+            y_offset,
+            player_name_width,
+            player_name_height,
+            player_win_width,
+            player_win_height,
+        )
 
-    def create_player_buttons(self, player_x, x_offset, player_y, y_offset, player_name_width, player_name_height,
-                              player_win_width, player_win_height):
+    def create_player_buttons(
+        self,
+        player_x,
+        x_offset,
+        player_y,
+        y_offset,
+        player_name_width,
+        player_name_height,
+        player_win_width,
+        player_win_height,
+    ):
         name_size = 45
         for player_name in self.players:
             # Check if a button for the player already exists
@@ -429,16 +562,24 @@ class WaitingRoom(MenuScreen):
             if not player_button:
                 if len(player_name) > 8:
                     name_size -= (len(player_name) - 8) * 3 + 1
-                self.create_button((player_x + x_offset, player_y + y_offset), player_name_width, player_name_height,
-                                   Colors.RED,
-                                   player_name,
-                                   text_size=name_size)
+                self.create_button(
+                    (player_x + x_offset, player_y + y_offset),
+                    player_name_width,
+                    player_name_height,
+                    Colors.RED,
+                    player_name,
+                    text_size=name_size,
+                )
 
-                self.create_button((player_x + x_offset + player_name_width + 40, player_y - 10), player_win_width,
-                                   player_win_height,
-                                   Colors.BLACK_BUTTON,
-                                   str(self.players[player_name]),
-                                   text_size=45, text_only=True)
+                self.create_button(
+                    (player_x + x_offset + player_name_width + 40, player_y - 10),
+                    player_win_width,
+                    player_win_height,
+                    Colors.BLACK_BUTTON,
+                    str(self.players[player_name]),
+                    text_size=45,
+                    text_only=True,
+                )
             player_y += player_name_height
 
     def pressed_ready(self, username: str = ""):
@@ -472,7 +613,11 @@ class WaitingRoom(MenuScreen):
                 break
 
         # Paint the player button
-        [button for button in self.buttons.keys() if button.text == self.user["username"]][0].color = color
+        [
+            button
+            for button in self.buttons.keys()
+            if button.text == self.user["username"]
+        ][0].color = color
 
         return True
 
@@ -481,32 +626,61 @@ class WaitingRoom(MenuScreen):
         cur_x = cur_button.starting_x + cur_button.width
         cur_y = 0
         x_offset = 15
-        pygame.draw.line(self.screen, Colors.BLACK_BUTTON, (cur_x + x_offset, cur_y), (cur_x + x_offset, self.height), width=10)
+        pygame.draw.line(
+            self.screen,
+            Colors.BLACK_BUTTON,
+            (cur_x + x_offset, cur_y),
+            (cur_x + x_offset, self.height),
+            width=10,
+        )
 
         cur_button = self.find_button_by_text(self.room_name)
         cur_x += cur_button.width
         x_offset = 18
-        pygame.draw.line(self.screen, Colors.BLACK_BUTTON, (cur_x + x_offset, cur_y), (cur_x + x_offset, self.height), width=10)
+        pygame.draw.line(
+            self.screen,
+            Colors.BLACK_BUTTON,
+            (cur_x + x_offset, cur_y),
+            (cur_x + x_offset, self.height),
+            width=10,
+        )
 
         cur_button = self.find_button_by_text("Chat")
         cur_x = 0
         cur_y += cur_button.height
-        pygame.draw.line(self.screen, Colors.BLACK_BUTTON, (cur_x, cur_y), (cur_x + cur_button.width + 15, cur_y), width=10)
+        pygame.draw.line(
+            self.screen,
+            Colors.BLACK_BUTTON,
+            (cur_x, cur_y),
+            (cur_x + cur_button.width + 15, cur_y),
+            width=10,
+        )
 
         cur_button = self.find_button_by_text("Players")
         cur_x = cur_button.starting_x
         cur_y = cur_button.height
         x_offset = 0
-        y_offset = - cur_button.height // 3 + 15
-        pygame.draw.line(self.screen, Colors.BLACK_BUTTON, (cur_x + x_offset, cur_y + y_offset), (self.width, cur_y + y_offset), width=10)
+        y_offset = -cur_button.height // 3 + 15
+        pygame.draw.line(
+            self.screen,
+            Colors.BLACK_BUTTON,
+            (cur_x + x_offset, cur_y + y_offset),
+            (self.width, cur_y + y_offset),
+            width=10,
+        )
 
         cur_button = self.find_button_by_text("Wins")
         cur_x = cur_button.starting_x
         cur_y = cur_button.starting_y
         x_offset = 34
         y_offset = 31
-        pygame.draw.line(self.screen, Colors.BLACK_BUTTON, (cur_x + x_offset, cur_y + y_offset),
-                         (cur_x + x_offset, self.height), width=10)
+        pygame.draw.line(
+            self.screen,
+            Colors.BLACK_BUTTON,
+            (cur_x + x_offset, cur_y + y_offset),
+            (cur_x + x_offset, self.height),
+            width=10,
+        )
 
         for player_name in self.players:
             cur_button = self.find_button_by_text(player_name)
@@ -515,7 +689,13 @@ class WaitingRoom(MenuScreen):
                 continue
             cur_x = 0
             cur_y = cur_button.starting_y + 100
-            pygame.draw.line(self.screen, Colors.BLACK_BUTTON, (cur_x, cur_y), (cur_x + 460, cur_y), width=10)
+            pygame.draw.line(
+                self.screen,
+                Colors.BLACK_BUTTON,
+                (cur_x, cur_y),
+                (cur_x + 460, cur_y),
+                width=10,
+            )
 
     def find_button_by_text(self, text):
         for button in self.buttons:

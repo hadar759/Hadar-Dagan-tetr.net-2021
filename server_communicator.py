@@ -21,13 +21,17 @@ class ServerCommunicator:
         return json.loads(get(f"{self.SERVER_DOMAIN}/users/marathons").content)
 
     def get_sprint_leaderboard(self, line_num):
-        return json.loads(get(f"{self.SERVER_DOMAIN}/users/sprints?line_num={line_num}").content)
+        return json.loads(
+            get(f"{self.SERVER_DOMAIN}/users/sprints?line_num={line_num}").content
+        )
 
     def remove_room(self, room_name):
         post(f"{self.SERVER_DOMAIN}/users/rooms/delete?room_name={room_name}")
 
     def update_player_num(self, ip, player_num):
-        post(f"{self.SERVER_DOMAIN}/users/rooms/player-num?ip={ip}&player_num={player_num}")
+        post(
+            f"{self.SERVER_DOMAIN}/users/rooms/player-num?ip={ip}&player_num={player_num}"
+        )
 
     def create_room(self, room: Dict):
         """Adds a new room to the database"""
@@ -39,11 +43,21 @@ class ServerCommunicator:
 
     def update_sprint(self, username: str, time: float, line_num: int):
         """Updates the user top sprint time to the given time, and returns true if it's a new fastest time"""
-        return post(f"{self.SERVER_DOMAIN}/users/sprint?username={username}&cur_time={time}&line_num={line_num}").text == "true"
+        return (
+            post(
+                f"{self.SERVER_DOMAIN}/users/sprint?username={username}&cur_time={time}&line_num={line_num}"
+            ).text
+            == "true"
+        )
 
     def update_marathon(self, username: str, score: int):
         """Updates the top marathon score, and returns true if it's a new high score"""
-        return post(f"{self.SERVER_DOMAIN}/users/marathon?username={username}&score={score}").text == "true"
+        return (
+            post(
+                f"{self.SERVER_DOMAIN}/users/marathon?username={username}&score={score}"
+            ).text
+            == "true"
+        )
 
     def update_apm(self, username: str, attacks: int, time: float):
         """Updates the apm for the player"""
@@ -54,9 +68,7 @@ class ServerCommunicator:
     def get_rooms(self):
         """Returns the list containing all active rooms"""
         rooms = get(f"{self.SERVER_DOMAIN}/users/rooms")
-        return (
-            json.loads(rooms.content)
-        )
+        return json.loads(rooms.content)
 
     def on_connection(self, username: str, ip: str):
         post(f"{self.SERVER_DOMAIN}/users/connection?username={username}&ip={ip}")
