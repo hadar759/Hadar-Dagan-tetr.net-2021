@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 
 import pygame
 from tetris.colors import Colors
@@ -10,10 +10,10 @@ class Button:
         starting_pixel: Tuple[int, int],
         width: int,
         height: int,
-        color: int,
+        color: Dict,
         text: pygame.font,
         text_size: int = 45,
-        text_color: Tuple[int, int, int] = Colors.WHITE,
+        text_color: Tuple[int, int, int] = Colors.WHITE_BUTTON,
         transparent: bool = False,
         text_only: bool = False,
     ):
@@ -81,7 +81,9 @@ class Button:
         if self.transparent:
             return
         button_color = self.color
-        self.color = Colors.CLICKED_GREY
+        # Make the button brighter
+        self.color = self.get_clicked_color(button_color)
+
         # Do not color the button in
         if not self.text_only:
             self.color_button(screen)
@@ -91,10 +93,45 @@ class Button:
         # Return the button to it's previous condition
         self.color = button_color
 
+    def get_clicked_color(self, button_color):
+        """Returns the button color if it were to be clicked"""
+        return {key: tuple([min(255, val + 15) for val in button_color[key]]) for key in button_color}
+
     def show_text_in_button(self, screen):
         """Shows text inside the button"""
         screen.blit(self.rendered_text, self.get_middle_text_position())
 
     def color_button(self, screen):
         """Colors the button in on the screen"""
-        screen.fill(self.color, ((self.starting_x, self.starting_y), (self.width, self.height)))
+        border_size = 10
+        # Fill in the main button
+        screen.fill(self.color["button"], ((self.starting_x + border_size, self.starting_y + border_size),
+                                           (self.width - border_size, self.height - border_size)))
+        # Make it 3d
+        for i in range(border_size):
+            # Create the upper side
+            screen.fill(
+                self.color["upper"],
+                ((self.starting_x + i, self.starting_y + i),
+                 (self.width - i * 2, 1))
+            )
+
+            # Create the left and right sides
+            screen.fill(
+                self.color["side"],
+                ((self.starting_x + i, self.starting_y + i),
+                 (1, self.height - i * 2))
+            )
+
+            screen.fill(
+                self.color["side"],
+                ((self.starting_x + self.width - i, self.starting_y + i),
+                 (1, self.height - i * 2))
+            )
+
+            # Create the bottom
+            screen.fill(
+                self.color["bottom"],
+                ((self.starting_x + i, self.starting_y + self.height - i),
+                 (self.width - i * 2, 1))
+            )

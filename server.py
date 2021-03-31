@@ -4,7 +4,7 @@ from typing import Optional, Dict, List
 import time
 
 import uvicorn
-from pymongo import MongoClient
+from pymongo import *
 from fastapi import Depends, FastAPI
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
@@ -20,16 +20,46 @@ def get_collection():
         pass_text
     )
     db = client["tetris"]
-    collection = db["users"]
-    return collection
+    user_collection = db["users"]
+    return user_collection
 
 
 @cbv(router)
 class Server:
     SERVERS_QUERY = {"_id": 0}
+    SPRINTS = {20: 0, 40: 1, 100: 2, 1000: 3}
 
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
+
+    @router.get("/users/apms")
+    def get_apm_leaderboard(self):
+        """Returns all users sorted by highest apm"""
+        users = list(self.user_collection.dependency().find({"type": "user"}, {"_id": 0, "username": 1, "apm": 1}))
+        return [user for user in sorted(users, key=lambda user: user["apm"])[::-1] if user["apm"] != 0]
+
+    @router.get("/users/marathons")
+    def get_marathon_leaderboard(self):
+        """Returns all users sorted by highest marathon score"""
+        users = list(self.user_collection.dependency().find({"type": "user"}, {"_id": 0, "username": 1, "marathon": 1}))
+        # Sort users by marathon score, discard any users without a marathon score
+        return [user for user in sorted(users, key=lambda user: user["marathon"])[::-1] if user["marathon"] != 0]
+
+    @router.get("/users/sprints")
+    def get_sprint_leaderboard(self, line_num):
+        """Returns all users sorted by fastest sprint time"""
+        users = list(self.user_collection.dependency().find({"type": "user"}, {"_id": 0, "username": 1, "sprint": 1}))
+        print(users)
+        line_index = self.SPRINTS[int(line_num)]
+
+        def sprint_filter(user):
+            return self.sprint_time_to_int(user["sprint"][line_index])
+
+        # Sort the users, discard all without a score, and only save the relevant score
+        # This line does too much but I like list comprehensions too much so i'll keep it lol
+        sorted_users = [{"username": user["username"], f"{line_num}l": user["sprint"][line_index]}
+                        for user in sorted(users, key=sprint_filter) if user["sprint"][line_index] != "0"]
+        return sorted_users
 
     @router.post("/users/rooms/delete")
     def delete_room(self, room_name):
@@ -45,7 +75,7 @@ class Server:
 
     @router.get("/users/rooms")
     def get_rooms(self):
-        rooms = self.user_collection.dependency().find({"type": "room"})
+        rooms = self.user_collection.dependency().find({"type": "room"}, {"_id": 0})
         return list(rooms)
 
     @router.post("/users/games")
@@ -60,25 +90,17 @@ class Server:
         self.user_collection.dependency().update_one(filter={"username": username}, update=new_query)
 
     @router.post("/users/sprint")
-    def update_sprint(self, username: str, cur_time: float):
+    def update_sprint(self, username: str, cur_time: float, line_num: int):
         user = self.user_by_username(username)
+        line_index = self.SPRINTS[line_num]
 
-        user_time = user["40l"].split(":")
-        old_time = 0
-        # Time str to secs
-        for i in range(len(user_time)):
-            old_time += float(user_time[-i - 1]) * 60 ** i
+        sprints = user["sprint"]
+        old_time = self.sprint_time_to_int(sprints[line_index])
+        time_str = self.seconds_to_str(cur_time)
 
-        # From seconds to string
-        time_format = "%S"
-        if cur_time >= 60:
-            time_format = "%M:" + time_format
-        if cur_time >= 3600:
-            time_format = "%H:" + time_format
-        time_str = time.strftime(time_format, time.gmtime(cur_time)) + "." + str(cur_time).split(".")[1][:3]
-
-        update_query = {"$set": {"40l": time_str}}
-        # User score a faster best time
+        sprints[line_index] = time_str
+        update_query = {"$set": {"sprint": sprints}}
+        # User scored a faster best time
         if old_time == 0 or cur_time < old_time:
             self.user_collection.dependency().update_one(filter={"username": username}, update=update_query)
             return True
@@ -268,7 +290,25 @@ class Server:
         ) or {}
 
     def user_by_username(self, username):
-        return self.user_collection.dependency().find_one({"username": username})
+        return self.user_collection.dependency().find_one({"username": username}, {"_id": 0})
+
+    @staticmethod
+    def sprint_time_to_int(time_str):
+        time_str = time_str.split(":")
+        old_time = 0
+        # Time str to secs
+        for i in range(len(time_str)):
+            old_time += float(time_str[-i - 1]) * 60 ** i
+        return old_time
+
+    def seconds_to_str(self, seconds):
+        # From seconds to string
+        time_format = "%S"
+        if seconds >= 60:
+            time_format = "%M:" + time_format
+        if seconds >= 3600:
+            time_format = "%H:" + time_format
+        return time.strftime(time_format, time.gmtime(seconds)) + "." + str(seconds).split(".")[1][:3]
 
 
 app.include_router(router)

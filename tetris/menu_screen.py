@@ -32,7 +32,7 @@ class MenuScreen:
         starting_pixel: Tuple[int, int],
         width: int,
         height: int,
-        color: int,
+        color: Dict,
         text: str,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
@@ -92,15 +92,12 @@ class MenuScreen:
             (mid_x_pos, self.height // 2 - button_height),
             button_width,
             button_height,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             text,
             38,
             text_color=Colors.RED,
             func=self.buttons.popitem
         )
-        # TODO change this shitty solution
-
-        # self.actions[text] = self.buttons.pop,
 
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
         textbox_text = self.textboxes[textbox]
@@ -161,16 +158,13 @@ class MenuScreen:
                 x = textbox.starting_x
                 y = textbox.starting_y
                 if not textbox.text_only:
-                    self.screen.fill(
-                        textbox.color, ((x, y), (textbox.width, textbox.height))
-                    )
+                    textbox.color_button(self.screen)
                 self.textboxes[textbox] = textbox.show_text_in_textbox(self.textboxes[textbox], self.screen)
 
     def show_text_in_buttons(self):
         """Display the button's text for each of the buttons we have"""
         for button in self.buttons.keys():
-            self.show_text_in_button(button)
-
+            button.show_text_in_button(self.screen)
 
     def reset_textboxes(self):
         for textbox in self.textboxes:

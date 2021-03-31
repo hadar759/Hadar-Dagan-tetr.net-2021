@@ -19,11 +19,10 @@ def main():
     sock.connect(("10.100.102.17", 44444))
     # Start the main menu
     menu = WaitingRoom({"username": "bruh759"},
-                       True, "Hadar759's room", sock, ServerCommunicator("10.100.102.17", "44444"),
+                       True, "Hadar759's room", sock, ServerCommunicator("10.100.102.17", "8000"),
                        width - 200, height - 100, 75, "resources/tetris_background.jpg"
                        )
     menu.run()"""
-
 
     menu = WelcomeScreen(
         width - 200, height - 100, 75, "resources/tetris_background.jpg"

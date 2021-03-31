@@ -6,13 +6,14 @@ import time
 from select import select
 from typing import List
 
+from db_post_creator import DBPostCreator
 from server_communicator import ServerCommunicator
 
 
 class GameServer:
     SERVER_PORT = 44444
 
-    def __init__(self, server_ip: str, room_name: str, min_apm: int = 0, max_apm: int = 999, private: bool = False, admin=""):
+    def __init__(self, server_ip: str, default: bool, room_name: str, min_apm: int = 0, max_apm: int = 999, private: bool = False, admin=""):
         self.client_list: List[socket.socket] = []
         self.players = {}
         self.players_wins = {}
@@ -28,7 +29,9 @@ class GameServer:
         self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
 
         # Add the room to the database
-        self.server_communicator.create_room(self.create_db_post(room_name, server_ip, min_apm, max_apm, private))
+        self.server_communicator.create_room(
+            DBPostCreator.create_room_post(self.server_communicator.estimated_document_count(),
+                                           default, room_name, server_ip, min_apm, max_apm, private))
 
     def run(self):
         self.server_socket.bind((self.server_ip, self.SERVER_PORT))
@@ -186,19 +189,6 @@ class GameServer:
         print(len(self.client_list))
         self.server_communicator.update_player_num(self.server_ip, len(self.client_list))
 
-    def create_db_post(self, room_name, ip: str, min_apm: int = 0, max_apm: int = 999, private: bool = False) -> dict:
-        """Returns a db post with the given parameters"""
-        return {
-            "_id": self.server_communicator.estimated_document_count(),
-            "type": "room",
-            "name": room_name,
-            "ip": ip,
-            "player_num": 0,
-            "min_apm": min_apm,
-            "max_apm": max_apm,
-            "private": private
-        }
-
 
 def get_inner_ip():
     return socket.gethostbyname(socket.gethostname())
@@ -207,7 +197,7 @@ def get_inner_ip():
 if __name__ == "__main__":
     ip = get_inner_ip()
     print("server starts on", ip)
-    server = GameServer(ip, "test room")
+    server = GameServer(ip, True, "test room")
     # Add the room to the database
-    #server.server_communicator.create_room(server.create_db_post(ip))
+    #server.server_communicator.create_room(DBPostCreator.create_db_post(ip))
     server.run()

@@ -14,6 +14,15 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
+    def get_apm_leaderboard(self):
+        return json.loads(get(f"{self.SERVER_DOMAIN}/users/apms").content)
+
+    def get_marathon_leaderboard(self):
+        return json.loads(get(f"{self.SERVER_DOMAIN}/users/marathons").content)
+
+    def get_sprint_leaderboard(self, line_num):
+        return json.loads(get(f"{self.SERVER_DOMAIN}/users/sprints?line_num={line_num}").content)
+
     def remove_room(self, room_name):
         post(f"{self.SERVER_DOMAIN}/users/rooms/delete?room_name={room_name}")
 
@@ -28,9 +37,9 @@ class ServerCommunicator:
         """Updates the user's stats after a game is played"""
         post(f"{self.SERVER_DOMAIN}/users/games?username={username}&win={win}")
 
-    def update_sprint(self, username: str, time: float):
+    def update_sprint(self, username: str, time: float, line_num: int):
         """Updates the user top sprint time to the given time, and returns true if it's a new fastest time"""
-        return post(f"{self.SERVER_DOMAIN}/users/sprint?username={username}&cur_time={time}").text == "true"
+        return post(f"{self.SERVER_DOMAIN}/users/sprint?username={username}&cur_time={time}&line_num={line_num}").text == "true"
 
     def update_marathon(self, username: str, score: int):
         """Updates the top marathon score, and returns true if it's a new high score"""

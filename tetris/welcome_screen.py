@@ -6,6 +6,7 @@ import pygame
 from requests import get
 import hashlib
 
+from db_post_creator import DBPostCreator
 from server_communicator import ServerCommunicator
 from tetris.colors import Colors
 from tetris.main_menu import MainMenu
@@ -35,7 +36,7 @@ class WelcomeScreen(MenuScreen):
             (self.width // 2 - 258, self.height // 3 - 250),
             504,
             200,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             "login",
             func=self.login,
         )
@@ -45,7 +46,7 @@ class WelcomeScreen(MenuScreen):
             (self.width // 2 - 258, self.height // 3 * 2 - 250),
             504,
             200,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             "register",
             func=self.register_screen,
         )
@@ -104,7 +105,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos, self.height // 5),
             button_width,
             button_height,
-            Colors.WHITE,
+            Colors.WHITE_BUTTON,
             r"Username\Email",
             text_color=Colors.DARK_GREY,
         )
@@ -114,7 +115,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos, self.height // 10 + button_height * 3),
             button_width,
             button_height,
-            Colors.WHITE,
+            Colors.WHITE_BUTTON,
             "Password",
             text_color=Colors.GREY,
             is_pass=True
@@ -125,7 +126,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos + button_width // 4, self.height // 2),
             button_width // 2,
             button_height // 2,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             "Forgot your password?",
             18,
             Colors.BLUE,
@@ -137,7 +138,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos + button_width // 4 - 5, self.height // 2 + button_height),
             button_width // 2,
             button_height,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             "CONTINUE",
             text_color=Colors.WHITE,
             func=self.login_continue,
@@ -196,7 +197,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos, self.height // 2 - button_height),
             button_width,
             button_height,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             text,
             38,
             text_color=Colors.RED,
@@ -222,7 +223,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos, self.height // 10),
             button_width,
             button_height,
-            Colors.WHITE,
+            Colors.WHITE_BUTTON,
             r"Email",
             text_color=Colors.DARK_GREY,
         )
@@ -232,7 +233,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos, self.height // 10 + button_height * 1.7),
             button_width,
             button_height,
-            Colors.WHITE,
+            Colors.WHITE_BUTTON,
             "Username",
             text_color=Colors.GREY,
         )
@@ -242,7 +243,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos, self.height // 10 + button_height * 1.7 * 2),
             button_width,
             button_height,
-            Colors.WHITE,
+            Colors.WHITE_BUTTON,
             "Password",
             text_color=Colors.GREY,
             is_pass=True
@@ -253,7 +254,7 @@ class WelcomeScreen(MenuScreen):
             (mid_x_pos + button_width // 4 - 5, self.height // 2 + button_height),
             button_width // 2,
             button_height,
-            Colors.BLACK,
+            Colors.BLACK_BUTTON,
             "CONTINUE",
             text_color=Colors.WHITE,
             func=self.register_continue,
@@ -301,7 +302,7 @@ class WelcomeScreen(MenuScreen):
             password = hashlib.md5(password.encode()).hexdigest()
             print(password)
             user_number = self.server_communicator.estimated_document_count()
-            user_post = self.create_db_post(
+            user_post = DBPostCreator.create_user_post(
                 user_number, email, username, password, self.get_outer_ip()
             )
             threading.Thread(target=self.server_communicator.create_user(user_post), daemon=True).start()
@@ -324,26 +325,3 @@ class WelcomeScreen(MenuScreen):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         return local_ip
-
-    @staticmethod
-    def create_db_post(
-        user_number: int, email: str, username: str, password: str, ip: str
-    ) -> dict:
-        """Returns a db post with the given parameters"""
-        return {
-            "_id": user_number,
-            "type": "user",
-            "email": email,
-            "username": username,
-            "password": password,
-            "ip": ip,
-            "invite": "",
-            "invite_ip": "",
-            "online": True,
-            "40l": "0",
-            "marathon": 0,
-            "apm_games": [],
-            "apm": 0.0,
-            "wins": 0,
-            "games": 0
-        }

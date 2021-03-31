@@ -206,7 +206,6 @@ class TetrisGame(Game):
             # Send the screen & lines to be sent to the opponent
             self.server_socket.send(pickle.dumps(data))
             self.lines_to_be_sent = 0
-            # TODO find out why it's getting lagged everytime we drop a piece
             try:
                 # Receive the screen and line data from the opponent
                 data_received = pickle.loads(self.server_socket.recv(25600))
@@ -648,8 +647,8 @@ class TetrisGame(Game):
             threading.Thread(target=self.server_communicator.add_game, args=(self.username, win,)).start()
             threading.Thread(target=self.server_communicator.update_apm, args=(self.username, self.total_attacks, game_time,)).start()
 
-        elif self.mode == "sprint" and self.lines_to_finish == 40 and win:
-            new_top = self.server_communicator.update_sprint(self.username, game_time)
+        elif self.mode == "sprint"  and win:
+            new_top = self.server_communicator.update_sprint(self.username, game_time, self.lines_to_finish)
 
         elif self.mode == "marathon":
             new_top = self.server_communicator.update_marathon(self.username, self.score)
