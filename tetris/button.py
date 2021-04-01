@@ -16,6 +16,8 @@ class Button:
         text_color: Tuple[int, int, int] = Colors.WHITE_BUTTON,
         transparent: bool = False,
         text_only: bool = False,
+        border_size: int = 10,
+        clickable: bool = True
     ):
         # The first pixel of the button
         self.starting_x = starting_pixel[0]
@@ -28,8 +30,10 @@ class Button:
         self.text = text
         self.text_size = text_size
         self.text_color = text_color
+        self.border_size = border_size
         self.transparent = transparent
         self.text_only = text_only
+        self.clickable = clickable
         # The rendered text to display inside the button
         self.rendered_text = self.render_button_text()
 
@@ -83,7 +87,7 @@ class Button:
 
     def clicked(self, screen):
         # Do not show the button
-        if self.transparent:
+        if self.transparent or not self.clickable:
             return
         button_color = self.color
         # Make the button brighter
@@ -111,17 +115,16 @@ class Button:
 
     def color_button(self, screen):
         """Colors the button in on the screen"""
-        border_size = 10
         # Fill in the main button
         screen.fill(
             self.color["button"],
             (
-                (self.starting_x + border_size, self.starting_y + border_size),
-                (self.width - border_size, self.height - border_size),
+                (self.starting_x + self.border_size, self.starting_y + self.border_size),
+                (self.width - self.border_size, self.height - self.border_size),
             ),
         )
         # Make it 3d
-        for i in range(border_size):
+        for i in range(self.border_size):
             # Create the upper side
             screen.fill(
                 self.color["upper"],

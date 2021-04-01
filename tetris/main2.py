@@ -16,9 +16,9 @@ def main():
     width = user32.GetSystemMetrics(0)
     height = user32.GetSystemMetrics(1)
     """sock = socket.socket()
-    sock.connect(("10.100.102.17", 44444))
+    sock.connect(("172.21.192.1", 44444))
     # Start the main menu
-    menu = WaitingRoom({"username": "bruh759"},
+    menu = WaitingRoom({"username": "hadar759"},
                        True, "Hadar759's room", sock, ServerCommunicator("10.100.102.17", "8000"),
                        width - 200, height - 100, 75, "resources/tetris_background.jpg"
                        )

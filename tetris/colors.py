@@ -39,6 +39,18 @@ class Colors:
         "bottom": (18, 17, 27),
     }
 
+    RED_BUTTON = {
+        "button": (79, 24, 24),
+        "upper": (144, 45, 45),
+        "side": (114, 34, 34),
+        "bottom": (47, 13, 13)
+    }
+    GREEN_READY_BUTTON = {
+        "button": (28, 80, 42),
+        "upper": (29, 115, 41),
+        "side": (30, 90, 34),
+        "bottom": (14, 30, 15),
+    }
     BLACK = (0, 0, 0)
     GREY = (29, 29, 29)
     DARK_GREY = (14, 14, 14)

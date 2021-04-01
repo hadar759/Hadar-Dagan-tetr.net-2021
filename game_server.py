@@ -145,6 +145,8 @@ class GameServer:
         elif data == "disconnect":
             closed = False
             # This was the admin
+            print(self.admin)
+            print(self.players[client])
             if self.players[client] == self.admin:
                 self.remove_server()
                 closed = True
@@ -158,6 +160,8 @@ class GameServer:
             for other_client in self.client_list:
                 text_to_send = "closed" if closed else f"!{player_name}"
                 other_client.send(text_to_send.encode())
+            if closed:
+                quit()
             # Update the removed player in the database
             threading.Thread(target=self.update_player_num).start()
             return

@@ -40,6 +40,8 @@ class MenuScreen:
         func: callable = None,
         text_only: bool = False,
         args: Tuple = (),
+        border_size: int = 10,
+        clickable: bool = True
     ):
         """Creates a new button and appends it to the button dict"""
         button = Button(
@@ -52,6 +54,8 @@ class MenuScreen:
             text_color,
             transparent,
             text_only,
+            border_size,
+            clickable
         )
         self.buttons[button] = (func, args)
 
