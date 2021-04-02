@@ -89,7 +89,6 @@ class MenuScreen:
     def get_inner_ip():
         return socket.gethostbyname(socket.gethostname())
 
-
     def create_button(
         self,
         starting_pixel: Tuple[int, int],
@@ -104,7 +103,7 @@ class MenuScreen:
         text_only: bool = False,
         args: Tuple = (),
         border_size: int = 10,
-        clickable: bool = True
+        clickable: bool = True,
     ):
         """Creates a new button and appends it to the button dict"""
         button = Button(
@@ -118,7 +117,7 @@ class MenuScreen:
             transparent,
             text_only,
             border_size,
-            clickable
+            clickable,
         )
         self.buttons[button] = (func, args)
 

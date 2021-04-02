@@ -12,15 +12,15 @@ class UserProfile(MenuScreen):
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
 
     def __init__(
-            self,
-            user: Dict,
-            wanted_profile: str,
-            server_communicator: ServerCommunicator,
-            width: int,
-            height: int,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
-            user_profile: Optional[dict] = None
+        self,
+        user: Dict,
+        wanted_profile: str,
+        server_communicator: ServerCommunicator,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+        user_profile: Optional[dict] = None,
     ):
         super().__init__(width, height, refresh_rate, background_path)
         self.user = user
@@ -68,7 +68,7 @@ class UserProfile(MenuScreen):
             username,
             80,
             clickable=False,
-            text_only=True
+            text_only=True,
         )
         if username in self.user["friends"]:
             button_color = Colors.RED_BUTTON
@@ -98,11 +98,17 @@ class UserProfile(MenuScreen):
                 name_height - 100,
                 button_color,
                 button_text,
-                button_font_size
+                button_font_size,
             )
 
             self.buttons.pop(btn)
-            self.buttons[btn] = (self.friend_actions, (btn, username,))
+            self.buttons[btn] = (
+                self.friend_actions,
+                (
+                    btn,
+                    username,
+                ),
+            )
 
         function_button_width = 75
         function_button_height = 75
@@ -128,7 +134,7 @@ class UserProfile(MenuScreen):
             stat_height,
             Colors.BLACK_BUTTON,
             f"Games: {user['games']}",
-            text_only=True
+            text_only=True,
         )
 
         cur_y += stat_height
@@ -139,7 +145,7 @@ class UserProfile(MenuScreen):
             stat_height,
             Colors.BLACK_BUTTON,
             f"Wins: {user['wins']}",
-            text_only=True
+            text_only=True,
         )
 
         cur_y += stat_height
@@ -150,7 +156,7 @@ class UserProfile(MenuScreen):
             stat_height,
             Colors.BLACK_BUTTON,
             f"apm: {user['apm']}",
-            text_only=True
+            text_only=True,
         )
 
         cur_y += stat_height
@@ -161,7 +167,7 @@ class UserProfile(MenuScreen):
             stat_height,
             Colors.BLACK_BUTTON,
             f"Marathon: {user['marathon']}",
-            text_only=True
+            text_only=True,
         )
 
         cur_y = name_height
@@ -193,7 +199,7 @@ class UserProfile(MenuScreen):
                 f"{lengths[index]}: {entry}",
                 40,
                 Colors.DARK_YELLOW,
-                text_only=True
+                text_only=True,
             )
             cur_y += time_height
 
@@ -207,7 +213,10 @@ class UserProfile(MenuScreen):
             button.rendered_text = button.render_button_text()
 
             func = self.server_communicator.send_friend_request
-            args = (self.user["username"], username,)
+            args = (
+                self.user["username"],
+                username,
+            )
 
         elif button.text == "Accept request":
             button.color = Colors.RED_BUTTON
@@ -217,7 +226,10 @@ class UserProfile(MenuScreen):
             button.rendered_text = button.render_button_text()
 
             func = self.server_communicator.accept_friend_request
-            args = (username, self.user["username"],)
+            args = (
+                username,
+                self.user["username"],
+            )
 
         else:
             button.color = Colors.GREEN_BUTTON
@@ -228,7 +240,10 @@ class UserProfile(MenuScreen):
             button.color_button(self.screen)
 
             func = self.server_communicator.remove_friend
-            args = (self.user["username"], username,)
+            args = (
+                self.user["username"],
+                username,
+            )
 
         threading.Thread(target=func, args=args).start()
         self.display_buttons()
@@ -245,13 +260,15 @@ class UserProfile(MenuScreen):
         cur_y = 0
         self.screen.fill(
             Colors.WHITE,
-            ((cur_x + 5, cur_y + self.name_button.height - 50), (self.name_button.width + 115, 10))
+            (
+                (cur_x + 5, cur_y + self.name_button.height - 50),
+                (self.name_button.width + 115, 10),
+            ),
         )
 
         cur_y = self.name_button.height
         cur_x = self.name_button.width * 2
         self.screen.fill(
             Colors.DARK_YELLOW,
-            ((cur_x + 30, cur_y + self.name_button.height - 120), (240, 10))
+            ((cur_x + 30, cur_y + self.name_button.height - 120), (240, 10)),
         )
-

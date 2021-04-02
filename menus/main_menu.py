@@ -223,9 +223,9 @@ class MainMenu(MenuScreen):
             bruh_width,
             name_height,
             Colors.BLACK_BUTTON,
-            "✉",
+            "Ⓕ",
             func=self.friends_screen,
-            args=("friends",)
+            args=("friends",),
         )
 
         self.create_button(
@@ -233,17 +233,26 @@ class MainMenu(MenuScreen):
             bruh_width,
             name_height,
             Colors.BLACK_BUTTON,
-            "♟",
+            "Ⓡ",
             func=self.friends_screen,
-            args=("requests_sent",)
+            args=("requests_sent",),
         )
 
         self.display_buttons()
 
     def friends_screen(self, type):
         self.running = False
-        friends_screen = FriendsScreen(self.user, self.server_communicator, self.user[type], 12, type,
-                                       self.width, self.height, self.refresh_rate, self.background_path)
+        friends_screen = FriendsScreen(
+            self.user,
+            self.server_communicator,
+            self.user[type],
+            12,
+            type,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         friends_screen.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
@@ -256,25 +265,47 @@ class MainMenu(MenuScreen):
 
     def create_leaderboard(self):
         self.running = False
-        leaderboard = LeaderboardScreen(self.user, self.server_communicator, [], 4, self.width, self.height, self.refresh_rate,
-                                        self.background_path)
+        leaderboard = LeaderboardScreen(
+            self.user,
+            self.server_communicator,
+            [],
+            4,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         leaderboard.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def user_profile(self, username):
         self.running = False
-        profile = UserProfile(self.user, username, self.server_communicator, self.width, self.height, self.refresh_rate,
-                              self.background_path)
+        profile = UserProfile(
+            self.user,
+            username,
+            self.server_communicator,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         profile.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def create_room_list(self):
         self.running = False
-        room_screen = RoomScreen(self.user, self.server_communicator, self.server_communicator.get_rooms(), 3,
-                                 self.width, self.height, self.refresh_rate,
-                                 self.background_path)
+        room_screen = RoomScreen(
+            self.user,
+            self.server_communicator,
+            self.server_communicator.get_rooms(),
+            3,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         room_screen.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()

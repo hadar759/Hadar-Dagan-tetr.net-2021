@@ -6,17 +6,16 @@ from .menu_screen import MenuScreen
 
 
 class ListScreen(MenuScreen):
-
     def __init__(
-            self,
-            user: Dict,
-            server_communicator: ServerCommunicator,
-            entry_list,
-            num_on_screen,
-            width: int,
-            height: int,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
+        self,
+        user: Dict,
+        server_communicator: ServerCommunicator,
+        entry_list,
+        num_on_screen,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
     ):
         super().__init__(width, height, refresh_rate, background_path)
         self.user = user
@@ -54,4 +53,3 @@ class ListScreen(MenuScreen):
             self.create_popup_button("Can't scroll down more")
         else:
             self.display_entries(*args)
-

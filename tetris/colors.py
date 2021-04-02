@@ -43,7 +43,7 @@ class Colors:
         "button": (79, 24, 24),
         "upper": (144, 45, 45),
         "side": (114, 34, 34),
-        "bottom": (47, 13, 13)
+        "bottom": (47, 13, 13),
     }
     GREEN_READY_BUTTON = {
         "button": (28, 80, 42),

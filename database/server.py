@@ -39,16 +39,27 @@ class Server:
         received_requests.remove(sender)
         received_friends = receiving_user["friends"]
         received_friends.append(sender)
-        receiving_update = {"$set": {"requests_received": received_requests, "friends": received_friends}}
+        receiving_update = {
+            "$set": {
+                "requests_received": received_requests,
+                "friends": received_friends,
+            }
+        }
 
         sent_requests = sending_user["requests_sent"]
         sent_requests.remove(recipient)
         sender_friends = sending_user["friends"]
         sender_friends.append(recipient)
-        sending_update = {"$set": {"requests_sent": sent_requests, "friends": sender_friends}}
+        sending_update = {
+            "$set": {"requests_sent": sent_requests, "friends": sender_friends}
+        }
 
-        self.user_collection.dependency().update_one(filter={"username": recipient}, update=receiving_update)
-        self.user_collection.dependency().update_one(filter={"username": sender}, update=sending_update)
+        self.user_collection.dependency().update_one(
+            filter={"username": recipient}, update=receiving_update
+        )
+        self.user_collection.dependency().update_one(
+            filter={"username": sender}, update=sending_update
+        )
 
     # TODO: make friends list, make accepting and declining requests, check if triple / link works
     @router.post("/users/friends/remove")
@@ -74,8 +85,12 @@ class Server:
             sending_friends.remove(recipient)
             sending_update = {"$set": {"friends": sending_friends}}
 
-        self.user_collection.dependency().update_one(filter={"username": recipient}, update=receiving_update)
-        self.user_collection.dependency().update_one(filter={"username": sender}, update=sending_update)
+        self.user_collection.dependency().update_one(
+            filter={"username": recipient}, update=receiving_update
+        )
+        self.user_collection.dependency().update_one(
+            filter={"username": sender}, update=sending_update
+        )
 
     @router.post("/users/friends/send")
     def send_friend_request(self, sender, recipient):
@@ -90,8 +105,12 @@ class Server:
         sent_requests.append(recipient)
         sending_update = {"$set": {"requests_sent": sent_requests}}
 
-        self.user_collection.dependency().update_one(filter={"username": recipient}, update=receiving_update)
-        self.user_collection.dependency().update_one(filter={"username": sender}, update=sending_update)
+        self.user_collection.dependency().update_one(
+            filter={"username": recipient}, update=receiving_update
+        )
+        self.user_collection.dependency().update_one(
+            filter={"username": sender}, update=sending_update
+        )
 
     # TODO test how much time this takes, and then implement it in the friends screen
     @router.get("/users/friends/profiles")
@@ -104,10 +123,21 @@ class Server:
 
     @router.get("/users/profile")
     def get_user_profile(self, username):
-        return self.user_collection.dependency().find_one({"username": username},
-                                                          {"username": 1, "sprint": 1, "apm": 1, "games": 1, "wins": 1,
-                                                           "marathon": 1, "friends": 1, "requests_received": 1,
-                                                           "requests_sent": 1, "_id": 0})
+        return self.user_collection.dependency().find_one(
+            {"username": username},
+            {
+                "username": 1,
+                "sprint": 1,
+                "apm": 1,
+                "games": 1,
+                "wins": 1,
+                "marathon": 1,
+                "friends": 1,
+                "requests_received": 1,
+                "requests_sent": 1,
+                "_id": 0,
+            },
+        )
 
     @router.get("/users/apms")
     def get_apm_leaderboard(self):

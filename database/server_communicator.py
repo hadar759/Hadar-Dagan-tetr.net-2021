@@ -15,16 +15,24 @@ class ServerCommunicator:
         return str(condition).lower()
 
     def accept_friend_request(self, sender, recipient):
-        post(f"{self.SERVER_DOMAIN}/users/friends/accept?sender={sender}&recipient={recipient}")
+        post(
+            f"{self.SERVER_DOMAIN}/users/friends/accept?sender={sender}&recipient={recipient}"
+        )
 
     def send_friend_request(self, sender, recipient):
-        post(f"{self.SERVER_DOMAIN}/users/friends/send?sender={sender}&recipient={recipient}")
+        post(
+            f"{self.SERVER_DOMAIN}/users/friends/send?sender={sender}&recipient={recipient}"
+        )
 
     def remove_friend(self, sender, recipient):
-        post(f"{self.SERVER_DOMAIN}/users/friends/remove?sender={sender}&recipient={recipient}")
+        post(
+            f"{self.SERVER_DOMAIN}/users/friends/remove?sender={sender}&recipient={recipient}"
+        )
 
     def get_user_profile(self, username):
-        return json.loads(get(f"{self.SERVER_DOMAIN}/users/profile?username={username}").content)
+        return json.loads(
+            get(f"{self.SERVER_DOMAIN}/users/profile?username={username}").content
+        )
 
     def get_apm_leaderboard(self):
         return json.loads(get(f"{self.SERVER_DOMAIN}/users/apms").content)

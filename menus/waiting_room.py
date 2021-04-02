@@ -72,8 +72,8 @@ class WaitingRoom(MenuScreen):
 
             super().run()
 
-                #  TODO maybe make more buttons in the middle like game settings AND INVITE, and maybe make it
-                #   more than 2 players
+            #  TODO maybe make more buttons in the middle like game settings AND INVITE, and maybe make it
+            #   more than 2 players
 
     def establish_connection(self):
         """Sends and receives the appropriate data from the server on connection"""
@@ -107,14 +107,22 @@ class WaitingRoom(MenuScreen):
         elif self.server_communicator.is_online(foe_name):
             server_ip = self.sock.getpeername()[0]
 
-            threading.Thread(target=self.server_communicator.invite_user, args=(
-                self.user["username"], foe_name, server_ip,
-            )).start()
+            threading.Thread(
+                target=self.server_communicator.invite_user,
+                args=(
+                    self.user["username"],
+                    foe_name,
+                    server_ip,
+                ),
+            ).start()
 
         else:
             self.create_popup_button("Opponent not online")
 
-        self.buttons[self.invite_btn] = (threading.Thread(target=self.challenge_player).start, ())
+        self.buttons[self.invite_btn] = (
+            threading.Thread(target=self.challenge_player).start,
+            (),
+        )
 
     def start_client_game(self, server_ip, bag_seed):
         client_game = TetrisGame(
@@ -216,7 +224,7 @@ class WaitingRoom(MenuScreen):
                     Colors.BLACK_BUTTON,
                     msg + " ",
                     font_size,
-                    text_only=True
+                    text_only=True,
                 )
             last_button = list(self.buttons.keys())[-1]
             last_button.get_middle_text_position = last_button.get_left_text_position
@@ -319,7 +327,11 @@ class WaitingRoom(MenuScreen):
             # Remove all characters which slipped
             self.textboxes[textbox] = self.textboxes[textbox][dif // self.LETTER_SIZE :]
         # Textbox resetted, reset the message as well
-        if self.textboxes[textbox] == textbox.text or not self.textboxes[textbox] and textbox is self.msg_textbox:
+        if (
+            self.textboxes[textbox] == textbox.text
+            or not self.textboxes[textbox]
+            and textbox is self.msg_textbox
+        ):
             self.message = ""
         elif textbox is self.msg_textbox:
             self.message += self.textboxes[textbox][-1]
@@ -354,7 +366,7 @@ class WaitingRoom(MenuScreen):
             Colors.BLACK_BUTTON,
             "Players",
             text_only=False,
-            clickable=False
+            clickable=False,
         )
         cur_x += button_width
 
@@ -366,7 +378,7 @@ class WaitingRoom(MenuScreen):
             Colors.BLACK_BUTTON,
             self.room_name,
             text_only=False,
-            clickable=False
+            clickable=False,
         )
         cur_x += button_width * 2
 
@@ -378,7 +390,7 @@ class WaitingRoom(MenuScreen):
             Colors.BLACK_BUTTON,
             "Chat",
             text_only=False,
-            clickable=False
+            clickable=False,
         )
         cur_x = 0
         cur_y += button_height
@@ -392,7 +404,7 @@ class WaitingRoom(MenuScreen):
             "Name",
             text_size=45,
             text_only=False,
-            clickable=False
+            clickable=False,
         )
 
         player_name_width = 330
@@ -425,7 +437,7 @@ class WaitingRoom(MenuScreen):
             "Wins",
             text_size=30,
             text_only=False,
-            clickable=False
+            clickable=False,
         )
 
         button_width = math.floor(button_width * 1.2)
@@ -499,8 +511,15 @@ class WaitingRoom(MenuScreen):
         self.sock.detach()
 
     def user_profile(self, username):
-        profile = UserProfile(self.user, username, self.server_communicator, self.width, self.height, self.refresh_rate,
-                              self.background_path)
+        profile = UserProfile(
+            self.user,
+            username,
+            self.server_communicator,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         profile.run()
 
     def display_players(self):
@@ -551,7 +570,7 @@ class WaitingRoom(MenuScreen):
                     player_name,
                     text_size=name_size,
                     func=self.user_profile,
-                    args=(player_name,)
+                    args=(player_name,),
                 )
 
                 self.create_button(
@@ -562,7 +581,7 @@ class WaitingRoom(MenuScreen):
                     str(self.players[player_name]),
                     text_size=45,
                     text_only=False,
-                    clickable=False
+                    clickable=False,
                 )
             player_y += player_name_height
 
@@ -653,7 +672,10 @@ class WaitingRoom(MenuScreen):
             width=10,
         )
 
-        for button in [self.find_button_by_text("Name"), self.find_button_by_text("Wins")]:
+        for button in [
+            self.find_button_by_text("Name"),
+            self.find_button_by_text("Wins"),
+        ]:
             cur_button = button
             cur_x = cur_button.starting_x
             cur_y = cur_button.starting_y

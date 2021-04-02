@@ -17,7 +17,7 @@ class Button:
         transparent: bool = False,
         text_only: bool = False,
         border_size: int = 10,
-        clickable: bool = True
+        clickable: bool = True,
     ):
         # The first pixel of the button
         self.starting_x = starting_pixel[0]
@@ -119,7 +119,10 @@ class Button:
         screen.fill(
             self.color["button"],
             (
-                (self.starting_x + self.border_size, self.starting_y + self.border_size),
+                (
+                    self.starting_x + self.border_size,
+                    self.starting_y + self.border_size,
+                ),
                 (self.width - self.border_size, self.height - self.border_size),
             ),
         )

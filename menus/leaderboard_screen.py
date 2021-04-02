@@ -8,17 +8,26 @@ from menus.user_profile_screen import UserProfile
 
 class LeaderboardScreen(ListScreen):
     def __init__(
-            self,
-            user: Dict,
-            server_communicator: ServerCommunicator,
+        self,
+        user: Dict,
+        server_communicator: ServerCommunicator,
+        entry_list,
+        num_on_screen,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+    ):
+        super().__init__(
+            user,
+            server_communicator,
             entry_list,
             num_on_screen,
-            width: int,
-            height: int,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
-    ):
-        super().__init__(user, server_communicator, entry_list, num_on_screen, width, height, refresh_rate, background_path)
+            width,
+            height,
+            refresh_rate,
+            background_path,
+        )
 
     def create_screen(self):
         self.buttons = {}
@@ -274,9 +283,11 @@ class LeaderboardScreen(ListScreen):
         score_height = 190
         position_width = 150
         cur_y += 80
-        self.offset = min(max(0, len(self.entry_list) - self.num_on_screen), self.offset)
+        self.offset = min(
+            max(0, len(self.entry_list) - self.num_on_screen), self.offset
+        )
         for index, user in enumerate(
-            self.entry_list[self.offset: self.offset + self.num_on_screen]
+            self.entry_list[self.offset : self.offset + self.num_on_screen]
         ):
             self.create_button(
                 (cur_x, cur_y),
@@ -317,6 +328,13 @@ class LeaderboardScreen(ListScreen):
             cur_y += entry_height + 10
 
     def user_profile(self, username):
-        profile = UserProfile(self.user, username, self.server_communicator, self.width, self.height, self.refresh_rate,
-                              self.background_path)
+        profile = UserProfile(
+            self.user,
+            username,
+            self.server_communicator,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         profile.run()

@@ -11,17 +11,26 @@ from tetris.colors import Colors
 
 class RoomScreen(ListScreen):
     def __init__(
-            self,
-            user: Dict,
-            server_communicator: ServerCommunicator,
+        self,
+        user: Dict,
+        server_communicator: ServerCommunicator,
+        entry_list,
+        num_on_screen,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+    ):
+        super().__init__(
+            user,
+            server_communicator,
             entry_list,
             num_on_screen,
-            width: int,
-            height: int,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
-    ):
-        super().__init__(user, server_communicator, entry_list, num_on_screen, width, height, refresh_rate, background_path)
+            width,
+            height,
+            refresh_rate,
+            background_path,
+        )
 
     def create_screen(self):
         # Reset the screen
@@ -104,7 +113,7 @@ class RoomScreen(ListScreen):
             "↓",
             55,
             Colors.WHITE,
-            func=self.scroll_down
+            func=self.scroll_down,
         )
 
         cur_y += 10
@@ -123,7 +132,10 @@ class RoomScreen(ListScreen):
         cur_y += function_button_height + 10
 
         self.buttons[scroll_up_btn] = (self.buttons[scroll_up_btn][0], (cur_x, cur_y))
-        self.buttons[scroll_down_btn] = (self.buttons[scroll_down_btn][0], (cur_x, cur_y))
+        self.buttons[scroll_down_btn] = (
+            self.buttons[scroll_down_btn][0],
+            (cur_x, cur_y),
+        )
 
         self.display_entries(cur_x, cur_y)
 
@@ -137,8 +149,10 @@ class RoomScreen(ListScreen):
         room_button_height = 190
         player_button_width = 50
         player_button_height = 200
-        self.offset = min(max(0, len(self.entry_list) - self.num_on_screen), self.offset)
-        for room in self.entry_list[self.offset: self.offset + self.num_on_screen]:
+        self.offset = min(
+            max(0, len(self.entry_list) - self.num_on_screen), self.offset
+        )
+        for room in self.entry_list[self.offset : self.offset + self.num_on_screen]:
             self.create_button(
                 (cur_x, cur_y),
                 room_button_width,
@@ -355,4 +369,3 @@ class RoomScreen(ListScreen):
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
         self.create_screen()
-

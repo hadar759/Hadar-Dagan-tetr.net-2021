@@ -12,18 +12,27 @@ from tetris.colors import Colors
 
 class FriendsScreen(ListScreen):
     def __init__(
-            self,
-            user: Dict,
-            server_communicator: ServerCommunicator,
+        self,
+        user: Dict,
+        server_communicator: ServerCommunicator,
+        entry_list,
+        num_on_screen,
+        type: str,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
+    ):
+        super().__init__(
+            user,
+            server_communicator,
             entry_list,
             num_on_screen,
-            type: str,
-            width: int,
-            height: int,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
-    ):
-        super().__init__(user, server_communicator, entry_list, num_on_screen, width, height, refresh_rate, background_path)
+            width,
+            height,
+            refresh_rate,
+            background_path,
+        )
         self.type = type
 
     def create_screen(self):
@@ -74,7 +83,7 @@ class FriendsScreen(ListScreen):
             Colors.WHITE_BUTTON,
             "Player name",
             30,
-            Colors.BLACK
+            Colors.BLACK,
         )
 
         if "friends" not in self.type:
@@ -92,7 +101,7 @@ class FriendsScreen(ListScreen):
                 40,
                 Colors.GREEN,
                 func=self.switch_type,
-                args=(btn_text.lower(),)
+                args=(btn_text.lower(),),
             )
 
         function_button_width = 75
@@ -106,7 +115,7 @@ class FriendsScreen(ListScreen):
             "+",
             55,
             Colors.WHITE,
-            func=self.add_friend
+            func=self.add_friend,
         )
         # Create the back button
         self.create_button(
@@ -143,7 +152,7 @@ class FriendsScreen(ListScreen):
             "↓",
             55,
             Colors.WHITE,
-            func=self.scroll_down
+            func=self.scroll_down,
         )
 
         cur_y += 10
@@ -162,7 +171,10 @@ class FriendsScreen(ListScreen):
         cur_y += function_button_height + 10
 
         self.buttons[scroll_up_btn] = (self.buttons[scroll_up_btn][0], (cur_x, cur_y))
-        self.buttons[scroll_down_btn] = (self.buttons[scroll_down_btn][0], (cur_x, cur_y))
+        self.buttons[scroll_down_btn] = (
+            self.buttons[scroll_down_btn][0],
+            (cur_x, cur_y),
+        )
 
         self.display_entries(cur_x, cur_y)
 
@@ -174,10 +186,9 @@ class FriendsScreen(ListScreen):
         friend_name = list(self.textboxes.values())[0]
 
         # Entered invalid foe name
-        if (
-                friend_name == self.user["username"]
-                or not self.server_communicator.username_exists(friend_name)
-        ):
+        if friend_name == self.user[
+            "username"
+        ] or not self.server_communicator.username_exists(friend_name):
             self.create_popup_button(r"Invalid Username Entered")
 
         elif friend_name in self.user["friends"]:
@@ -187,9 +198,13 @@ class FriendsScreen(ListScreen):
             self.create_popup_button("Request already sent")
 
         else:
-            threading.Thread(target=self.server_communicator.send_friend_request, args=(
-                self.user["username"], friend_name,
-            )).start()
+            threading.Thread(
+                target=self.server_communicator.send_friend_request,
+                args=(
+                    self.user["username"],
+                    friend_name,
+                ),
+            ).start()
             self.user["requests_sent"].append(friend_name)
             self.create_screen()
 
@@ -204,8 +219,12 @@ class FriendsScreen(ListScreen):
     def display_entries(self, cur_x, cur_y):
         user_button_width = self.width // 4 - 50
         user_button_height = 100
-        self.offset = min(max(0, len(self.entry_list) - self.num_on_screen), self.offset)
-        for index, friend in enumerate(self.entry_list[self.offset: self.offset + self.num_on_screen]):
+        self.offset = min(
+            max(0, len(self.entry_list) - self.num_on_screen), self.offset
+        )
+        for index, friend in enumerate(
+            self.entry_list[self.offset : self.offset + self.num_on_screen]
+        ):
             self.create_button(
                 (cur_x, cur_y),
                 user_button_width,
@@ -225,8 +244,15 @@ class FriendsScreen(ListScreen):
                 cur_x += user_button_width + 10
 
     def user_profile(self, username):
-        profile = UserProfile(self.user, username, self.server_communicator, self.width, self.height, self.refresh_rate,
-                              self.background_path)
+        profile = UserProfile(
+            self.user,
+            username,
+            self.server_communicator,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
         profile.run()
 
     def change_binary_button(self, button):
