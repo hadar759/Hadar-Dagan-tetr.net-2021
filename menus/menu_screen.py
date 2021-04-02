@@ -1,12 +1,17 @@
+import socket
 from typing import Optional, Dict, Tuple
 
 import pygame
+from requests import get
 
-from tetris import Button, Colors
-from tetris import TextBox
+from menus.button import Button
+from tetris.colors import Colors
+from menus.text_box import TextBox
 
 
 class MenuScreen:
+    BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
+
     def __init__(
         self,
         width: int,
@@ -26,6 +31,64 @@ class MenuScreen:
         self.textboxes: Dict[TextBox, str] = {}
         self.actions = {}
         self.mouse_pos = ()
+
+    def run(self):
+        self.update_screen()
+
+        for event in pygame.event.get():
+            # Different event, but mouse pos was initiated
+            if self.mouse_pos:
+                self.handle_events(event)
+
+    def handle_events(self, event):
+        if event.type == pygame.QUIT:
+            self.quit()
+            pygame.quit()
+            quit()
+
+        # If the user typed something
+        if event.type == pygame.KEYDOWN:
+            for textbox in self.textboxes.keys():
+                if textbox.active:
+                    self.textbox_key_actions(textbox, event)
+                    break
+
+        # In case the user pressed the mouse button
+        if event.type == self.BUTTON_PRESS and event.button == 1:
+            for button in reversed(self.buttons):
+                # Check if the click is inside the button area (i.e. the button was clicked)
+                # Otherwise skip
+                if not button.inside_button(self.mouse_pos):
+                    continue
+                # Change the button color
+                button.clicked(self.screen)
+                # Get the correct response using to the button
+                func, args = self.buttons[button]
+                # User pressed a button with no response function
+                if not func:
+                    continue
+                func(*args)
+                break
+
+            for textbox in self.textboxes.keys():
+                # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
+                if textbox.inside_button(self.mouse_pos):
+                    # Make the textbox writeable
+                    textbox.active = True
+                else:
+                    textbox.active = False
+
+    def quit(self):
+        self.running = False
+
+    @staticmethod
+    def get_outer_ip():
+        return get("https://api.ipify.org").text
+
+    @staticmethod
+    def get_inner_ip():
+        return socket.gethostbyname(socket.gethostname())
+
 
     def create_button(
         self,

@@ -6,11 +6,11 @@ import pygame
 from requests import get
 import hashlib
 
-from db_post_creator import DBPostCreator
-from server_communicator import ServerCommunicator
+from database.db_post_creator import DBPostCreator
+from database.server_communicator import ServerCommunicator
 from tetris.colors import Colors
-from tetris.main_menu import MainMenu
-from tetris.menu_screen import MenuScreen
+from menus.main_menu import MainMenu
+from menus.menu_screen import MenuScreen
 
 
 class WelcomeScreen(MenuScreen):
@@ -111,7 +111,7 @@ class WelcomeScreen(MenuScreen):
         )
 
         # Password Button
-        pass_box = self.create_textbox(
+        self.create_textbox(
             (mid_x_pos, self.height // 10 + button_height * 3),
             button_width,
             button_height,
@@ -194,23 +194,6 @@ class WelcomeScreen(MenuScreen):
             self.reset_textboxes()
             self.create_popup_button("Invalid credentials")
 
-    def create_popup_button(self, text):
-        button_width = self.width // 2
-        button_height = self.height // 3
-        # Place the button in the middle of the screen
-        mid_x_pos = self.width // 2 - (button_width // 2)
-
-        self.create_button(
-            (mid_x_pos, self.height // 2 - button_height),
-            button_width,
-            button_height,
-            Colors.BLACK_BUTTON,
-            text,
-            38,
-            text_color=Colors.RED,
-            func=self.buttons.popitem,
-        )
-
     @staticmethod
     def is_email(inp: str):
         """Returns whether a given string is an email address"""
@@ -237,7 +220,7 @@ class WelcomeScreen(MenuScreen):
 
         # Username Button
         self.create_textbox(
-            (mid_x_pos, self.height // 10 + button_height * 1.7),
+            (mid_x_pos, self.height // 10 + round(button_height * 1.7)),
             button_width,
             button_height,
             Colors.WHITE_BUTTON,
@@ -247,7 +230,7 @@ class WelcomeScreen(MenuScreen):
 
         # Password Button
         self.create_textbox(
-            (mid_x_pos, self.height // 10 + button_height * 1.7 * 2),
+            (mid_x_pos, self.height // 10 + round(button_height * 1.7 * 2)),
             button_width,
             button_height,
             Colors.WHITE_BUTTON,
@@ -274,38 +257,34 @@ class WelcomeScreen(MenuScreen):
         email = user_inputs[0]
         username = user_inputs[1]
         password = user_inputs[2]
-        valid_user = True
 
         if not self.is_email(email) or email == "":
             self.create_popup_button(r"Invalid Email")
-            valid_user = False
 
-        if self.is_email(username):
+        elif " " in username:
+            self.create_popup_button("Invalid name")
+
+        elif self.is_email(username):
             self.create_popup_button("Username can't contain @")
-            valid_user = False
 
-        if password == "":
+        elif password == "":
             self.create_popup_button("Please enter Password")
-            valid_user = False
 
-        if username == "":
+        elif username == "":
             self.create_popup_button("Please enter Username")
-            valid_user = False
 
         # TODO CHANGE
-        if self.server_communicator.email_exists(email):
+        elif self.server_communicator.email_exists(email):
             self.reset_textboxes()
             self.create_popup_button("Email already exists")
-            valid_user = False
 
         # TODO CHANGE
         elif self.server_communicator.username_exists(username):
             self.reset_textboxes()
             self.create_popup_button("Username already exists")
-            valid_user = False
 
         # Add the valid user to the DB
-        if valid_user:
+        else:
             password = hashlib.md5(password.encode()).hexdigest()
             print(password)
             user_number = self.server_communicator.estimated_document_count()

@@ -1,13 +1,6 @@
 import ctypes
-import socket
 
-from pymongo import MongoClient
-
-from game_server import GameServer
-from server_communicator import ServerCommunicator
-from tetris.main_menu import MainMenu
-from tetris.waiting_room import WaitingRoom
-from tetris.welcome_screen import WelcomeScreen
+from menus.welcome_screen import WelcomeScreen
 
 
 def main():
@@ -18,7 +11,7 @@ def main():
     """sock = socket.socket()
     sock.connect(("172.21.192.1", 44444))
     # Start the main menu
-    menu = WaitingRoom({"username": "hadar759"},
+    menu = WaitingRoom({"username": "bruh759"},
                        True, "Hadar759's room", sock, ServerCommunicator("10.100.102.17", "8000"),
                        width - 200, height - 100, 75, "resources/tetris_background.jpg"
                        )

@@ -2,18 +2,17 @@ import math
 import pickle
 import socket
 import threading
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 import pygame
 
-from tetris.menu_screen import MenuScreen
+from menus.menu_screen import MenuScreen
 from tetris.tetris_client import TetrisClient
 from tetris.tetris_game import TetrisGame
-from tetris.button import Button
 from tetris.colors import Colors
-from tetris.text_box import TextBox
-from requests import get
-from server_communicator import ServerCommunicator
+from menus.text_box import TextBox
+from database.server_communicator import ServerCommunicator
+from menus.user_profile_screen import UserProfile
 
 
 class WaitingRoom(MenuScreen):
@@ -48,6 +47,8 @@ class WaitingRoom(MenuScreen):
         self.message = ""
         self.start_args = ()
         self.ready_players = []
+        self.msg_textbox = None
+        self.invite_btn = None
 
     def run(self):
         self.create_room()
@@ -55,8 +56,6 @@ class WaitingRoom(MenuScreen):
         threading.Thread(target=self.recv_chat, daemon=True).start()
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
         while self.running:
-            self.update_screen()
-
             # Start the game, and restart the waiting room once it ends
             if self.start_args:
                 self.running = False
@@ -71,42 +70,7 @@ class WaitingRoom(MenuScreen):
                 threading.Thread(target=self.recv_chat, daemon=True).start()
                 threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
-            for event in pygame.event.get():
-                if not self.mouse_pos:
-                    continue
-
-                if event.type == pygame.QUIT:
-                    self.quit()
-                    self.running = False
-                    self.server_communicator.update_online(self.user["username"], False)
-                    pygame.quit()
-                    exit()
-
-                # In case the user pressed the mouse button
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    for textbox in self.textboxes.keys():
-                        # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
-                        if textbox.inside_button(self.mouse_pos):
-                            # Make the textbox writeable
-                            textbox.active = True
-                        else:
-                            textbox.active = False
-
-                    for button in self.buttons.keys():
-                        # Check if the click is inside the button area (i.e. whether the button was clicked)
-                        if button.inside_button(self.mouse_pos):
-                            button.clicked(self.screen)
-                            func, args = self.buttons[button]
-                            if not func:
-                                continue
-                            func(*args)
-                            break
-
-                # If the user typed something
-                if event.type == pygame.KEYDOWN:
-                    for textbox in self.textboxes.keys():
-                        if textbox.active:
-                            self.textbox_key_actions(textbox, event)
+            super().run()
 
                 #  TODO maybe make more buttons in the middle like game settings AND INVITE, and maybe make it
                 #   more than 2 players
@@ -126,8 +90,11 @@ class WaitingRoom(MenuScreen):
         # Send the server our username
         self.sock.send(self.user["username"].encode())
 
+    # TODO fix issue of crashing when admin leaves after game
     def challenge_player(self):
+        self.buttons[self.invite_btn] = (None, ())
         foe_name = list(self.textboxes.values())[0]
+        self.textboxes[(list(self.textboxes.keys()))[0]] = ""
 
         # Entered invalid foe name
         if (
@@ -139,14 +106,15 @@ class WaitingRoom(MenuScreen):
 
         elif self.server_communicator.is_online(foe_name):
             server_ip = self.sock.getpeername()[0]
-            self.server_communicator.invite_user(
-                self.user["username"], foe_name, server_ip
-            )
+
+            threading.Thread(target=self.server_communicator.invite_user, args=(
+                self.user["username"], foe_name, server_ip,
+            )).start()
 
         else:
             self.create_popup_button("Opponent not online")
 
-        self.textboxes[(list(self.textboxes.keys()))[0]] = ""
+        self.buttons[self.invite_btn] = (threading.Thread(target=self.challenge_player).start, ())
 
     def start_client_game(self, server_ip, bag_seed):
         client_game = TetrisGame(
@@ -323,16 +291,17 @@ class WaitingRoom(MenuScreen):
             # Last letter
             if len(textbox_text) <= 1:
                 self.textboxes[textbox] = textbox.text
-                self.message = ""
+                if textbox is self.msg_textbox:
+                    self.message = ""
             # Just regular deleting
             else:
                 self.handle_deletion(textbox)
 
         # ENTER
-        elif event.key == 13 and self.message:
+        elif event.key == 13 and textbox is self.msg_textbox and self.message:
             # For some reason the last letter doesn't append to the message
-            self.send_message()
             self.textboxes[textbox] = ""
+            self.send_message()
             self.message = ""
 
         # Just regular text
@@ -350,21 +319,22 @@ class WaitingRoom(MenuScreen):
             # Remove all characters which slipped
             self.textboxes[textbox] = self.textboxes[textbox][dif // self.LETTER_SIZE :]
         # Textbox resetted, reset the message as well
-        if self.textboxes[textbox] == textbox.text or not self.textboxes[textbox]:
+        if self.textboxes[textbox] == textbox.text or not self.textboxes[textbox] and textbox is self.msg_textbox:
             self.message = ""
-        else:
+        elif textbox is self.msg_textbox:
             self.message += self.textboxes[textbox][-1]
 
     def handle_deletion(self, textbox):
         # Display the characters not on screen at the moment
         textbox_len = len(self.textboxes[textbox])
         # Not all of the text is displayed atm, display some of the older text
-        if len(self.message) > textbox_len:
+        if len(self.message) > textbox_len and textbox is self.msg_textbox:
             self.textboxes[textbox] = (
                 self.message[-textbox_len - 1] + self.textboxes[textbox]
             )
         # Delete from message as well
-        self.message = self.message[:-1]
+        if textbox is self.msg_textbox:
+            self.message = self.message[:-1]
         self.textboxes[textbox] = self.textboxes[textbox][:-1]
 
     def send_message(self):
@@ -387,7 +357,6 @@ class WaitingRoom(MenuScreen):
             clickable=False
         )
         cur_x += button_width
-
 
         # Create the room name label
         self.create_button(
@@ -487,7 +456,7 @@ class WaitingRoom(MenuScreen):
         )
         cur_y += challenge_height + 20
 
-        self.create_button(
+        self.invite_btn = self.create_button(
             (cur_x + challenge_width // 4, cur_y),
             challenge_width // 2,
             challenge_height,
@@ -500,7 +469,7 @@ class WaitingRoom(MenuScreen):
         textbox_height = 50
         cur_x = self.width - textbox_width
         cur_y = self.height - textbox_height
-        self.create_textbox(
+        self.msg_textbox = self.create_textbox(
             (cur_x + 5, cur_y),
             textbox_width,
             textbox_height,
@@ -528,6 +497,11 @@ class WaitingRoom(MenuScreen):
         self.sock.send("disconnect".encode())
         self.running = False
         self.sock.detach()
+
+    def user_profile(self, username):
+        profile = UserProfile(self.user, username, self.server_communicator, self.width, self.height, self.refresh_rate,
+                              self.background_path)
+        profile.run()
 
     def display_players(self):
         player_name_width = 295
@@ -576,6 +550,8 @@ class WaitingRoom(MenuScreen):
                     Colors.RED_BUTTON,
                     player_name,
                     text_size=name_size,
+                    func=self.user_profile,
+                    args=(player_name,)
                 )
 
                 self.create_button(

@@ -5,18 +5,16 @@ v1.0
 """
 import pickle
 import threading
-import time
 import math
 from socket import socket
 from typing import Tuple, Optional, Dict, List
 import random
 
-from concurrent.futures import Executor
 import pygame
 from pygame import USEREVENT
 from pygamepp.game import Game
 from pygamepp.game_object import GameObject
-from server_communicator import ServerCommunicator
+from database.server_communicator import ServerCommunicator
 
 from tetris.pieces import *
 from tetris.pieces.tetris_piece import Piece
@@ -625,14 +623,12 @@ class TetrisGame(Game):
 
     def game_over(self, win: bool = None):
         """End the game"""
-        if win is None:
-            win = self.win
         # Calculate the end time
         game_time = self.get_current_time_since_start()
         new_top = False
 
         if self.mode == "multiplayer":
-            if not win:
+            if not self.win:
                 # send the opponent the message that you've lost
                 self.server_socket.send(
                     pickle.dumps(
@@ -648,7 +644,7 @@ class TetrisGame(Game):
                 target=self.server_communicator.add_game,
                 args=(
                     self.username,
-                    win,
+                    self.win,
                 ),
             ).start()
             threading.Thread(

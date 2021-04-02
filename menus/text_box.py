@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import pygame
-from tetris.button import Button
+from menus.button import Button
 from tetris.colors import Colors
 
 
@@ -11,7 +11,7 @@ class TextBox(Button):
         starting_pixel: Tuple[int, int],
         width: int,
         height: int,
-        color: int,
+        color: dict,
         text: pygame.font,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,

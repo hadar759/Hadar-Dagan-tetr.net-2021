@@ -19,6 +19,9 @@ class DBPostCreator:
             "apm": 0.0,
             "wins": 0,
             "games": 0,
+            "friends": [],
+            "requests_received": [],
+            "requests_sent": [],
         }
 
     @staticmethod

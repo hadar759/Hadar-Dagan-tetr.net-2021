@@ -1,13 +1,12 @@
 import pickle
-import random
 import socket
 import threading
 import time
 from select import select
 from typing import List
 
-from db_post_creator import DBPostCreator
-from server_communicator import ServerCommunicator
+from database.db_post_creator import DBPostCreator
+from database.server_communicator import ServerCommunicator
 
 
 class GameServer:

@@ -14,7 +14,7 @@ router = InferringRouter()
 
 
 def get_collection():
-    with open(r"./mongodb.txt", "r") as pass_file:
+    with open(r"../mongodb.txt", "r") as pass_file:
         pass_text = pass_file.read()
     client = MongoClient(pass_text)
     db = client["tetris"]
@@ -29,6 +29,85 @@ class Server:
 
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
+
+    @router.post("/users/friends/accept")
+    def accept_friend(self, sender, recipient):
+        receiving_user = self.user_by_username(recipient)
+        sending_user = self.user_by_username(sender)
+
+        received_requests = receiving_user["requests_received"]
+        received_requests.remove(sender)
+        received_friends = receiving_user["friends"]
+        received_friends.append(sender)
+        receiving_update = {"$set": {"requests_received": received_requests, "friends": received_friends}}
+
+        sent_requests = sending_user["requests_sent"]
+        sent_requests.remove(recipient)
+        sender_friends = sending_user["friends"]
+        sender_friends.append(recipient)
+        sending_update = {"$set": {"requests_sent": sent_requests, "friends": sender_friends}}
+
+        self.user_collection.dependency().update_one(filter={"username": recipient}, update=receiving_update)
+        self.user_collection.dependency().update_one(filter={"username": sender}, update=sending_update)
+
+    # TODO: make friends list, make accepting and declining requests, check if triple / link works
+    @router.post("/users/friends/remove")
+    def remove_friend(self, sender, recipient):
+        receiving_user = self.user_by_username(recipient)
+        sending_user = self.user_by_username(sender)
+
+        if sender in receiving_user["requests_received"]:
+            received_requests = receiving_user["requests_received"]
+            received_requests.remove(sender)
+            receiving_update = {"$set": {"requests_received": received_requests}}
+
+            sent_requests = sending_user["requests_sent"]
+            sent_requests.remove(recipient)
+            sending_update = {"$set": {"requests_sent": sent_requests}}
+
+        else:
+            receiving_friends = receiving_user["friends"]
+            receiving_friends.remove(sender)
+            receiving_update = {"$set": {"friends": receiving_friends}}
+
+            sending_friends = sending_user["friends"]
+            sending_friends.remove(recipient)
+            sending_update = {"$set": {"friends": sending_friends}}
+
+        self.user_collection.dependency().update_one(filter={"username": recipient}, update=receiving_update)
+        self.user_collection.dependency().update_one(filter={"username": sender}, update=sending_update)
+
+    @router.post("/users/friends/send")
+    def send_friend_request(self, sender, recipient):
+        receiving_user = self.user_by_username(recipient)
+        sending_user = self.user_by_username(sender)
+
+        received_requests = receiving_user["requests_received"]
+        received_requests.append(sender)
+        receiving_update = {"$set": {"requests_received": received_requests}}
+
+        sent_requests = sending_user["requests_sent"]
+        sent_requests.append(recipient)
+        sending_update = {"$set": {"requests_sent": sent_requests}}
+
+        self.user_collection.dependency().update_one(filter={"username": recipient}, update=receiving_update)
+        self.user_collection.dependency().update_one(filter={"username": sender}, update=sending_update)
+
+    # TODO test how much time this takes, and then implement it in the friends screen
+    @router.get("/users/friends/profiles")
+    def get_friends_profiles(self, username):
+        user = self.user_by_username(username)
+        friends = []
+        for friend in user["friends"]:
+            friends.append(self.get_user_profile(friend))
+        return friends
+
+    @router.get("/users/profile")
+    def get_user_profile(self, username):
+        return self.user_collection.dependency().find_one({"username": username},
+                                                          {"username": 1, "sprint": 1, "apm": 1, "games": 1, "wins": 1,
+                                                           "marathon": 1, "friends": 1, "requests_received": 1,
+                                                           "requests_sent": 1, "_id": 0})
 
     @router.get("/users/apms")
     def get_apm_leaderboard(self):
@@ -108,12 +187,12 @@ class Server:
         """Updates the game and win count for a user"""
         user = self.user_by_username(username)
         # Add a game played to the user's query
-        new_query = {"$set": {"games": user["games"] + 1}}
+        new_query = {"games": user["games"] + 1}
         # Add a win to the user's query
         if win:
             new_query["wins"] = user["wins"] + 1
         self.user_collection.dependency().update_one(
-            filter={"username": username}, update=new_query
+            filter={"username": username}, update={"$set": new_query}
         )
 
     @router.post("/users/sprint")
@@ -318,10 +397,10 @@ class Server:
         """Returns whether a given user identifier matches a given password in the db"""
         return (
             self.user_collection.dependency().find_one(
-                {"username": user_identifier, "password": password}
+                {"username": user_identifier, "password": password}, {"_id": 0}
             )
             or self.user_collection.dependency().find_one(
-                {"email": user_identifier, "password": password}
+                {"email": user_identifier, "password": password}, {"_id": 0}
             )
             or {}
         )
@@ -340,7 +419,8 @@ class Server:
             old_time += float(time_str[-i - 1]) * 60 ** i
         return old_time
 
-    def seconds_to_str(self, seconds):
+    @staticmethod
+    def seconds_to_str(seconds):
         # From seconds to string
         time_format = "%S"
         if seconds >= 60:
@@ -359,5 +439,6 @@ app.include_router(router)
 
 if __name__ == "__main__":
     # Run Server
+    os.chdir("./database")
     subprocess.call("uvicorn server:app --host 0.0.0.0 --port 8000")
     # uvicorn.run(app)

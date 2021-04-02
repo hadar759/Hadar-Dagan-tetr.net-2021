@@ -51,6 +51,7 @@ class Colors:
         "side": (30, 90, 34),
         "bottom": (14, 30, 15),
     }
+    DARK_YELLOW = (217, 139, 51)
     BLACK = (0, 0, 0)
     GREY = (29, 29, 29)
     DARK_GREY = (14, 14, 14)
