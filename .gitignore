@@ -364,3 +364,4 @@ FodyWeavers.xsd
 config.json
 main.py
 venv/*
+mongodb.txt
