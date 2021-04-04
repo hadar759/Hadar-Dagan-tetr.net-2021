@@ -134,7 +134,7 @@ class GameServer:
 
     def handle_message(self, data, client):
         # The client pressed the ready button
-        if data[0 : len("Ready%")] == "Ready%":
+        if data[0: len("Ready%")] == "Ready%":
             if client in self.ready_clients:
                 self.ready_clients.remove(client)
             else:

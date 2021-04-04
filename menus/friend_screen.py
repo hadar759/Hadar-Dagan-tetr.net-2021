@@ -229,7 +229,7 @@ class FriendsScreen(ListScreen):
                 (cur_x, cur_y),
                 user_button_width,
                 user_button_height,
-                Colors.BLACK_BUTTON,
+                Colors.GREEN_READY_BUTTON,
                 friend,
                 text_color=Colors.WHITE,
                 func=self.user_profile,

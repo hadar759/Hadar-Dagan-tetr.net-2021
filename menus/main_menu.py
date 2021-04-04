@@ -219,7 +219,7 @@ class MainMenu(MenuScreen):
 
         bruh_width = name_width // 7
         self.create_button(
-            (self.width - name_width - bruh_width - 10, self.height // 3 - 250),
+            (self.width - name_width - bruh_width, self.height // 3 - 250),
             bruh_width,
             name_height,
             Colors.BLACK_BUTTON,
@@ -229,7 +229,7 @@ class MainMenu(MenuScreen):
         )
 
         self.create_button(
-            (self.width - name_width - bruh_width * 2 - 20, self.height // 3 - 250),
+            (self.width - name_width - bruh_width * 2, self.height // 3 - 250),
             bruh_width,
             name_height,
             Colors.BLACK_BUTTON,
