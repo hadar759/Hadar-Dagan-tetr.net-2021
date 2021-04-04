@@ -1,10 +1,10 @@
 import socket
+import bcrypt
 import threading
 from typing import Optional
 
 import pygame
 from requests import get
-import hashlib
 
 from database.db_post_creator import DBPostCreator
 from database.server_communicator import ServerCommunicator
@@ -25,6 +25,8 @@ class WelcomeScreen(MenuScreen):
     ):
         super().__init__(width, height, refresh_rate, background_path)
         self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
+        with open(r"../salt.txt", "r") as salt_file:
+            self.salt = salt_file.read().encode()
 
     def run(self):
         """Main loop of the welcome screen"""
@@ -165,7 +167,7 @@ class WelcomeScreen(MenuScreen):
         if not valid_user:
             return
 
-        password = hashlib.md5(password.encode()).hexdigest()
+        password = bcrypt.hashpw(password.encode(), self.salt).hex()
         user = self.server_communicator.get_user(user_identifier, password)
 
         # Update the user's latest ip
@@ -285,7 +287,7 @@ class WelcomeScreen(MenuScreen):
 
         # Add the valid user to the DB
         else:
-            password = hashlib.md5(password.encode()).hexdigest()
+            password = bcrypt.hashpw(password.encode(), self.salt).hex()
             print(password)
             user_number = self.server_communicator.estimated_document_count()
             user_post = DBPostCreator.create_user_post(
