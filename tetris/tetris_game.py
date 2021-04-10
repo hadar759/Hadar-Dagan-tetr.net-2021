@@ -24,19 +24,19 @@ from tetris.colors import Colors
 
 class TetrisGame(Game):
     # Will be displayed when users lose
-    LOSE_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 60).render(
+    LOSE_TEXT = pygame.font.Font("./tetris-resources/joystix-monospace.ttf", 60).render(
         "YOU LOSE", True, Colors.WHITE
     )
     # Will be displayed when users win
-    WIN_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 60).render(
+    WIN_TEXT = pygame.font.Font("./tetris-resources/joystix-monospace.ttf", 60).render(
         "YOU WIN", True, Colors.WHITE
     )
     # Will be displayed before the score
-    SCORE_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render(
+    SCORE_TEXT = pygame.font.Font("./tetris-resources/joystix-monospace.ttf", 19).render(
         "SCORE:", True, Colors.WHITE
     )
     # Will be displayed before the time
-    TIME_TEXT = pygame.font.Font("./resources/joystix-monospace.ttf", 19).render(
+    TIME_TEXT = pygame.font.Font("./tetris-resources/joystix-monospace.ttf", 19).render(
         "TIME:", True, Colors.WHITE
     )
 
@@ -103,53 +103,53 @@ class TetrisGame(Game):
         self.skin = 0
         self.pieces_and_next_sprites = {
             "<class 'tetris.pieces.i_piece.IPiece'>": pygame.image.load(
-                f"resources/ipiece-full-sprite{self.skin}.png"
+                f"tetris-resources/ipiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.j_piece.JPiece'>": pygame.image.load(
-                f"resources/jpiece-full-sprite{self.skin}.png"
+                f"tetris-resources/jpiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.o_piece.OPiece'>": pygame.image.load(
-                f"resources/opiece-full-sprite{self.skin}.png"
+                f"tetris-resources/opiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.l_piece.LPiece'>": pygame.image.load(
-                f"resources/lpiece-full-sprite{self.skin}.png"
+                f"tetris-resources/lpiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.t_piece.TPiece'>": pygame.image.load(
-                f"resources/tpiece-full-sprite{self.skin}.png"
+                f"tetris-resources/tpiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.s_piece.SPiece'>": pygame.image.load(
-                f"resources/spiece-full-sprite{self.skin}.png"
+                f"tetris-resources/spiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.z_piece.ZPiece'>": pygame.image.load(
-                f"resources/zpiece-full-sprite{self.skin}.png"
+                f"tetris-resources/zpiece-full-sprite{self.skin}.png"
             ),
             "<class 'tetris.pieces.garbage_piece.GarbagePiece'>": pygame.image.load(
-                rf"./resources/garbage_piece_sprite{self.skin}.png"
+                rf"tetris-resources/garbage_piece_sprite{self.skin}.png"
             ),
         }
         self.pieces = {
-            "I": pygame.image.load(f"resources/ipiece-sprite{self.skin}.png"),
-            "J": pygame.image.load(f"resources/jpiece-sprite{self.skin}.png"),
-            "O": pygame.image.load(f"resources/opiece-sprite{self.skin}.png"),
-            "L": pygame.image.load(f"resources/lpiece-sprite{self.skin}.png"),
-            "T": pygame.image.load(f"resources/tpiece-sprite{self.skin}.png"),
-            "S": pygame.image.load(f"resources/spiece-sprite{self.skin}.png"),
-            "Z": pygame.image.load(f"resources/zpiece-sprite{self.skin}.png"),
-            "G": pygame.image.load(f"resources/garbage_piece_sprite{self.skin}.png"),
+            "I": pygame.image.load(f"tetris-resources/ipiece-sprite{self.skin}.png"),
+            "J": pygame.image.load(f"tetris-resources/jpiece-sprite{self.skin}.png"),
+            "O": pygame.image.load(f"tetris-resources/opiece-sprite{self.skin}.png"),
+            "L": pygame.image.load(f"tetris-resources/lpiece-sprite{self.skin}.png"),
+            "T": pygame.image.load(f"tetris-resources/tpiece-sprite{self.skin}.png"),
+            "S": pygame.image.load(f"tetris-resources/spiece-sprite{self.skin}.png"),
+            "Z": pygame.image.load(f"tetris-resources/zpiece-sprite{self.skin}.png"),
+            "G": pygame.image.load(f"tetris-resources/garbage_piece_sprite{self.skin}.png"),
         }
 
         if self.mode == "sprint":
             # Sprint specific variables
             self.lines_to_finish = lines_or_level
             self.line_text = pygame.font.Font(
-                "./resources/joystix-monospace.ttf", 19
+                "./tetris-resources/joystix-monospace.ttf", 19
             ).render("LEFT:", True, Colors.WHITE)
         if self.mode == "marathon":
             # Marathon specific variables
             self.level = lines_or_level
             self.gravity_time -= self.level * 83
             self.line_text = pygame.font.Font(
-                "./resources/joystix-monospace.ttf", 19
+                "./tetris-resources/joystix-monospace.ttf", 19
             ).render("LINES:", True, Colors.WHITE)
         if self.mode == "multiplayer":
             # Multiplayer specific variables
@@ -698,7 +698,7 @@ class TetrisGame(Game):
 
         # Stop the game, and load the end screen
 
-        self.background_image = pygame.image.load("resources/end-screen.png")
+        self.background_image = pygame.image.load("tetris-resources/end-screen.png")
         self.screen = pygame.display.set_mode(
             (self.background_image.get_size()[0], self.background_image.get_size()[1])
         )
@@ -738,7 +738,7 @@ class TetrisGame(Game):
     @staticmethod
     def render_input(font_size: int, inp):
         """Render a text given it's font and size"""
-        return pygame.font.Font("./resources/joystix-monospace.ttf", font_size).render(
+        return pygame.font.Font("./tetris-resources/joystix-monospace.ttf", font_size).render(
             inp, True, Colors.WHITE
         )
 

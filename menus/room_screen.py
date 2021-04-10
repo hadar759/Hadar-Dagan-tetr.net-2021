@@ -363,7 +363,7 @@ class RoomScreen(ListScreen):
             self.width,
             self.height,
             75,
-            "../tetris/resources/tetris_background.jpg",
+            "../tetris/tetris-resources/tetris_background.jpg",
         )
         waiting_room.run()
         self.running = True

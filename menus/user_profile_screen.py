@@ -37,7 +37,7 @@ class UserProfile(MenuScreen):
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
         while self.running:
-            super().run()
+            self.run_once()
 
     def quit(self):
         self.buttons = {}

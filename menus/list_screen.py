@@ -28,7 +28,7 @@ class ListScreen(MenuScreen):
         self.create_screen()
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
         while self.running:
-            super().run()
+            self.run_once()
 
     def create_screen(self):
         pass

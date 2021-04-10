@@ -12,5 +12,5 @@ class GarbagePiece(GridGameObject):
         for i in range(self.LEFT_BORDER, self.RIGHT_BORDER + 1):
             if i != hole:
                 position.append([height, i])
-        sprite = pygame.image.load(rf"./resources/garbage_piece_sprite{skin}.png")
+        sprite = pygame.image.load(rf"./tetris-resources/garbage_piece_sprite{skin}.png")
         super().__init__(sprite, position, 50)

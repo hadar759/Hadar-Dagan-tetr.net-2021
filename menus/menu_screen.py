@@ -30,9 +30,9 @@ class MenuScreen:
         self.buttons: Dict[Button, callable] = {}
         self.textboxes: Dict[TextBox, str] = {}
         self.actions = {}
-        self.mouse_pos = ()
+        self.mouse_pos: Optional[Tuple[int, int]] = None
 
-    def run(self):
+    def run_once(self):
         self.update_screen()
 
         for event in pygame.event.get():
@@ -128,7 +128,7 @@ class MenuScreen:
         starting_pixel: Tuple[int, int],
         width: int,
         height: int,
-        color: int,
+        color: Dict,
         text: str,
         text_size: int = 45,
         text_color: Tuple[int, int, int] = Colors.WHITE,
@@ -152,7 +152,7 @@ class MenuScreen:
         self.textboxes[box] = ""
         return box
 
-    def create_popup_button(self, text):
+    def create_popup_button(self, text, color=Colors.RED):
         button_width = self.width // 2
         button_height = self.height // 3
         # Place the button in the middle of the screen
@@ -165,7 +165,7 @@ class MenuScreen:
             Colors.BLACK_BUTTON,
             text,
             38,
-            text_color=Colors.RED,
+            text_color=color,
             func=self.buttons.popitem,
         )
 

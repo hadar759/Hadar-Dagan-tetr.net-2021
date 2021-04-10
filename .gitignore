@@ -364,8 +364,15 @@ FodyWeavers.xsd
 config.json
 main.py
 venv/*
-mongodb.txt
 
-salt.txt
+resources/mongodb.txt
+
+resources/salt.txt
 
 tetris/main3.py
+
+resources/gmail.txt
+
+resources/password.txt
+
+tetris/main?.py

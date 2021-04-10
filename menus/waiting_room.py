@@ -70,7 +70,7 @@ class WaitingRoom(MenuScreen):
                 threading.Thread(target=self.recv_chat, daemon=True).start()
                 threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
-            super().run()
+            self.run_once()
 
             #  TODO maybe make more buttons in the middle like game settings AND INVITE, and maybe make it
             #   more than 2 players
@@ -208,7 +208,7 @@ class WaitingRoom(MenuScreen):
             sentence = ""
             for word in msg.split(" "):
                 rendered_sentence = pygame.font.Font(
-                    "./resources/joystix-monospace.ttf", font_size
+                    "./tetris-resources/joystix-monospace.ttf", font_size
                 ).render(sentence + word, True, Colors.WHITE)
                 if rendered_sentence.get_rect()[2] > button_width:
                     messages.append(sentence)

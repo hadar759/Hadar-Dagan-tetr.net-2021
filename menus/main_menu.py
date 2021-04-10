@@ -49,7 +49,7 @@ class MainMenu(MenuScreen):
             threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             while self.running:
-                super().run()
+                self.run_once()
 
                 # Display invites
                 cur_time = round(time.time())
@@ -112,7 +112,7 @@ class MainMenu(MenuScreen):
             self.width,
             self.height,
             75,
-            "../tetris/resources/tetris_background.jpg",
+            "../tetris/tetris-resources/tetris_background.jpg",
         )
         waiting_room.run()
         self.running = True

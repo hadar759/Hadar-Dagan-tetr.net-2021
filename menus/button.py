@@ -56,10 +56,10 @@ class Button:
             text_color = self.text_color
         if inp.isascii():
             return pygame.font.Font(
-                "./resources/joystix-monospace.ttf", font_size
+                "./tetris-resources/joystix-monospace.ttf", font_size
             ).render(inp, True, text_color)
         else:
-            return pygame.font.Font("./resources/seguisym.ttf", font_size).render(
+            return pygame.font.Font("./tetris-resources/seguisym.ttf", font_size).render(
                 inp, True, text_color
             )
 
