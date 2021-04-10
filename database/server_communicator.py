@@ -24,10 +24,15 @@ class ServerCommunicator:
             f"{self.SERVER_DOMAIN}/pass/update?user_email={user_email}&password={password}"
         )
 
-    def check_reset_code(self, user_email, code):
+    def check_code(self, user_email, code):
         return get(
             f"{self.SERVER_DOMAIN}/pass/check?user_email={user_email}&code={code}"
         ).text == "true"
+
+    def user_create_code(self, user_email):
+        post(
+            f"{self.SERVER_DOMAIN}/users/create/code?user_email={user_email}"
+        )
 
     def reset_password(self, user_email):
         post(

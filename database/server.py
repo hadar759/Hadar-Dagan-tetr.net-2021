@@ -471,6 +471,19 @@ class Server:
             + str(seconds).split(".")[1][:3]
         )
 
+    @router.post("/users/create/code")
+    def user_create_code(self, user_email):
+        global pass_resets
+        # Create a secure SSL context
+        context = ssl.create_default_context()
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as email_server:
+            email_server.login(self.email, self.email_pass)
+            generated_code = "".join(random.choices([str(i) for i in range(10)], k=6))
+            pass_resets[user_email] = (generated_code, time.time())
+            email_msg = f"From: {self.email}\nSubject: Register User\n\nRegistration code: {generated_code}"
+            email_server.sendmail(self.email, user_email, email_msg)
+
     @router.get("/pass/new")
     def is_password_new(self, user_email, password):
         print(self.user_collection.dependency().find_one({"email": user_email, "password": password}))

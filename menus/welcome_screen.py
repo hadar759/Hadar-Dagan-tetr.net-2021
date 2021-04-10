@@ -206,7 +206,7 @@ class WelcomeScreen(MenuScreen):
 
         else:
             box_text = "Reset Code"
-            self.buttons[list(self.buttons.keys())[-1]] = self.check_reset_code, (user_email,)
+            self.buttons[list(self.buttons.keys())[-1]] = self.check_code, (self.reset_password, (user_email,))
             self.server_communicator.reset_password(user_email)
 
         # Reset the textbox
@@ -215,15 +215,15 @@ class WelcomeScreen(MenuScreen):
             box.text = box_text
             box.rendered_text = box.render_button_text()
 
-    def check_reset_code(self, user_email):
+    def check_code(self, user_email, func, args):
         """Checks whether the entered code is valid and proceeds accordingly"""
         code: str = list(self.textboxes.values())[0]
         if not code.isdigit():
             self.textboxes = {key: "" for key in self.textboxes}
             self.create_popup_button("Enter valid code")
 
-        elif self.server_communicator.check_reset_code(user_email, code):
-            self.reset_password(user_email)
+        elif self.server_communicator.check_code(user_email, code):
+            func(*args)
 
         else:
             self.create_popup_button(r"Wrong code\More than 15 minutes passed")
@@ -365,6 +365,7 @@ class WelcomeScreen(MenuScreen):
     def register_screen(self):
         """Create the register screen - set up the correct buttons"""
         self.buttons = {}
+        self.textboxes = {}
         self.screen.blit(self.background_image, (0, 0))
 
         self.create_return_button(self.create_first_screen)
@@ -450,24 +451,71 @@ class WelcomeScreen(MenuScreen):
 
         # Add the valid user to the DB
         else:
-            password = bcrypt.hashpw(password.encode(), self.salt).hex()
-            print(password)
-            user_number = self.server_communicator.estimated_document_count()
-            user_post = DBPostCreator.create_user_post(
-                user_number, email, username, password, self.get_outer_ip()
+            self.server_communicator.user_create_code(email)
+
+            self.buttons = {}
+            self.textboxes = {}
+
+            self.create_return_button(self.register_screen)
+
+            title_width = self.width
+            title_height = 200
+            cur_x = 0
+            cur_y = 0
+            # Create the screen title
+            self.create_button(
+                (cur_x + 10, cur_y),
+                title_width,
+                title_height,
+                Colors.BLACK_BUTTON,
+                "Reset password",
+                70,
+                Colors.WHITE,
+                text_only=True,
             )
-            threading.Thread(
-                target=self.server_communicator.create_user(user_post), daemon=True
-            ).start()
-            MainMenu(
-                user_post,
-                self.server_communicator,
-                self.width,
-                self.height,
-                self.refresh_rate,
-                self.background_path,
-            ).run()
-            pygame.quit()
+            cur_y += title_height * 2
+            cur_x = self.width // 2
+
+            button_width = self.width // 2
+            button_height = 100
+            self.create_textbox(
+                (cur_x - button_width // 2, cur_y - button_height),
+                button_width,
+                button_height,
+                Colors.WHITE_BUTTON,
+                "Code",
+                text_color=Colors.BLACK
+            )
+            cur_y += button_height + 50
+
+            self.create_button(
+                (cur_x - button_width // 4, cur_y - button_height),
+                button_width // 2,
+                button_height * 2,
+                Colors.BLACK_BUTTON,
+                "Create user",
+                func=self.check_code,
+                args=(email, self.create_user, (email, username, password))
+            )
+
+    def create_user(self, email, username, password):
+        password = bcrypt.hashpw(password.encode(), self.salt).hex()
+        user_post = DBPostCreator.create_user_post(
+            email, username, password, self.get_outer_ip()
+        )
+        threading.Thread(
+            target=self.server_communicator.create_user(user_post), daemon=True
+        ).start()
+        self.running = False
+        MainMenu(
+            user_post,
+            self.server_communicator,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        ).run()
+        pygame.quit()
 
     @staticmethod
     def get_outer_ip():
