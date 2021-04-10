@@ -1,4 +1,7 @@
 import os
+import random
+import smtplib
+import ssl
 import subprocess
 from typing import Optional, Dict, List
 import time
@@ -12,15 +15,15 @@ from fastapi_utils.inferring_router import InferringRouter
 app = FastAPI()
 router = InferringRouter()
 
+pass_resets = {}
 
 def get_collection():
-    with open(r"../mongodb.txt", "r") as pass_file:
+    with open(r"../resources/mongodb.txt", "r") as pass_file:
         pass_text = pass_file.read()
     client = MongoClient(pass_text)
     db = client["tetris"]
     user_collection = db["users"]
     return user_collection
-
 
 @cbv(router)
 class Server:
@@ -29,6 +32,11 @@ class Server:
 
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
+        with open(r"../resources/password.txt", "r") as pass_file:
+            self.email_pass = pass_file.read()
+
+        with open(r"../resources/gmail.txt", "r") as email_file:
+            self.email = email_file.read()
 
     @router.post("/users/friends/accept")
     def accept_friend(self, sender, recipient):
@@ -463,12 +471,39 @@ class Server:
             + str(seconds).split(".")[1][:3]
         )
 
+    @router.get("/pass/new")
+    def is_password_new(self, user_email, password):
+        print(self.user_collection.dependency().find_one({"email": user_email, "password": password}))
+        return self.user_collection.dependency().find_one({"email": user_email, "password": password}) is None
+
+    @router.post("/pass/update")
+    def update_user_email(self, user_email, password):
+        self.user_collection.dependency().find_one_and_update({"email": user_email}, {"$set": {"password": password}})
+
+    @router.post("/pass/reset")
+    def send_reset_email(self, user_email):
+        global pass_resets
+        # Create a secure SSL context
+        context = ssl.create_default_context()
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as email_server:
+            email_server.login(self.email, self.email_pass)
+            generated_code = "".join(random.choices([str(i) for i in range(10)], k=6))
+            pass_resets[user_email] = (generated_code, time.time())
+            email_msg = f"From: {self.email}\nSubject: Reset password\n\nPassword reset code: {generated_code}"
+            email_server.sendmail(self.email, user_email, email_msg)
+
+    @router.get("/pass/check")
+    def check_pass_reset(self, user_email, code):
+        global pass_resets
+        return pass_resets[user_email][0] == str(code) and time.time() - pass_resets[user_email][1] < 15 * 60
+
 
 app.include_router(router)
 
 
 if __name__ == "__main__":
     # Run Server
-    #os.chdir("./database")
+    # os.chdir("./database")
     subprocess.call("uvicorn server:app --host 0.0.0.0 --port 8000")
     # uvicorn.run(app)

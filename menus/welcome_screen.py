@@ -1,6 +1,10 @@
+import random
+import re
 import socket
 import bcrypt
 import threading
+import smtplib
+import ssl
 from typing import Optional
 
 import pygame
@@ -25,14 +29,21 @@ class WelcomeScreen(MenuScreen):
     ):
         super().__init__(width, height, refresh_rate, background_path)
         self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
-        with open(r"../salt.txt", "r") as salt_file:
+        with open(r"../resources/salt.txt", "r") as salt_file:
             self.salt = salt_file.read().encode()
 
     def run(self):
         """Main loop of the welcome screen"""
-        # Set up the buttons and display them
-        # Very specific numbers just so they exactly fill the blocks in the background pic hahaha
+        self.create_first_screen()
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
+        while self.running:
+            self.run_once()
+
+    def create_first_screen(self):
+        """Create the first screen of the game"""
+        self.buttons = {}
+        self.textboxes = {}
         # Login button
         self.create_button(
             (self.width // 2 - 258, self.height // 3 - 250),
@@ -53,54 +64,30 @@ class WelcomeScreen(MenuScreen):
             func=self.register_screen,
         )
 
-        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
-
-        while self.running:
-            self.update_screen()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    self.running = False
-                    quit()
-
-                if not self.mouse_pos:
-                    continue
-
-                # In case the user pressed the mouse button
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    for textbox in self.textboxes.keys():
-                        # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
-                        if textbox.inside_button(self.mouse_pos):
-                            # Make the textbox writeable
-                            textbox.active = True
-                        else:
-                            textbox.active = False
-
-                    for button in reversed(self.buttons.keys()):
-                        # Check if the click is inside the button area (i.e. whether the button was clicked)
-                        if button.inside_button(self.mouse_pos):
-                            button.clicked(self.screen)
-                            # Execute the function which the button controls
-                            self.buttons[button][0]()
-                            break
-
-                # If the user typed something
-                if event.type == pygame.KEYDOWN:
-                    for textbox in self.textboxes.keys():
-                        if textbox.active:
-                            self.textbox_key_actions(textbox, event)
-                            break
+    def create_return_button(self, func):
+        ret_width = 75
+        ret_height = 75
+        self.create_button(
+            (self.width - ret_width, 0),
+            ret_width,
+            ret_height,
+            Colors.BLACK_BUTTON,
+            "<-",
+            func=func
+        )
 
     def login(self):
         """Create the login screen - set up the correct buttons"""
         self.buttons = {}
+        self.textboxes = {}
         self.screen.blit(self.background_image, (0, 0))
 
         button_width = self.width // 2
         button_height = self.height // 10
         # Place the button in the middle of the screen
         mid_x_pos = self.width // 2 - (button_width // 2)
+
+        self.create_return_button(self.create_first_screen)
 
         # Username\Email Button
         self.create_textbox(
@@ -135,6 +122,18 @@ class WelcomeScreen(MenuScreen):
             True,
         )
 
+        self.create_button(
+            (mid_x_pos + button_width // 4 - 5, self.height // 2 + button_height // 2 - 20),
+            button_width // 2,
+            button_height // 2,
+            Colors.BLACK_BUTTON,
+            "Forgot my password",
+            text_color=Colors.RED,
+            func=self.forgot_my_password,
+            text_only=False,
+            text_size=25
+        )
+
         # Continue button
         self.create_button(
             (mid_x_pos + button_width // 4 - 5, self.height // 2 + button_height),
@@ -147,6 +146,167 @@ class WelcomeScreen(MenuScreen):
         )
 
         self.update_screen()
+
+    def forgot_my_password(self):
+        """Prompt the user to enter their email, to which the password will be reset"""
+        self.buttons = {}
+        self.textboxes = {}
+
+        self.create_return_button(self.login)
+
+        title_width = self.width
+        title_height = 200
+        cur_x = 0
+        cur_y = 0
+        # Create the screen title
+        self.create_button(
+            (cur_x + 10, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "Reset password",
+            70,
+            Colors.WHITE,
+            text_only=True,
+        )
+        cur_y += title_height * 2
+        cur_x = self.width // 2
+
+        button_width = self.width // 2
+        button_height = 100
+        self.create_textbox(
+            (cur_x - button_width // 2, cur_y - button_height),
+            button_width,
+            button_height,
+            Colors.WHITE_BUTTON,
+            "Email",
+            text_color=Colors.BLACK
+        )
+        cur_y += button_height + 50
+
+        self.create_button(
+            (cur_x - button_width // 4, cur_y - button_height),
+            button_width // 2,
+            button_height * 2,
+            Colors.BLACK_BUTTON,
+            "Continue",
+            func=self.check_reset_email
+        )
+
+    def check_reset_email(self):
+        """Checks whether the given email for reset is correct"""
+        user_email = list(self.textboxes.values())[0]
+        valid_email = self.is_email(user_email)
+        if not valid_email or not self.server_communicator.email_exists(user_email):
+            box_text = "Email"
+            if not valid_email:
+                self.create_popup_button("Email not valid")
+            else:
+                self.create_popup_button("User doesn't exist")
+
+        else:
+            box_text = "Reset Code"
+            self.buttons[list(self.buttons.keys())[-1]] = self.check_reset_code, (user_email,)
+            self.server_communicator.reset_password(user_email)
+
+        # Reset the textbox
+        self.textboxes = {key: "" for key in self.textboxes}
+        for box in self.textboxes:
+            box.text = box_text
+            box.rendered_text = box.render_button_text()
+
+    def check_reset_code(self, user_email):
+        """Checks whether the entered code is valid and proceeds accordingly"""
+        code: str = list(self.textboxes.values())[0]
+        if not code.isdigit():
+            self.textboxes = {key: "" for key in self.textboxes}
+            self.create_popup_button("Enter valid code")
+
+        elif self.server_communicator.check_reset_code(user_email, code):
+            self.reset_password(user_email)
+
+        else:
+            self.create_popup_button(r"Wrong code\More than 15 minutes passed")
+
+    def reset_password(self, user_email):
+        """Prompt the user to enter the password to reset to"""
+        self.buttons = {}
+        self.textboxes = {}
+
+        self.create_return_button(self.login)
+
+        title_width = self.width
+        title_height = 200
+        cur_x = 0
+        cur_y = 0
+        # Create the screen title
+        self.create_button(
+            (cur_x + 10, cur_y),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "Reset password",
+            70,
+            Colors.WHITE,
+            text_only=True,
+        )
+        cur_y += title_height * 1.8
+        cur_x = self.width // 2
+
+        button_width = self.width // 2
+        button_height = 100
+        self.create_textbox(
+            (cur_x - button_width // 2, cur_y - button_height),
+            button_width,
+            button_height,
+            Colors.WHITE_BUTTON,
+            "Password",
+            is_pass=True,
+            text_color=Colors.BLACK
+        )
+        cur_y += button_height + 100
+
+        self.create_textbox(
+            (cur_x - button_width // 2, cur_y - button_height),
+            button_width,
+            button_height,
+            Colors.WHITE_BUTTON,
+            "Reenter password",
+            is_pass=True,
+            text_color=Colors.BLACK
+        )
+        cur_y += button_height + 100
+
+        self.create_button(
+            (cur_x - button_width // 4, cur_y - button_height),
+            button_width // 2,
+            button_height * 2,
+            Colors.BLACK_BUTTON,
+            "Continue",
+            func=self.reset_password_continue,
+            args=(user_email,)
+        )
+
+    def reset_password_continue(self, user_email):
+        """Receive the password from the user and updates it"""
+        textbox_values = list(self.textboxes.values())
+        password = textbox_values[0]
+        re_password = textbox_values[1]
+
+        if password != re_password:
+            self.reset_password(user_email)
+            self.create_popup_button("Passwords do not match")
+
+        elif not self.server_communicator.is_password_new(user_email, bcrypt.hashpw(password.encode(), self.salt).hex()):
+            self.reset_password(user_email)
+            self.create_popup_button("Must use a different password then the current one")
+
+        else:
+            # Encrypt the password
+            password = bcrypt.hashpw(password.encode(), self.salt).hex()
+            self.server_communicator.update_password(user_email, password)
+            self.login()
+            self.create_popup_button("Password successfully updated", Colors.BLUE)
 
     def login_continue(self):
         """Process the login info given"""
@@ -199,12 +359,15 @@ class WelcomeScreen(MenuScreen):
     @staticmethod
     def is_email(inp: str):
         """Returns whether a given string is an email address"""
-        return "@" in inp
+        regex = r'^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
+        return re.search(regex, inp) is not None
 
     def register_screen(self):
         """Create the register screen - set up the correct buttons"""
         self.buttons = {}
         self.screen.blit(self.background_image, (0, 0))
+
+        self.create_return_button(self.create_first_screen)
 
         button_width = self.width // 2
         button_height = self.height // 10
