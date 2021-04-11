@@ -26,6 +26,7 @@ class WaitingRoom(MenuScreen):
         user: Dict,
         is_admin: bool,
         room_name: str,
+        cache: Dict,
         server_socket: socket.socket,
         server_communicator: ServerCommunicator,
         width: int,
@@ -34,6 +35,7 @@ class WaitingRoom(MenuScreen):
         background_path: Optional[str] = None,
     ):
         super().__init__(width, height, refresh_rate, background_path)
+        self.cache = cache
         self.players = {}
         self.is_admin = is_admin
         self.room_name = room_name
@@ -512,15 +514,20 @@ class WaitingRoom(MenuScreen):
 
     def user_profile(self, username):
         profile = UserProfile(
-            self.user,
+            self.cache["user"],
             username,
             self.server_communicator,
             self.width,
             self.height,
             self.refresh_rate,
             self.background_path,
+            user_profile=self.cache.get(username)
         )
+        self.running = False
         profile.run()
+        self.cache[username] = profile.profile
+        self.cache["user"] = profile.user
+        self.running = True
 
     def display_players(self):
         player_name_width = 295

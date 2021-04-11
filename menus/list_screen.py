@@ -10,7 +10,7 @@ class ListScreen(MenuScreen):
         self,
         user: Dict,
         server_communicator: ServerCommunicator,
-        entry_list,
+        cache,
         num_on_screen,
         width: int,
         height: int,
@@ -21,7 +21,8 @@ class ListScreen(MenuScreen):
         self.user = user
         self.server_communicator = server_communicator
         self.offset = 0
-        self.entry_list = entry_list
+        self.cache = cache
+        self.entry_list = []
         self.num_on_screen = num_on_screen
 
     def run(self):

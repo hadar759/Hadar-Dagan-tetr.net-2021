@@ -15,7 +15,7 @@ class FriendsScreen(ListScreen):
         self,
         user: Dict,
         server_communicator: ServerCommunicator,
-        entry_list,
+        cache,
         num_on_screen,
         type: str,
         width: int,
@@ -26,7 +26,7 @@ class FriendsScreen(ListScreen):
         super().__init__(
             user,
             server_communicator,
-            entry_list,
+            cache,
             num_on_screen,
             width,
             height,
@@ -34,6 +34,7 @@ class FriendsScreen(ListScreen):
             background_path,
         )
         self.type = type
+        self.entry_list = user[type]
 
     def create_screen(self):
         # Reset the screen
@@ -157,16 +158,17 @@ class FriendsScreen(ListScreen):
 
         cur_y += 10
 
-        self.create_button(
-            (cur_x, cur_y),
-            function_button_width,
-            function_button_height,
-            Colors.BLACK_BUTTON,
-            "⟳",
-            70,
-            Colors.WHITE,
-            func=self.refresh_list,
-        )
+        if self.type != "requests_sent":
+            self.create_button(
+                (cur_x, cur_y),
+                function_button_width,
+                function_button_height,
+                Colors.BLACK_BUTTON,
+                "⟳",
+                70,
+                Colors.WHITE,
+                func=self.refresh_list,
+            )
 
         cur_y += function_button_height + 10
 
@@ -180,7 +182,8 @@ class FriendsScreen(ListScreen):
 
     def switch_type(self, type):
         self.type = f"requests_{type}"
-        self.refresh_list()
+        self.entry_list = self.user[self.type]
+        self.create_screen()
 
     def add_friend(self):
         friend_name = list(self.textboxes.values())[0]
@@ -206,6 +209,10 @@ class FriendsScreen(ListScreen):
                 ),
             ).start()
             self.user["requests_sent"].append(friend_name)
+            self.cache["user"] = self.user
+            print("add friend")
+            print(self.cache)
+            print(self.user)
             self.create_screen()
 
         self.textboxes[(list(self.textboxes.keys()))[0]] = ""
@@ -213,7 +220,9 @@ class FriendsScreen(ListScreen):
     def refresh_list(self):
         self.offset = 0
         self.user = self.server_communicator.get_user_profile(self.user["username"])
+        self.cache["user"] = self.user
         self.entry_list = self.user[self.type]
+        self.loading = False
         self.create_screen()
 
     def display_entries(self, cur_x, cur_y):
@@ -223,7 +232,7 @@ class FriendsScreen(ListScreen):
             max(0, len(self.entry_list) - self.num_on_screen), self.offset
         )
         for index, friend in enumerate(
-            self.entry_list[self.offset : self.offset + self.num_on_screen]
+            self.entry_list[self.offset: self.offset + self.num_on_screen]
         ):
             self.create_button(
                 (cur_x, cur_y),
@@ -244,16 +253,24 @@ class FriendsScreen(ListScreen):
                 cur_x += user_button_width + 10
 
     def user_profile(self, username):
+        self.running = False
         profile = UserProfile(
-            self.user,
+            self.cache["user"],
             username,
             self.server_communicator,
             self.width,
             self.height,
             self.refresh_rate,
             self.background_path,
+            user_profile=self.cache.get(username)
         )
         profile.run()
+        self.running = True
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        self.cache[username] = profile.profile
+        self.cache["user"] = profile.user
+        print(profile.user)
+        self.create_screen()
 
     def change_binary_button(self, button):
         if button.text == "❌":

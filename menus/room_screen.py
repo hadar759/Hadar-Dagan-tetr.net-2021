@@ -1,5 +1,6 @@
 import socket
 import threading
+import time
 from typing import Dict, Optional
 
 from game_server import GameServer
@@ -14,7 +15,7 @@ class RoomScreen(ListScreen):
         self,
         user: Dict,
         server_communicator: ServerCommunicator,
-        entry_list,
+        cache,
         num_on_screen,
         width: int,
         height: int,
@@ -24,13 +25,14 @@ class RoomScreen(ListScreen):
         super().__init__(
             user,
             server_communicator,
-            entry_list,
+            cache,
             num_on_screen,
             width,
             height,
             refresh_rate,
             background_path,
         )
+        self.entry_list = cache["rooms"]
 
     def create_screen(self):
         # Reset the screen
@@ -141,7 +143,9 @@ class RoomScreen(ListScreen):
 
     def refresh_rooms(self):
         self.offset = 0
-        self.entry_list = self.server_communicator.get_rooms()
+        self.cache["rooms"] = self.server_communicator.get_rooms()
+        self.entry_list = self.cache["rooms"]
+        self.loading = False
         self.create_screen()
 
     def display_entries(self, cur_x, cur_y):
@@ -152,7 +156,7 @@ class RoomScreen(ListScreen):
         self.offset = min(
             max(0, len(self.entry_list) - self.num_on_screen), self.offset
         )
-        for room in self.entry_list[self.offset : self.offset + self.num_on_screen]:
+        for room in self.entry_list[self.offset: self.offset + self.num_on_screen]:
             self.create_button(
                 (cur_x, cur_y),
                 room_button_width,
@@ -350,7 +354,6 @@ class RoomScreen(ListScreen):
         button.rendered_text = button.render_button_text()
 
     def connect_to_room(self, room: Dict):
-        self.running = False
         sock = socket.socket()
         sock.connect((room["ip"], 44444))
         # Start the main menu
@@ -358,6 +361,7 @@ class RoomScreen(ListScreen):
             self.user,
             False,
             room["name"],
+            self.cache,
             sock,
             self.server_communicator,
             self.width,
@@ -365,7 +369,9 @@ class RoomScreen(ListScreen):
             75,
             "../tetris/tetris-resources/tetris_background.jpg",
         )
+        self.running = False
         waiting_room.run()
         self.running = True
+        self.cache = waiting_room.cache
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
         self.create_screen()

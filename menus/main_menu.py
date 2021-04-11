@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
 import pickle
 import socket
 import threading
@@ -26,6 +28,7 @@ class MainMenu(MenuScreen):
     def __init__(
         self,
         user: Dict,
+        cache,
         server_communicator: ServerCommunicator,
         width: int,
         height: int,
@@ -39,6 +42,7 @@ class MainMenu(MenuScreen):
         self.text_cursor_ticks = pygame.time.get_ticks()
         self.server_communicator = server_communicator
         self.socket = socket.socket()
+        self.cache = cache
 
     def run(self):
         """Main loop of the main menu"""
@@ -46,6 +50,7 @@ class MainMenu(MenuScreen):
             self.create_menu()
             self.running = True
             old_time = round(time.time())
+            print("hi")
             threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             while self.running:
@@ -99,14 +104,14 @@ class MainMenu(MenuScreen):
         self.connect_to_room(room)
 
     def connect_to_room(self, room: Dict):
-        self.running = False
         sock = socket.socket()
         sock.connect((room["ip"], 44444))
         # Start the main menu
         waiting_room = WaitingRoom(
-            self.user,
+            self.cache["user"],
             False,
             room["name"],
+            self.cache,
             sock,
             self.server_communicator,
             self.width,
@@ -114,8 +119,10 @@ class MainMenu(MenuScreen):
             75,
             "../tetris/tetris-resources/tetris_background.jpg",
         )
+        self.running = False
         waiting_room.run()
         self.running = True
+        self.cache = waiting_room.cache
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def dismiss_invite(self):
@@ -241,11 +248,10 @@ class MainMenu(MenuScreen):
         self.display_buttons()
 
     def friends_screen(self, type):
-        self.running = False
         friends_screen = FriendsScreen(
-            self.user,
+            self.cache["user"],
             self.server_communicator,
-            self.user[type],
+            self.cache,
             12,
             type,
             self.width,
@@ -253,8 +259,10 @@ class MainMenu(MenuScreen):
             self.refresh_rate,
             self.background_path,
         )
+        self.running = False
         friends_screen.run()
         self.running = True
+        self.cache = friends_screen.cache
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def quit(self):
@@ -264,49 +272,58 @@ class MainMenu(MenuScreen):
         self.server_communicator.update_online(self.user["username"], False)
 
     def create_leaderboard(self):
-        self.running = False
         leaderboard = LeaderboardScreen(
-            self.user,
+            self.cache["user"],
             self.server_communicator,
-            [],
+            self.cache,
             4,
             self.width,
             self.height,
             self.refresh_rate,
             self.background_path,
         )
+        self.running = False
         leaderboard.run()
+        # Update the cache
+        self.cache = leaderboard.cache
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def user_profile(self, username):
-        self.running = False
         profile = UserProfile(
-            self.user,
+            self.cache["user"],
             username,
             self.server_communicator,
             self.width,
             self.height,
             self.refresh_rate,
             self.background_path,
+            user_profile=self.cache.get(username)
         )
+        self.running = False
         profile.run()
+        # Update the cache
+        self.cache["user"] = profile.user
+        self.cache[username] = profile.profile
+
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def create_room_list(self):
-        self.running = False
         room_screen = RoomScreen(
-            self.user,
+            self.cache["user"],
             self.server_communicator,
-            self.server_communicator.get_rooms(),
+            self.cache,
             3,
             self.width,
             self.height,
             self.refresh_rate,
             self.background_path,
         )
+        self.running = False
         room_screen.run()
+        # Update the cache
+        self.cache = room_screen.cache
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 

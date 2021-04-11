@@ -1,6 +1,10 @@
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import random
 import re
 import socket
+import time
+
 import bcrypt
 import threading
 import smtplib
@@ -72,7 +76,7 @@ class WelcomeScreen(MenuScreen):
             ret_width,
             ret_height,
             Colors.BLACK_BUTTON,
-            "<-",
+            "->",
             func=func
         )
 
@@ -332,7 +336,6 @@ class WelcomeScreen(MenuScreen):
 
         # Update the user's latest ip
         if user:
-            self.running = False
             new_outer_ip = self.get_outer_ip()
             threading.Thread(
                 target=self.server_communicator.on_connection,
@@ -342,8 +345,11 @@ class WelcomeScreen(MenuScreen):
                 ),
                 daemon=True,
             ).start()
+            cache = self.cache_stats(user["username"])
+            self.running = False
             MainMenu(
-                user,
+                cache["user"],
+                cache,
                 self.server_communicator,
                 self.width,
                 self.height,
@@ -506,9 +512,11 @@ class WelcomeScreen(MenuScreen):
         threading.Thread(
             target=self.server_communicator.create_user(user_post), daemon=True
         ).start()
+        cache = self.cache_stats(username)
         self.running = False
         MainMenu(
             user_post,
+            cache,
             self.server_communicator,
             self.width,
             self.height,
@@ -526,3 +534,52 @@ class WelcomeScreen(MenuScreen):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         return local_ip
+
+    def cache_stats(self, username):
+        start_time = time.time()
+        cache = {}
+        with ThreadPoolExecutor() as executor:
+            futures = []
+
+            cur_future = executor.submit(self.server_communicator.get_apm_leaderboard)
+            futures.append(cur_future)
+            cache[cur_future] = "apm_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_marathon_leaderboard)
+            futures.append(cur_future)
+            cache[cur_future] = "marathon_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 20)
+            futures.append(cur_future)
+            cache[cur_future] = "20l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 40)
+            futures.append(cur_future)
+            cache[cur_future] = "40l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 100)
+            futures.append(cur_future)
+            cache[cur_future] = "100l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 1000)
+            futures.append(cur_future)
+            cache[cur_future] = "1000l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_rooms)
+            futures.append(cur_future)
+            cache[cur_future] = "rooms"
+
+            cur_future = executor.submit(self.server_communicator.get_user_profile, username)
+            futures.append(cur_future)
+            cache[cur_future] = "user"
+
+        new_cache = {}
+
+        for future in concurrent.futures.as_completed(futures):
+            new_cache[cache[future]] = future.result()
+
+        print(new_cache)
+        print(f"it took: {time.time() - start_time}secs")
+
+        return new_cache
+

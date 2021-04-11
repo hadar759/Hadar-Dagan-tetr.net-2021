@@ -1,4 +1,7 @@
+import math
 import socket
+import threading
+import time
 from typing import Optional, Dict, Tuple
 
 import pygame
@@ -27,6 +30,7 @@ class MenuScreen:
         )
         self.background_path = background_path
         self.running = True
+        self.loading = False
         self.buttons: Dict[Button, callable] = {}
         self.textboxes: Dict[TextBox, str] = {}
         self.actions = {}
@@ -67,7 +71,9 @@ class MenuScreen:
                 # User pressed a button with no response function
                 if not func:
                     continue
+                threading.Thread(target=self.show_loading, daemon=True).start()
                 func(*args)
+                self.loading = False
                 break
 
             for textbox in self.textboxes.keys():
@@ -225,8 +231,6 @@ class MenuScreen:
         """Display all buttons on the screen"""
         for textbox in self.textboxes.keys():
             if not textbox.transparent:
-                x = textbox.starting_x
-                y = textbox.starting_y
                 if not textbox.text_only:
                     textbox.color_button(self.screen)
                 self.textboxes[textbox] = textbox.show_text_in_textbox(
@@ -245,7 +249,7 @@ class MenuScreen:
                 textbox.text, textbox.text_size, textbox.text_color
             )
 
-    def update_screen(self):
+    def update_screen(self, flip=True):
         """Displays everything needed to be displayed on the screen"""
         # Display the background image in case there is one
         if self.background_image:
@@ -253,7 +257,8 @@ class MenuScreen:
         self.display_textboxes()
         self.display_buttons()
         self.drawings()
-        pygame.display.flip()
+        if flip:
+            pygame.display.flip()
 
     def drawings(self):
         pass
@@ -261,3 +266,67 @@ class MenuScreen:
     def update_mouse_pos(self):
         while self.running:
             self.mouse_pos = pygame.mouse.get_pos()
+
+    def show_loading(self):
+        self.loading = True
+        # Variables for circle drawing
+        offset = 15
+        radius = 200
+        cycle_len = 6
+
+        base_x = self.width // 2 - radius // 3
+        base_y = self.height // 2 - radius // 3
+
+        time.sleep(1)
+        runs = 0
+        last_updated = -999
+
+        # Draw the circles as long as we're loading
+        while self.loading and self.running:
+
+            if (runs % cycle_len == cycle_len - 1 or runs % cycle_len == 0) and runs != last_updated:
+                self.update_screen(flip=False)
+                self.fade(flip=False)
+
+            if runs % cycle_len == cycle_len - 2:
+                width = 0
+
+            else:
+                width = 15
+
+            self.draw_3d_circle(base_x, base_y, radius, width, draw_top_right=True)
+
+            if runs % cycle_len > 0:
+                self.draw_3d_circle(base_x, base_y + offset, radius, width, draw_bottom_right=True)
+
+            if runs % cycle_len > 1:
+                self.draw_3d_circle(base_x - offset, base_y + offset, radius, width, draw_bottom_left=True)
+
+            if runs % cycle_len > 2:
+                self.draw_3d_circle(base_x - offset, base_y, radius, width, draw_top_left=True)
+
+            pygame.display.flip()
+
+            runs += 1
+            time.sleep(1)
+
+    def draw_3d_circle(self, base_x, base_y, radius, width, draw_top_right=False, draw_bottom_right=False, draw_bottom_left=False,
+                       draw_top_left=False):
+        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["button"], (base_x, base_y), radius, width,
+                           draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
+                           draw_top_left=draw_top_left)
+        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["bottom"], (base_x, base_y), radius - width // 3 * 2,
+                           width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
+                           draw_top_left=draw_top_left)
+        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["upper"], (base_x, base_y), radius + width // 3,
+                           width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
+                           draw_top_left=draw_top_left)
+
+    def fade(self, alpha=100, flip=True):
+        """Fade the screen"""
+        fade = pygame.Surface((self.screen.get_rect()[2], self.screen.get_rect()[3]))
+        fade.fill((0, 0, 0))
+        fade.set_alpha(alpha)
+        self.screen.blit(fade, (0, 0))
+        if flip:
+            pygame.display.update()

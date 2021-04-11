@@ -1,3 +1,4 @@
+import threading
 from typing import Dict, Optional
 
 from database.server_communicator import ServerCommunicator
@@ -11,7 +12,7 @@ class LeaderboardScreen(ListScreen):
         self,
         user: Dict,
         server_communicator: ServerCommunicator,
-        entry_list,
+        cache,
         num_on_screen,
         width: int,
         height: int,
@@ -21,7 +22,7 @@ class LeaderboardScreen(ListScreen):
         super().__init__(
             user,
             server_communicator,
-            entry_list,
+            cache,
             num_on_screen,
             width,
             height,
@@ -106,15 +107,15 @@ class LeaderboardScreen(ListScreen):
         self.running = False
 
     def sprint_leaderboard(self, line_num):
-        self.entry_list = self.server_communicator.get_sprint_leaderboard(line_num)
+        self.entry_list = self.cache[f"{line_num}l_leaderboard"]
         self.display_leaderboard(str(line_num) + "l")
 
     def marathon_leaderboard(self):
-        self.entry_list = self.server_communicator.get_marathon_leaderboard()
+        self.entry_list = self.cache["marathon_leaderboard"]
         self.display_leaderboard("marathon")
 
     def apm_leaderboard(self):
-        self.entry_list = self.server_communicator.get_apm_leaderboard()
+        self.entry_list = self.cache["apm_leaderboard"]
         self.display_leaderboard("apm")
 
     def sprint_leaderboard_menu(self):
@@ -336,5 +337,11 @@ class LeaderboardScreen(ListScreen):
             self.height,
             self.refresh_rate,
             self.background_path,
+            user_profile=self.cache.get(username)
         )
+        self.running = False
         profile.run()
+        self.cache["user"] = profile.user
+        self.cache[username] = profile.profile
+        self.running = True
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()

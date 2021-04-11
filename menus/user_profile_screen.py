@@ -25,9 +25,9 @@ class UserProfile(MenuScreen):
         super().__init__(width, height, refresh_rate, background_path)
         self.user = user
         self.server_communicator = server_communicator
+        self.wanted_profile = wanted_profile
         if not user_profile:
             self.profile = self.server_communicator.get_user_profile(wanted_profile)
-            self.wanted_profile = wanted_profile
         else:
             self.profile = user_profile
 
@@ -46,14 +46,8 @@ class UserProfile(MenuScreen):
         self.server_communicator.update_online(self.user["username"], False)
 
     def create_user_profile(self):
-        self.user = self.server_communicator.get_user_profile(self.user["username"])
-        username = self.wanted_profile
-        if username != self.user["username"]:
-            user = self.server_communicator.get_user_profile(username)
-        else:
-            user = self.user
-        print(user)
-        print(f"you've entered {username}'s user profile")
+        username = self.profile["username"]
+
         self.buttons = {}
         self.textboxes = {}
         name_width = 400
@@ -91,7 +85,7 @@ class UserProfile(MenuScreen):
             button_text = "Add friend"
             button_font_size = 47
 
-        if user != self.user:
+        if self.profile["username"] != self.user["username"]:
             btn = self.create_button(
                 (cur_x + name_width + 200, cur_y + 60),
                 name_width + 30,
@@ -133,7 +127,7 @@ class UserProfile(MenuScreen):
             stat_width,
             stat_height,
             Colors.BLACK_BUTTON,
-            f"Games: {user['games']}",
+            f"Games: {self.profile['games']}",
             text_only=True,
         )
 
@@ -144,7 +138,7 @@ class UserProfile(MenuScreen):
             stat_width,
             stat_height,
             Colors.BLACK_BUTTON,
-            f"Wins: {user['wins']}",
+            f"Wins: {self.profile['wins']}",
             text_only=True,
         )
 
@@ -155,7 +149,7 @@ class UserProfile(MenuScreen):
             stat_width,
             stat_height,
             Colors.BLACK_BUTTON,
-            f"apm: {user['apm']}",
+            f"apm: {self.profile['apm']}",
             text_only=True,
         )
 
@@ -166,7 +160,7 @@ class UserProfile(MenuScreen):
             stat_width,
             stat_height,
             Colors.BLACK_BUTTON,
-            f"Marathon: {user['marathon']}",
+            f"Marathon: {self.profile['marathon']}",
             text_only=True,
         )
 
@@ -188,7 +182,7 @@ class UserProfile(MenuScreen):
         time_width = stat_width
         time_height = 75
 
-        for index, entry in enumerate(user["sprint"]):
+        for index, entry in enumerate(self.profile["sprint"]):
             if entry == "0":
                 entry = "-"
             self.create_button(
@@ -218,6 +212,8 @@ class UserProfile(MenuScreen):
                 username,
             )
 
+            self.user["requests_sent"].append(username)
+
         elif button.text == "Accept request":
             button.color = Colors.RED_BUTTON
 
@@ -230,6 +226,9 @@ class UserProfile(MenuScreen):
                 username,
                 self.user["username"],
             )
+
+            self.user["friends"].append(username)
+            self.user["requests_received"].remove(username)
 
         else:
             button.color = Colors.GREEN_BUTTON
@@ -244,6 +243,11 @@ class UserProfile(MenuScreen):
                 self.user["username"],
                 username,
             )
+
+            if username in self.user["friends"]:
+                self.user["friends"].remove(username)
+            else:
+                self.user["requests_sent"].remove(username)
 
         threading.Thread(target=func, args=args).start()
         self.display_buttons()
