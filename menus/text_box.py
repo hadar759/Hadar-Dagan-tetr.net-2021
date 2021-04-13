@@ -55,7 +55,7 @@ class TextBox(Button):
         self.rendered_text = self.render_button_text(
             displayed_text, self.text_size, self.text_color
         )
-        screen.blit(self.rendered_text, self.get_middle_text_position())
+        screen.blit(self.rendered_text[0], self.get_middle_text_position())
         return inputted_text
 
     def add_text_cursor(self, text):

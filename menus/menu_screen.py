@@ -110,6 +110,8 @@ class MenuScreen:
         args: Tuple = (),
         border_size: int = 10,
         clickable: bool = True,
+        info_text: str = "",
+        info_size: int = 27
     ):
         """Creates a new button and appends it to the button dict"""
         button = Button(
@@ -126,6 +128,20 @@ class MenuScreen:
             clickable,
         )
         self.buttons[button] = (func, args)
+
+        if info_text:
+            info_button_width = 50
+            info_button_height = 50
+            info_button = Button(
+                (starting_pixel[0] + width - info_button_width, starting_pixel[1]),
+                info_button_width,
+                info_button_height,
+                Colors.BLACK_BUTTON,
+                "ⓘ",
+                35,
+                text_only=True
+            )
+            self.buttons[info_button] = (self.create_popup_button, (info_text, info_size, Colors.BLUE))
 
         return button
 
@@ -158,7 +174,7 @@ class MenuScreen:
         self.textboxes[box] = ""
         return box
 
-    def create_popup_button(self, text, color=Colors.RED):
+    def create_popup_button(self, text, size=38, color=Colors.RED):
         button_width = self.width // 2
         button_height = self.height // 3
         # Place the button in the middle of the screen
@@ -170,7 +186,7 @@ class MenuScreen:
             button_height,
             Colors.BLACK_BUTTON,
             text,
-            38,
+            size,
             text_color=color,
             func=self.buttons.popitem,
         )
@@ -274,7 +290,6 @@ class MenuScreen:
         radius = 200
         cycle_len = 6
         width = 15
-        fill = False
 
         base_x = self.width // 2 - radius // 3
         base_y = self.height // 2 - radius // 3

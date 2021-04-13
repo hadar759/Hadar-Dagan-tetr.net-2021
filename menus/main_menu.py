@@ -171,6 +171,9 @@ class MainMenu(MenuScreen):
             Colors.YELLOW_BUTTON,
             cur_button_text,
             func=self.sprint,
+            info_text="Sprint is a gamemode in which the\ngoal is to play as fast as you can.\n"
+                      "You pick a number of lines and your\nscore is measured based on how fast\n"
+                      "you can destroy that many lines."
         )
         cur_y += button_offset
 
@@ -182,6 +185,8 @@ class MainMenu(MenuScreen):
             Colors.DEEP_BLUE_BUTTON,
             cur_button_text,
             func=self.marathon,
+            info_text="Marathon is a gamemode in which the\ngoal is to play as long as you can.\nEvery 10 lines "
+                      "the drop speed gets\nfaster and your score is measured\nbased on how long you've survived."
         )
         cur_y += button_offset
 
@@ -193,6 +198,9 @@ class MainMenu(MenuScreen):
             Colors.PINKISH_BUTTON,
             cur_button_text,
             func=self.create_room_list,
+            info_text="Multiplayer is a gamemode in which\nplayers compete against each other.\nEach line you destroy "
+                      "sends\n\"garbage\" lines to the opponent.\nYour goal is to make everyone\ntop out by sending "
+                      "\"garbage\"."
         )
         cur_y += button_offset
 
@@ -204,6 +212,8 @@ class MainMenu(MenuScreen):
             Colors.GREEN_BUTTON,
             cur_button_text,
             func=self.create_leaderboard,
+            info_text="Top scores of all time\nin various categories",
+            info_size=40
         )
 
         name_width = 350
