@@ -253,7 +253,6 @@ class FriendsScreen(ListScreen):
                 cur_x += user_button_width + 10
 
     def user_profile(self, username):
-        self.running = False
         profile = UserProfile(
             self.cache["user"],
             username,
@@ -264,6 +263,7 @@ class FriendsScreen(ListScreen):
             self.background_path,
             user_profile=self.cache.get(username)
         )
+        self.running = False
         profile.run()
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()

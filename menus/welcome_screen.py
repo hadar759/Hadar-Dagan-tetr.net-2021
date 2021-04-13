@@ -474,7 +474,7 @@ class WelcomeScreen(MenuScreen):
                 title_width,
                 title_height,
                 Colors.BLACK_BUTTON,
-                "Reset password",
+                "Verify User",
                 70,
                 Colors.WHITE,
                 text_only=True,

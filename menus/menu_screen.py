@@ -59,7 +59,7 @@ class MenuScreen:
 
         # In case the user pressed the mouse button
         if event.type == self.BUTTON_PRESS and event.button == 1:
-            for button in reversed(self.buttons):
+            for button in reversed(list(self.buttons)):
                 # Check if the click is inside the button area (i.e. the button was clicked)
                 # Otherwise skip
                 if not button.inside_button(self.mouse_pos):
@@ -273,6 +273,8 @@ class MenuScreen:
         offset = 15
         radius = 200
         cycle_len = 6
+        width = 15
+        fill = False
 
         base_x = self.width // 2 - radius // 3
         base_y = self.height // 2 - radius // 3
@@ -288,22 +290,18 @@ class MenuScreen:
                 self.update_screen(flip=False)
                 self.fade(flip=False)
 
-            if runs % cycle_len == cycle_len - 2:
-                width = 0
+            fill = runs % cycle_len == cycle_len - 2
 
-            else:
-                width = 15
-
-            self.draw_3d_circle(base_x, base_y, radius, width, draw_top_right=True)
+            self.draw_3d_circle(base_x, base_y, radius, width, draw_top_right=True, fill=fill)
 
             if runs % cycle_len > 0:
-                self.draw_3d_circle(base_x, base_y + offset, radius, width, draw_bottom_right=True)
+                self.draw_3d_circle(base_x, base_y + offset, radius, width, draw_bottom_right=True, fill=fill)
 
             if runs % cycle_len > 1:
-                self.draw_3d_circle(base_x - offset, base_y + offset, radius, width, draw_bottom_left=True)
+                self.draw_3d_circle(base_x - offset, base_y + offset, radius, width, draw_bottom_left=True, fill=fill)
 
             if runs % cycle_len > 2:
-                self.draw_3d_circle(base_x - offset, base_y, radius, width, draw_top_left=True)
+                self.draw_3d_circle(base_x - offset, base_y, radius, width, draw_top_left=True, fill=fill)
 
             pygame.display.flip()
 
@@ -311,14 +309,16 @@ class MenuScreen:
             time.sleep(1)
 
     def draw_3d_circle(self, base_x, base_y, radius, width, draw_top_right=False, draw_bottom_right=False, draw_bottom_left=False,
-                       draw_top_left=False):
+                       draw_top_left=False, fill=False):
         pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["button"], (base_x, base_y), radius, width,
                            draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
                            draw_top_left=draw_top_left)
-        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["bottom"], (base_x, base_y), radius - width // 3 * 2,
-                           width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
-                           draw_top_left=draw_top_left)
         pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["upper"], (base_x, base_y), radius + width // 3,
+                           width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right,
+                           draw_bottom_left=draw_bottom_left,
+                           draw_top_left=draw_top_left)
+        width = 0 if fill else width
+        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["bottom"], (base_x, base_y), radius - width // 3 * 2,
                            width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
                            draw_top_left=draw_top_left)
 
