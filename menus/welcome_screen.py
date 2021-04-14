@@ -31,8 +31,7 @@ class WelcomeScreen(MenuScreen):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
-        super().__init__(width, height, refresh_rate, background_path)
-        self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
+        super().__init__(width, height, ServerCommunicator("127.0.0.1", "8000"), refresh_rate, background_path)
         with open(r"../resources/salt.txt", "r") as salt_file:
             self.salt = salt_file.read().encode()
 
@@ -314,7 +313,6 @@ class WelcomeScreen(MenuScreen):
 
     def login_continue(self):
         """Process the login info given"""
-
         user_inputs = tuple(self.textboxes.values())
         user_identifier = user_inputs[0]
         password = user_inputs[1]
@@ -535,51 +533,5 @@ class WelcomeScreen(MenuScreen):
         local_ip = socket.gethostbyname(hostname)
         return local_ip
 
-    def cache_stats(self, username):
-        start_time = time.time()
-        cache = {}
-        with ThreadPoolExecutor() as executor:
-            futures = []
 
-            cur_future = executor.submit(self.server_communicator.get_apm_leaderboard)
-            futures.append(cur_future)
-            cache[cur_future] = "apm_leaderboard"
-
-            cur_future = executor.submit(self.server_communicator.get_marathon_leaderboard)
-            futures.append(cur_future)
-            cache[cur_future] = "marathon_leaderboard"
-
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 20)
-            futures.append(cur_future)
-            cache[cur_future] = "20l_leaderboard"
-
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 40)
-            futures.append(cur_future)
-            cache[cur_future] = "40l_leaderboard"
-
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 100)
-            futures.append(cur_future)
-            cache[cur_future] = "100l_leaderboard"
-
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 1000)
-            futures.append(cur_future)
-            cache[cur_future] = "1000l_leaderboard"
-
-            cur_future = executor.submit(self.server_communicator.get_rooms)
-            futures.append(cur_future)
-            cache[cur_future] = "rooms"
-
-            cur_future = executor.submit(self.server_communicator.get_user_profile, username)
-            futures.append(cur_future)
-            cache[cur_future] = "user"
-
-        new_cache = {}
-
-        for future in concurrent.futures.as_completed(futures):
-            new_cache[cache[future]] = future.result()
-
-        print(new_cache)
-        print(f"it took: {time.time() - start_time}secs")
-
-        return new_cache
 

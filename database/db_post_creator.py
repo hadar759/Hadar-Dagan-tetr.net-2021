@@ -22,11 +22,14 @@ class DBPostCreator:
             "friends": [],
             "requests_received": [],
             "requests_sent": [],
+            "DAS": 130,
+            "ARR": 1,
+            "skin": 0,
+            "ghost": True,
         }
 
     @staticmethod
     def create_room_post(
-        estimated_document_count,
         default,
         room_name,
         ip: str,

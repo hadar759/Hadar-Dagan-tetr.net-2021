@@ -39,7 +39,6 @@ class GameServer:
         # Add the room to the database
         self.server_communicator.create_room(
             DBPostCreator.create_room_post(
-                self.server_communicator.estimated_document_count(),
                 default,
                 room_name,
                 server_ip,

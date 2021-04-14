@@ -10,7 +10,7 @@ from .list_screen import ListScreen
 from tetris.colors import Colors
 
 
-class RoomScreen(ListScreen):
+class RoomsScreen(ListScreen):
     def __init__(
         self,
         user: Dict,
@@ -343,15 +343,6 @@ class RoomScreen(ListScreen):
             {"ip": room_server.server_ip, "name": room_server.room_name}
         )
         self.running = True
-
-    def change_binary_button(self, button):
-        if button.text == "❌":
-            button.text_color = Colors.GREEN
-            button.text = "✔"
-        elif button.text == "✔":
-            button.text_color = Colors.RED
-            button.text = "❌"
-        button.rendered_text = button.render_button_text()
 
     def connect_to_room(self, room: Dict):
         sock = socket.socket()

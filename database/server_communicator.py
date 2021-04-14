@@ -14,6 +14,9 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
+    def update_settings(self, username: str, das: int, arr: int, skin: int, ghost: bool):
+        post(f"{self.SERVER_DOMAIN}/users/settings?username={username}&das={das}&arr={arr}&skin={skin}&ghost={ghost}")
+
     def is_password_new(self, user_email, password):
         return get(
             f"{self.SERVER_DOMAIN}/pass/new?user_email={user_email}&password={password}"

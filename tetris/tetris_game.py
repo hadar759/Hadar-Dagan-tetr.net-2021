@@ -61,7 +61,7 @@ class TetrisGame(Game):
         height: int,
         mode: str,
         server_communicator: ServerCommunicator,
-        username: str,
+        user: Dict,
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
         lines_or_level: Optional[int] = None,
@@ -69,8 +69,8 @@ class TetrisGame(Game):
     ):
         super().__init__(width + 1000, height, refresh_rate, background_path)
         self.mode = mode
+        self.user = user
         self.server_communicator = server_communicator
-        self.username = username
         # The current piece the player is controlling
         self.cur_piece: Piece = None
         # The ghost piece of the current piece
@@ -100,7 +100,8 @@ class TetrisGame(Game):
             "hard_drop": False,
             "manual_drop": False,
         }
-        self.skin = 0
+        self.skin = self.user["skin"]
+        print(self.skin)
         self.pieces_and_next_sprites = {
             "<class 'tetris.pieces.i_piece.IPiece'>": pygame.image.load(
                 f"tetris-resources/ipiece-full-sprite{self.skin}.png"
@@ -409,7 +410,8 @@ class TetrisGame(Game):
         self.generate_seven_bag()
         self.cur_piece = self.cur_seven_bag.pop(0)()
         self.game_objects.append(self.cur_piece)
-        self.initialize_ghost_piece()
+        if self.user["ghost"]:
+            self.initialize_ghost_piece()
 
     def reset_move_variables(self):
         for key in self.move_variables:
@@ -512,7 +514,8 @@ class TetrisGame(Game):
                 self.key_z()
             elif event.key == pygame.K_x:
                 self.key_x()
-            self.update_ghost_position()
+            if self.user["ghost"]:
+                self.update_ghost_position()
 
     def key_down(self):
         """If the down arrow is pressed, turn on the manual drop"""
@@ -545,7 +548,8 @@ class TetrisGame(Game):
         # ARR - tetris term
         if self.move_variables["key_down"]:
             self.move_variables["arr"] = True
-            self.create_timer(self.DAS_EVENT, 30, True)
+            self.start_DAS()
+            #self.create_timer(self.DAS_EVENT, 30, True)
 
     def start_DAS(self):
         """Start the DAS"""
@@ -556,28 +560,30 @@ class TetrisGame(Game):
             if self.move_variables["right_das"]:
                 self.reset_grids()
                 self.cur_piece.move(pygame.K_RIGHT, self.game_grid)
-                self.create_timer(self.DAS_EVENT, 5, True)
+                self.create_timer(self.DAS_EVENT, self.user["ARR"], True)
             # Move the piece to the left every 5 milliseconds
             elif self.move_variables["left_das"]:
                 self.reset_grids()
                 self.cur_piece.move(pygame.K_LEFT, self.game_grid)
-                self.create_timer(self.DAS_EVENT, 5, True)
-        self.update_ghost_position()
+                self.create_timer(self.DAS_EVENT, self.user["ARR"], True)
+        if self.user["ghost"]:
+            self.update_ghost_position()
 
     def key_right(self):
         """Move the piece one block to the right and start the ARR timer"""
         self.reset_grids()
         self.reset_move_variables()
-        self.create_timer(self.ARR_EVENT, 100, True)
+        print(self.user["DAS"])
+        self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
         self.move_variables["key_down"] = True
         self.move_variables["right_das"] = True
         self.cur_piece.move(pygame.K_RIGHT, self.game_grid)
 
     def key_left(self):
-        """Move the piece to the left and start the ARR timer"""
+        """Move the piece one block to the left and start the ARR timer"""
         self.reset_grids()
         self.reset_move_variables()
-        self.create_timer(self.ARR_EVENT, 100, True)
+        self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
         self.move_variables["key_down"] = True
         self.move_variables["left_das"] = True
         self.cur_piece.move(pygame.K_LEFT, self.game_grid)
@@ -643,14 +649,14 @@ class TetrisGame(Game):
             threading.Thread(
                 target=self.server_communicator.add_game,
                 args=(
-                    self.username,
+                    self.user["username"],
                     self.win,
                 ),
             ).start()
             threading.Thread(
                 target=self.server_communicator.update_apm,
                 args=(
-                    self.username,
+                    self.user["username"],
                     self.total_attacks,
                     game_time,
                 ),
@@ -658,12 +664,12 @@ class TetrisGame(Game):
 
         elif self.mode == "sprint" and win:
             new_top = self.server_communicator.update_sprint(
-                self.username, game_time, self.lines_to_finish
+                self.user["username"], game_time, self.lines_to_finish
             )
 
         elif self.mode == "marathon":
             new_top = self.server_communicator.update_marathon(
-                self.username, self.score
+                self.user["username"], self.score
             )
 
         self.running = False

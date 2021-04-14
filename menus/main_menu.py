@@ -12,9 +12,10 @@ from database.server_communicator import ServerCommunicator
 from menus.friend_screen import FriendsScreen
 from menus.leaderboard_screen import LeaderboardScreen
 from menus.menu_screen import MenuScreen
+from menus.settings_screen import SettingsScreen
 from menus.waiting_room import WaitingRoom
 from tetris.colors import Colors
-from menus.room_screen import RoomScreen
+from menus.room_screen import RoomsScreen
 from tetris.tetris_game import TetrisGame
 from menus.user_profile_screen import UserProfile
 
@@ -36,11 +37,10 @@ class MainMenu(MenuScreen):
         background_path: Optional[str] = None,
         skin: int = 1,
     ):
-        super().__init__(width, height, refresh_rate, background_path)
+        super().__init__(width, height, server_communicator, refresh_rate, background_path)
         self.user = user
         self.skin = skin
         self.text_cursor_ticks = pygame.time.get_ticks()
-        self.server_communicator = server_communicator
         self.socket = socket.socket()
         self.cache = cache
 
@@ -48,10 +48,8 @@ class MainMenu(MenuScreen):
         """Main loop of the main menu"""
         while True:
             self.create_menu()
-            self.running = True
             old_time = round(time.time())
-            print("hi")
-            threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+            self.open_screen()
 
             while self.running:
                 self.run_once()
@@ -63,6 +61,20 @@ class MainMenu(MenuScreen):
                     # threading.Thread(target=self.check_invite).start()
                     threading.Thread(target=self.check_invite, daemon=True).start()
                 pygame.display.flip()
+
+    def keep_cache_updated(self):
+        while self.running:
+            time.sleep(10)
+            new_cache = self.cache_stats(self.user["username"])
+            # Update the relevant cache parts
+            for key in new_cache:
+                self.cache[key] = new_cache[key]
+
+    def open_screen(self):
+        """Threads to be started when this screen is opened"""
+        self.running = True
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        threading.Thread(target=self.keep_cache_updated, daemon=True).start()
 
     def check_invite(self):
         invite = self.server_communicator.get_invite(self.user["username"]).replace(
@@ -121,9 +133,8 @@ class MainMenu(MenuScreen):
         )
         self.running = False
         waiting_room.run()
-        self.running = True
         self.cache = waiting_room.cache
-        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        self.open_screen()
 
     def dismiss_invite(self):
         """Dismisses an invite from a player"""
@@ -158,6 +169,9 @@ class MainMenu(MenuScreen):
         if self.background_image:
             self.screen.blit(self.background_image, (0, 0))
         # Set up the buttons and display them
+
+
+
         button_width = 504
         button_height = 150
         cur_x = self.width // 2 - 258
@@ -175,6 +189,7 @@ class MainMenu(MenuScreen):
                       "You pick a number of lines and your\nscore is measured based on how fast\n"
                       "you can destroy that many lines."
         )
+
         cur_y += button_offset
 
         cur_button_text = "marathon"
@@ -234,10 +249,22 @@ class MainMenu(MenuScreen):
             args=(self.user["username"],),
         )
 
-        bruh_width = name_width // 7
+        # Settings button
         self.create_button(
-            (self.width - name_width - bruh_width, self.height // 3 - 250),
-            bruh_width,
+            (10, 10),
+            60,
+            60,
+            Colors.DEEP_BLUE_BUTTON,
+            "⚙",
+            text_size=50,
+            func=self.settings
+        )
+
+        # Friends list screen
+        friends_button_width = name_width // 7
+        self.create_button(
+            (self.width - name_width - friends_button_width, self.height // 3 - 250),
+            friends_button_width,
             name_height,
             Colors.BLACK_BUTTON,
             "Ⓕ",
@@ -245,9 +272,10 @@ class MainMenu(MenuScreen):
             args=("friends",),
         )
 
+        # Request list screen
         self.create_button(
-            (self.width - name_width - bruh_width * 2, self.height // 3 - 250),
-            bruh_width,
+            (self.width - name_width - friends_button_width * 2, self.height // 3 - 250),
+            friends_button_width,
             name_height,
             Colors.BLACK_BUTTON,
             "Ⓡ",
@@ -256,6 +284,22 @@ class MainMenu(MenuScreen):
         )
 
         self.display_buttons()
+
+    def settings(self):
+        """A screen in which the user can change his settings"""
+        settings_screen = SettingsScreen(
+            self.server_communicator,
+            self.cache,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
+        self.running = False
+        settings_screen.run()
+        self.cache = settings_screen.cache
+        print(self.cache)
+        self.open_screen()
 
     def friends_screen(self, type):
         friends_screen = FriendsScreen(
@@ -271,9 +315,8 @@ class MainMenu(MenuScreen):
         )
         self.running = False
         friends_screen.run()
-        self.running = True
         self.cache = friends_screen.cache
-        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        self.open_screen()
 
     def quit(self):
         self.buttons = {}
@@ -296,8 +339,7 @@ class MainMenu(MenuScreen):
         leaderboard.run()
         # Update the cache
         self.cache = leaderboard.cache
-        self.running = True
-        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        self.open_screen()
 
     def user_profile(self, username):
         profile = UserProfile(
@@ -316,11 +358,10 @@ class MainMenu(MenuScreen):
         self.cache["user"] = profile.user
         self.cache[username] = profile.profile
 
-        self.running = True
-        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+        self.open_screen()
 
     def create_room_list(self):
-        room_screen = RoomScreen(
+        room_screen = RoomsScreen(
             self.cache["user"],
             self.server_communicator,
             self.cache,
@@ -334,8 +375,8 @@ class MainMenu(MenuScreen):
         room_screen.run()
         # Update the cache
         self.cache = room_screen.cache
-        self.running = True
-        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+
+        self.open_screen()
 
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
@@ -528,7 +569,7 @@ class MainMenu(MenuScreen):
             1000,
             mode,
             self.server_communicator,
-            self.user["username"],
+            self.cache["user"],
             75,
             lines_or_level=int(lines_or_level),
         )

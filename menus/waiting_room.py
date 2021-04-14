@@ -34,14 +34,13 @@ class WaitingRoom(MenuScreen):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
-        super().__init__(width, height, refresh_rate, background_path)
+        super().__init__(width, height, server_communicator, refresh_rate, background_path)
         self.cache = cache
         self.players = {}
         self.is_admin = is_admin
         self.room_name = room_name
         self.sock = server_socket
         self.user = user
-        self.server_communicator = server_communicator
 
         self.running = True
         self.last_message = False
@@ -132,7 +131,7 @@ class WaitingRoom(MenuScreen):
             1000,
             "multiplayer",
             self.server_communicator,
-            self.user["username"],
+            self.user,
             75,
         )
         client_game.set_bag_seed(bag_seed)

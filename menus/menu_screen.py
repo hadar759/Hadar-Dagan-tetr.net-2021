@@ -1,12 +1,15 @@
+import concurrent
 import math
 import socket
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Dict, Tuple
 
 import pygame
 from requests import get
 
+from database.server_communicator import ServerCommunicator
 from menus.button import Button
 from tetris.colors import Colors
 from menus.text_box import TextBox
@@ -19,11 +22,13 @@ class MenuScreen:
         self,
         width: int,
         height: int,
+        server_communicator: ServerCommunicator,
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
         self.width, self.height = width, height
         self.refresh_rate = refresh_rate
+        self.server_communicator = server_communicator
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.background_image = (
             pygame.image.load(background_path) if background_path else None
@@ -345,3 +350,60 @@ class MenuScreen:
         self.screen.blit(fade, (0, 0))
         if flip:
             pygame.display.update()
+
+    def cache_stats(self, username):
+        start_time = time.time()
+        cache = {}
+        with ThreadPoolExecutor() as executor:
+            futures = []
+
+            cur_future = executor.submit(self.server_communicator.get_apm_leaderboard)
+            futures.append(cur_future)
+            cache[cur_future] = "apm_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_marathon_leaderboard)
+            futures.append(cur_future)
+            cache[cur_future] = "marathon_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 20)
+            futures.append(cur_future)
+            cache[cur_future] = "20l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 40)
+            futures.append(cur_future)
+            cache[cur_future] = "40l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 100)
+            futures.append(cur_future)
+            cache[cur_future] = "100l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 1000)
+            futures.append(cur_future)
+            cache[cur_future] = "1000l_leaderboard"
+
+            cur_future = executor.submit(self.server_communicator.get_rooms)
+            futures.append(cur_future)
+            cache[cur_future] = "rooms"
+
+            cur_future = executor.submit(self.server_communicator.get_user_profile, username)
+            futures.append(cur_future)
+            cache[cur_future] = "user"
+
+        new_cache = {}
+
+        for future in concurrent.futures.as_completed(futures):
+            new_cache[cache[future]] = future.result()
+
+        print(new_cache)
+        print(f"it took: {time.time() - start_time}secs")
+
+        return new_cache
+
+    def change_binary_button(self, button):
+        if button.text == "❌":
+            button.text_color = Colors.GREEN
+            button.text = "✔"
+        elif button.text == "✔":
+            button.text_color = Colors.RED
+            button.text = "❌"
+        button.rendered_text = button.render_button_text()

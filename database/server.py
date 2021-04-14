@@ -38,6 +38,11 @@ class Server:
         with open(r"../resources/gmail.txt", "r") as email_file:
             self.email = email_file.read()
 
+    @router.post("/users/settings")
+    def update_settings(self, username: str, das: int, arr: int, skin: int, ghost: bool):
+        update_query = {"$set": {"DAS": das, "ARR": arr, "skin": skin, "ghost": ghost}}
+        self.user_collection.dependency().find_one_and_update({"username": username}, update_query)
+
     @router.post("/users/friends/accept")
     def accept_friend(self, sender, recipient):
         receiving_user = self.user_by_username(recipient)
@@ -143,6 +148,10 @@ class Server:
                 "friends": 1,
                 "requests_received": 1,
                 "requests_sent": 1,
+                "DAS": 1,
+                "ARR": 1,
+                "skin": 1,
+                "ghost": 1,
                 "_id": 0,
             },
         )
