@@ -31,7 +31,13 @@ class WelcomeScreen(MenuScreen):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
-        super().__init__(width, height, ServerCommunicator("127.0.0.1", "8000"), refresh_rate, background_path)
+        super().__init__(
+            width,
+            height,
+            ServerCommunicator("127.0.0.1", "8000"),
+            refresh_rate,
+            background_path,
+        )
         with open(r"../resources/salt.txt", "r") as salt_file:
             self.salt = salt_file.read().encode()
 
@@ -76,7 +82,7 @@ class WelcomeScreen(MenuScreen):
             ret_height,
             Colors.BLACK_BUTTON,
             "->",
-            func=func
+            func=func,
         )
 
     def login(self):
@@ -126,7 +132,10 @@ class WelcomeScreen(MenuScreen):
         )
 
         self.create_button(
-            (mid_x_pos + button_width // 4 - 5, self.height // 2 + button_height // 2 - 20),
+            (
+                mid_x_pos + button_width // 4 - 5,
+                self.height // 2 + button_height // 2 - 20,
+            ),
             button_width // 2,
             button_height // 2,
             Colors.BLACK_BUTTON,
@@ -134,7 +143,7 @@ class WelcomeScreen(MenuScreen):
             text_color=Colors.RED,
             func=self.forgot_my_password,
             text_only=False,
-            text_size=25
+            text_size=25,
         )
 
         # Continue button
@@ -183,7 +192,7 @@ class WelcomeScreen(MenuScreen):
             button_height,
             Colors.WHITE_BUTTON,
             "Email",
-            text_color=Colors.BLACK
+            text_color=Colors.BLACK,
         )
         cur_y += button_height + 50
 
@@ -193,7 +202,7 @@ class WelcomeScreen(MenuScreen):
             button_height * 2,
             Colors.BLACK_BUTTON,
             "Continue",
-            func=self.check_reset_email
+            func=self.check_reset_email,
         )
 
     def check_reset_email(self):
@@ -209,7 +218,10 @@ class WelcomeScreen(MenuScreen):
 
         else:
             box_text = "Reset Code"
-            self.buttons[list(self.buttons.keys())[-1]] = self.check_code, (self.reset_password, (user_email,))
+            self.buttons[list(self.buttons.keys())[-1]] = self.check_code, (
+                self.reset_password,
+                (user_email,),
+            )
             self.server_communicator.reset_password(user_email)
 
         # Reset the textbox
@@ -265,7 +277,7 @@ class WelcomeScreen(MenuScreen):
             Colors.WHITE_BUTTON,
             "Password",
             is_pass=True,
-            text_color=Colors.BLACK
+            text_color=Colors.BLACK,
         )
         cur_y += button_height + 100
 
@@ -276,7 +288,7 @@ class WelcomeScreen(MenuScreen):
             Colors.WHITE_BUTTON,
             "Reenter password",
             is_pass=True,
-            text_color=Colors.BLACK
+            text_color=Colors.BLACK,
         )
         cur_y += button_height + 100
 
@@ -287,7 +299,7 @@ class WelcomeScreen(MenuScreen):
             Colors.BLACK_BUTTON,
             "Continue",
             func=self.reset_password_continue,
-            args=(user_email,)
+            args=(user_email,),
         )
 
     def reset_password_continue(self, user_email):
@@ -300,9 +312,13 @@ class WelcomeScreen(MenuScreen):
             self.reset_password(user_email)
             self.create_popup_button("Passwords do not match")
 
-        elif not self.server_communicator.is_password_new(user_email, bcrypt.hashpw(password.encode(), self.salt).hex()):
+        elif not self.server_communicator.is_password_new(
+            user_email, bcrypt.hashpw(password.encode(), self.salt).hex()
+        ):
             self.reset_password(user_email)
-            self.create_popup_button("Must use a different password then the current one")
+            self.create_popup_button(
+                "Must use a different password then the current one"
+            )
 
         else:
             # Encrypt the password
@@ -363,7 +379,7 @@ class WelcomeScreen(MenuScreen):
     @staticmethod
     def is_email(inp: str):
         """Returns whether a given string is an email address"""
-        regex = r'^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$'
+        regex = r"^(\w|\.|\_|\-)+[@](\w|\_|\-|\.)+[.]\w{2,3}$"
         return re.search(regex, inp) is not None
 
     def register_screen(self):
@@ -488,7 +504,7 @@ class WelcomeScreen(MenuScreen):
                 button_height,
                 Colors.WHITE_BUTTON,
                 "Code",
-                text_color=Colors.BLACK
+                text_color=Colors.BLACK,
             )
             cur_y += button_height + 50
 
@@ -499,7 +515,7 @@ class WelcomeScreen(MenuScreen):
                 Colors.BLACK_BUTTON,
                 "Create user",
                 func=self.check_code,
-                args=(email, self.create_user, (email, username, password))
+                args=(email, self.create_user, (email, username, password)),
             )
 
     def create_user(self, email, username, password):
@@ -532,6 +548,3 @@ class WelcomeScreen(MenuScreen):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         return local_ip
-
-
-

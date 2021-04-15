@@ -17,6 +17,7 @@ router = InferringRouter()
 
 pass_resets = {}
 
+
 def get_collection():
     with open(r"../resources/mongodb.txt", "r") as pass_file:
         pass_text = pass_file.read()
@@ -24,6 +25,7 @@ def get_collection():
     db = client["tetris"]
     user_collection = db["users"]
     return user_collection
+
 
 @cbv(router)
 class Server:
@@ -38,10 +40,20 @@ class Server:
         with open(r"../resources/gmail.txt", "r") as email_file:
             self.email = email_file.read()
 
+    @router.post("/users/music")
+    def update_music(self, username: str, music: bool):
+        self.user_collection.dependency().find_one_and_update(
+            {"username": username}, {"$set": {"music": music}}
+        )
+
     @router.post("/users/settings")
-    def update_settings(self, username: str, das: int, arr: int, skin: int, ghost: bool):
+    def update_settings(
+        self, username: str, das: int, arr: int, skin: int, ghost: bool
+    ):
         update_query = {"$set": {"DAS": das, "ARR": arr, "skin": skin, "ghost": ghost}}
-        self.user_collection.dependency().find_one_and_update({"username": username}, update_query)
+        self.user_collection.dependency().find_one_and_update(
+            {"username": username}, update_query
+        )
 
     @router.post("/users/friends/accept")
     def accept_friend(self, sender, recipient):
@@ -152,6 +164,7 @@ class Server:
                 "ARR": 1,
                 "skin": 1,
                 "ghost": 1,
+                "music": 1,
                 "_id": 0,
             },
         )
@@ -495,12 +508,23 @@ class Server:
 
     @router.get("/pass/new")
     def is_password_new(self, user_email, password):
-        print(self.user_collection.dependency().find_one({"email": user_email, "password": password}))
-        return self.user_collection.dependency().find_one({"email": user_email, "password": password}) is None
+        print(
+            self.user_collection.dependency().find_one(
+                {"email": user_email, "password": password}
+            )
+        )
+        return (
+            self.user_collection.dependency().find_one(
+                {"email": user_email, "password": password}
+            )
+            is None
+        )
 
     @router.post("/pass/update")
     def update_user_email(self, user_email, password):
-        self.user_collection.dependency().find_one_and_update({"email": user_email}, {"$set": {"password": password}})
+        self.user_collection.dependency().find_one_and_update(
+            {"email": user_email}, {"$set": {"password": password}}
+        )
 
     @router.post("/pass/reset")
     def send_reset_email(self, user_email):
@@ -518,7 +542,10 @@ class Server:
     @router.get("/pass/check")
     def check_pass_reset(self, user_email, code):
         global pass_resets
-        return pass_resets[user_email][0] == str(code) and time.time() - pass_resets[user_email][1] < 15 * 60
+        return (
+            pass_resets[user_email][0] == str(code)
+            and time.time() - pass_resets[user_email][1] < 15 * 60
+        )
 
 
 app.include_router(router)

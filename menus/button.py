@@ -60,15 +60,19 @@ class Button:
         lines = []
         if inp.isascii():
             for line in split_text:
-                lines.append(pygame.font.Font(
-                    "./tetris-resources/joystix-monospace.ttf", font_size
-                ).render(line, True, text_color))
+                lines.append(
+                    pygame.font.Font(
+                        "./tetris-resources/joystix-monospace.ttf", font_size
+                    ).render(line, True, text_color)
+                )
             return lines
         else:
             for line in split_text:
-                lines.append(pygame.font.Font("./tetris-resources/seguisym.ttf", font_size).render(
-                    line, True, text_color
-                ))
+                lines.append(
+                    pygame.font.Font(
+                        "./tetris-resources/seguisym.ttf", font_size
+                    ).render(line, True, text_color)
+                )
             return lines
 
     def calculate_center_text_position(
@@ -94,7 +98,9 @@ class Button:
     def get_mid_left_text_position(self):
         return self.starting_x, max(
             0,
-            self.starting_y + self.height // 2 - self.rendered_text[0].get_rect()[3] // 2,
+            self.starting_y
+            + self.height // 2
+            - self.rendered_text[0].get_rect()[3] // 2,
         )
 
     def clicked(self, screen):

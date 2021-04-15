@@ -1,8 +1,6 @@
 class DBPostCreator:
     @staticmethod
-    def create_user_post(
-        email: str, username: str, password: str, ip: str
-    ) -> dict:
+    def create_user_post(email: str, username: str, password: str, ip: str) -> dict:
         """Returns a db post with the given parameters"""
         return {
             "type": "user",

@@ -22,7 +22,9 @@ class UserProfile(MenuScreen):
         background_path: Optional[str] = None,
         user_profile: Optional[dict] = None,
     ):
-        super().__init__(width, height, server_communicator, refresh_rate, background_path)
+        super().__init__(
+            width, height, server_communicator, refresh_rate, background_path
+        )
         self.user = user
         self.wanted_profile = wanted_profile
         if not user_profile:

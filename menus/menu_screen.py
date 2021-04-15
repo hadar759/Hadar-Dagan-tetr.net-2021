@@ -116,7 +116,7 @@ class MenuScreen:
         border_size: int = 10,
         clickable: bool = True,
         info_text: str = "",
-        info_size: int = 27
+        info_size: int = 27,
     ):
         """Creates a new button and appends it to the button dict"""
         button = Button(
@@ -144,9 +144,12 @@ class MenuScreen:
                 Colors.BLACK_BUTTON,
                 "ⓘ",
                 35,
-                text_only=True
+                text_only=True,
             )
-            self.buttons[info_button] = (self.create_popup_button, (info_text, info_size, Colors.BLUE))
+            self.buttons[info_button] = (
+                self.create_popup_button,
+                (info_text, info_size, Colors.BLUE),
+            )
 
         return button
 
@@ -306,41 +309,99 @@ class MenuScreen:
         # Draw the circles as long as we're loading
         while self.loading and self.running:
 
-            if (runs % cycle_len == cycle_len - 1 or runs % cycle_len == 0) and runs != last_updated:
+            if (
+                runs % cycle_len == cycle_len - 1 or runs % cycle_len == 0
+            ) and runs != last_updated:
                 self.update_screen(flip=False)
                 self.fade(flip=False)
 
             fill = runs % cycle_len == cycle_len - 2
 
-            self.draw_3d_circle(base_x, base_y, radius, width, draw_top_right=True, fill=fill)
+            self.draw_3d_circle(
+                base_x, base_y, radius, width, draw_top_right=True, fill=fill
+            )
 
             if runs % cycle_len > 0:
-                self.draw_3d_circle(base_x, base_y + offset, radius, width, draw_bottom_right=True, fill=fill)
+                self.draw_3d_circle(
+                    base_x,
+                    base_y + offset,
+                    radius,
+                    width,
+                    draw_bottom_right=True,
+                    fill=fill,
+                )
 
             if runs % cycle_len > 1:
-                self.draw_3d_circle(base_x - offset, base_y + offset, radius, width, draw_bottom_left=True, fill=fill)
+                self.draw_3d_circle(
+                    base_x - offset,
+                    base_y + offset,
+                    radius,
+                    width,
+                    draw_bottom_left=True,
+                    fill=fill,
+                )
 
             if runs % cycle_len > 2:
-                self.draw_3d_circle(base_x - offset, base_y, radius, width, draw_top_left=True, fill=fill)
+                self.draw_3d_circle(
+                    base_x - offset,
+                    base_y,
+                    radius,
+                    width,
+                    draw_top_left=True,
+                    fill=fill,
+                )
 
             pygame.display.flip()
 
             runs += 1
             time.sleep(1)
 
-    def draw_3d_circle(self, base_x, base_y, radius, width, draw_top_right=False, draw_bottom_right=False, draw_bottom_left=False,
-                       draw_top_left=False, fill=False):
-        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["button"], (base_x, base_y), radius, width,
-                           draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
-                           draw_top_left=draw_top_left)
-        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["upper"], (base_x, base_y), radius + width // 3,
-                           width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right,
-                           draw_bottom_left=draw_bottom_left,
-                           draw_top_left=draw_top_left)
+    def draw_3d_circle(
+        self,
+        base_x,
+        base_y,
+        radius,
+        width,
+        draw_top_right=False,
+        draw_bottom_right=False,
+        draw_bottom_left=False,
+        draw_top_left=False,
+        fill=False,
+    ):
+        pygame.draw.circle(
+            self.screen,
+            Colors.WHITE_BUTTON["button"],
+            (base_x, base_y),
+            radius,
+            width,
+            draw_top_right=draw_top_right,
+            draw_bottom_right=draw_bottom_right,
+            draw_bottom_left=draw_bottom_left,
+            draw_top_left=draw_top_left,
+        )
+        pygame.draw.circle(
+            self.screen,
+            Colors.WHITE_BUTTON["upper"],
+            (base_x, base_y),
+            radius + width // 3,
+            width // 3,
+            draw_top_right=draw_top_right,
+            draw_bottom_right=draw_bottom_right,
+            draw_bottom_left=draw_bottom_left,
+            draw_top_left=draw_top_left,
+        )
         width = 0 if fill else width
-        pygame.draw.circle(self.screen, Colors.WHITE_BUTTON["bottom"], (base_x, base_y), radius - width // 3 * 2,
-                           width // 3, draw_top_right=draw_top_right, draw_bottom_right=draw_bottom_right, draw_bottom_left=draw_bottom_left,
-                           draw_top_left=draw_top_left)
+        pygame.draw.circle(
+            self.screen,
+            Colors.WHITE_BUTTON["bottom"],
+            (base_x, base_y),
+            radius - width // 3 * 2,
+            width // 3,
+            draw_top_right=draw_top_right,
+            draw_bottom_right=draw_bottom_right,
+            draw_bottom_left=draw_bottom_left,
+            draw_top_left=draw_top_left,
+        )
 
     def fade(self, alpha=100, flip=True):
         """Fade the screen"""
@@ -361,23 +422,33 @@ class MenuScreen:
             futures.append(cur_future)
             cache[cur_future] = "apm_leaderboard"
 
-            cur_future = executor.submit(self.server_communicator.get_marathon_leaderboard)
+            cur_future = executor.submit(
+                self.server_communicator.get_marathon_leaderboard
+            )
             futures.append(cur_future)
             cache[cur_future] = "marathon_leaderboard"
 
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 20)
+            cur_future = executor.submit(
+                self.server_communicator.get_sprint_leaderboard, 20
+            )
             futures.append(cur_future)
             cache[cur_future] = "20l_leaderboard"
 
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 40)
+            cur_future = executor.submit(
+                self.server_communicator.get_sprint_leaderboard, 40
+            )
             futures.append(cur_future)
             cache[cur_future] = "40l_leaderboard"
 
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 100)
+            cur_future = executor.submit(
+                self.server_communicator.get_sprint_leaderboard, 100
+            )
             futures.append(cur_future)
             cache[cur_future] = "100l_leaderboard"
 
-            cur_future = executor.submit(self.server_communicator.get_sprint_leaderboard, 1000)
+            cur_future = executor.submit(
+                self.server_communicator.get_sprint_leaderboard, 1000
+            )
             futures.append(cur_future)
             cache[cur_future] = "1000l_leaderboard"
 
@@ -385,7 +456,9 @@ class MenuScreen:
             futures.append(cur_future)
             cache[cur_future] = "rooms"
 
-            cur_future = executor.submit(self.server_communicator.get_user_profile, username)
+            cur_future = executor.submit(
+                self.server_communicator.get_user_profile, username
+            )
             futures.append(cur_future)
             cache[cur_future] = "user"
 

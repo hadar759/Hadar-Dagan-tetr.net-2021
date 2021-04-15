@@ -232,7 +232,7 @@ class FriendsScreen(ListScreen):
             max(0, len(self.entry_list) - self.num_on_screen), self.offset
         )
         for index, friend in enumerate(
-            self.entry_list[self.offset: self.offset + self.num_on_screen]
+            self.entry_list[self.offset : self.offset + self.num_on_screen]
         ):
             self.create_button(
                 (cur_x, cur_y),
@@ -261,7 +261,7 @@ class FriendsScreen(ListScreen):
             self.height,
             self.refresh_rate,
             self.background_path,
-            user_profile=self.cache.get(username)
+            user_profile=self.cache.get(username),
         )
         self.running = False
         profile.run()

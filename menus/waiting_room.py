@@ -34,7 +34,9 @@ class WaitingRoom(MenuScreen):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
-        super().__init__(width, height, server_communicator, refresh_rate, background_path)
+        super().__init__(
+            width, height, server_communicator, refresh_rate, background_path
+        )
         self.cache = cache
         self.players = {}
         self.is_admin = is_admin
@@ -520,7 +522,7 @@ class WaitingRoom(MenuScreen):
             self.height,
             self.refresh_rate,
             self.background_path,
-            user_profile=self.cache.get(username)
+            user_profile=self.cache.get(username),
         )
         self.running = False
         profile.run()

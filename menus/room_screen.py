@@ -156,7 +156,7 @@ class RoomsScreen(ListScreen):
         self.offset = min(
             max(0, len(self.entry_list) - self.num_on_screen), self.offset
         )
-        for room in self.entry_list[self.offset: self.offset + self.num_on_screen]:
+        for room in self.entry_list[self.offset : self.offset + self.num_on_screen]:
             self.create_button(
                 (cur_x, cur_y),
                 room_button_width,

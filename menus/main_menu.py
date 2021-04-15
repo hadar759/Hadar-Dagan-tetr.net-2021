@@ -37,7 +37,9 @@ class MainMenu(MenuScreen):
         background_path: Optional[str] = None,
         skin: int = 1,
     ):
-        super().__init__(width, height, server_communicator, refresh_rate, background_path)
+        super().__init__(
+            width, height, server_communicator, refresh_rate, background_path
+        )
         self.user = user
         self.skin = skin
         self.text_cursor_ticks = pygame.time.get_ticks()
@@ -170,8 +172,6 @@ class MainMenu(MenuScreen):
             self.screen.blit(self.background_image, (0, 0))
         # Set up the buttons and display them
 
-
-
         button_width = 504
         button_height = 150
         cur_x = self.width // 2 - 258
@@ -186,8 +186,8 @@ class MainMenu(MenuScreen):
             cur_button_text,
             func=self.sprint,
             info_text="Sprint is a gamemode in which the\ngoal is to play as fast as you can.\n"
-                      "You pick a number of lines and your\nscore is measured based on how fast\n"
-                      "you can destroy that many lines."
+            "You pick a number of lines and your\nscore is measured based on how fast\n"
+            "you can destroy that many lines.",
         )
 
         cur_y += button_offset
@@ -201,7 +201,7 @@ class MainMenu(MenuScreen):
             cur_button_text,
             func=self.marathon,
             info_text="Marathon is a gamemode in which the\ngoal is to play as long as you can.\nEvery 10 lines "
-                      "the drop speed gets\nfaster and your score is measured\nbased on how long you've survived."
+            "the drop speed gets\nfaster and your score is measured\nbased on how long you've survived.",
         )
         cur_y += button_offset
 
@@ -214,8 +214,8 @@ class MainMenu(MenuScreen):
             cur_button_text,
             func=self.create_room_list,
             info_text="Multiplayer is a gamemode in which\nplayers compete against each other.\nEach line you destroy "
-                      "sends\n\"garbage\" lines to the opponent.\nYour goal is to make everyone\ntop out by sending "
-                      "\"garbage\"."
+            'sends\n"garbage" lines to the opponent.\nYour goal is to make everyone\ntop out by sending '
+            '"garbage".',
         )
         cur_y += button_offset
 
@@ -228,7 +228,7 @@ class MainMenu(MenuScreen):
             cur_button_text,
             func=self.create_leaderboard,
             info_text="Top scores of all time\nin various categories",
-            info_size=40
+            info_size=40,
         )
 
         name_width = 350
@@ -257,8 +257,20 @@ class MainMenu(MenuScreen):
             Colors.DEEP_BLUE_BUTTON,
             "⚙",
             text_size=50,
-            func=self.settings
+            func=self.settings,
         )
+
+        # Sound button
+        music_button = self.create_button(
+            (75, 10),
+            60,
+            60,
+            Colors.DEEP_BLUE_BUTTON,
+            "♪" if self.cache["user"]["music"] else "⛔",
+            50,
+            Colors.GREEN if self.cache["user"]["music"] else Colors.RED,
+        )
+        self.buttons[music_button] = (self.toggle_sound, (music_button,))
 
         # Friends list screen
         friends_button_width = name_width // 7
@@ -274,7 +286,10 @@ class MainMenu(MenuScreen):
 
         # Request list screen
         self.create_button(
-            (self.width - name_width - friends_button_width * 2, self.height // 3 - 250),
+            (
+                self.width - name_width - friends_button_width * 2,
+                self.height // 3 - 250,
+            ),
             friends_button_width,
             name_height,
             Colors.BLACK_BUTTON,
@@ -284,6 +299,26 @@ class MainMenu(MenuScreen):
         )
 
         self.display_buttons()
+
+    def toggle_sound(self, button):
+        if button.text == "♪":
+            button.text = "⛔"
+            button.text_color = Colors.RED
+            button.rendered_text = button.render_button_text()
+            music = False
+        else:
+            button.text = "♪"
+            button.text_color = Colors.GREEN
+            button.rendered_text = button.render_button_text()
+            music = True
+
+        # Update the user's music preference
+        user = self.cache["user"]
+        user["music"] = music
+        self.cache["user"] = user
+        threading.Thread(
+            target=self.server_communicator.update_music, args=(user["username"], music)
+        ).start()
 
     def settings(self):
         """A screen in which the user can change his settings"""
@@ -350,7 +385,7 @@ class MainMenu(MenuScreen):
             self.height,
             self.refresh_rate,
             self.background_path,
-            user_profile=self.cache.get(username)
+            user_profile=self.cache.get(username),
         )
         self.running = False
         profile.run()

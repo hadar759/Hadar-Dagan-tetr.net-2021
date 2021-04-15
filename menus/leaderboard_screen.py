@@ -337,7 +337,7 @@ class LeaderboardScreen(ListScreen):
             self.height,
             self.refresh_rate,
             self.background_path,
-            user_profile=self.cache.get(username)
+            user_profile=self.cache.get(username),
         )
         self.running = False
         profile.run()

@@ -8,15 +8,17 @@ from tetris import Colors
 
 class SettingsScreen(MenuScreen):
     def __init__(
-            self,
-            server_communicator: ServerCommunicator,
-            cache: Dict,
-            width: int,
-            height: int,
-            refresh_rate: int = 60,
-            background_path: Optional[str] = None,
+        self,
+        server_communicator: ServerCommunicator,
+        cache: Dict,
+        width: int,
+        height: int,
+        refresh_rate: int = 60,
+        background_path: Optional[str] = None,
     ):
-        super().__init__(width, height, server_communicator, refresh_rate, background_path)
+        super().__init__(
+            width, height, server_communicator, refresh_rate, background_path
+        )
         self.cache = cache
 
     def run(self):
@@ -184,7 +186,16 @@ class SettingsScreen(MenuScreen):
             # Update the cache
             self.cache["user"] = user
             # Update the server
-            threading.Thread(target=self.server_communicator.update_settings, args=(user["username"], int(das_speed), int(arr_speed) * 10, int(skin), ghost)).start()
+            threading.Thread(
+                target=self.server_communicator.update_settings,
+                args=(
+                    user["username"],
+                    int(das_speed),
+                    int(arr_speed) * 10,
+                    int(skin),
+                    ghost,
+                ),
+            ).start()
             self.quit()
             return
         # In case some entries weren't valid and we haven't quit
@@ -192,4 +203,3 @@ class SettingsScreen(MenuScreen):
         # Display all relevant popups on the screen
         for popup in popups:
             self.create_popup_button(popup)
-

@@ -32,9 +32,9 @@ class TetrisGame(Game):
         "YOU WIN", True, Colors.WHITE
     )
     # Will be displayed before the score
-    SCORE_TEXT = pygame.font.Font("./tetris-resources/joystix-monospace.ttf", 19).render(
-        "SCORE:", True, Colors.WHITE
-    )
+    SCORE_TEXT = pygame.font.Font(
+        "./tetris-resources/joystix-monospace.ttf", 19
+    ).render("SCORE:", True, Colors.WHITE)
     # Will be displayed before the time
     TIME_TEXT = pygame.font.Font("./tetris-resources/joystix-monospace.ttf", 19).render(
         "TIME:", True, Colors.WHITE
@@ -68,6 +68,11 @@ class TetrisGame(Game):
         server_socket: Optional[socket] = None,
     ):
         super().__init__(width + 1000, height, refresh_rate, background_path)
+        self.sounds_effects: Dict[str : pygame.mixer.Sound] = {
+            "piece_drop": pygame.mixer.Sound("../resources/bruh.mp3"),
+            "line_clear": pygame.mixer.Sound("../resources/line_clear.mp3"),
+            "tetris": pygame.mixer.Sound("../resources/tetris.mp3"),
+        }
         self.mode = mode
         self.user = user
         self.server_communicator = server_communicator
@@ -136,7 +141,9 @@ class TetrisGame(Game):
             "T": pygame.image.load(f"tetris-resources/tpiece-sprite{self.skin}.png"),
             "S": pygame.image.load(f"tetris-resources/spiece-sprite{self.skin}.png"),
             "Z": pygame.image.load(f"tetris-resources/zpiece-sprite{self.skin}.png"),
-            "G": pygame.image.load(f"tetris-resources/garbage_piece_sprite{self.skin}.png"),
+            "G": pygame.image.load(
+                f"tetris-resources/garbage_piece_sprite{self.skin}.png"
+            ),
         }
 
         if self.mode == "sprint":
@@ -470,6 +477,9 @@ class TetrisGame(Game):
             self.freeze_piece()
             return
         drop = True
+        # TODO new
+        if self.user["music"]:
+            self.sounds_effects["piece_drop"].play(0)
         # Gravitate the piece very fast until it hits the ground
         while drop:
             self.gravitate()
@@ -549,7 +559,7 @@ class TetrisGame(Game):
         if self.move_variables["key_down"]:
             self.move_variables["arr"] = True
             self.start_DAS()
-            #self.create_timer(self.DAS_EVENT, 30, True)
+            # self.create_timer(self.DAS_EVENT, 30, True)
 
     def start_DAS(self):
         """Start the DAS"""
@@ -744,9 +754,9 @@ class TetrisGame(Game):
     @staticmethod
     def render_input(font_size: int, inp):
         """Render a text given it's font and size"""
-        return pygame.font.Font("./tetris-resources/joystix-monospace.ttf", font_size).render(
-            inp, True, Colors.WHITE
-        )
+        return pygame.font.Font(
+            "./tetris-resources/joystix-monospace.ttf", font_size
+        ).render(inp, True, Colors.WHITE)
 
     def fade(self, delay):
         """Fade the screen"""
@@ -795,6 +805,12 @@ class TetrisGame(Game):
             self.score += 300 * (self.level + 1)
         elif num_of_lines_cleared == 4:
             self.score += 1200 * (self.level + 1)
+
+        if self.user["music"]:
+            if 0 < num_of_lines_cleared < 4:
+                self.sounds_effects["line_clear"].play(0)
+            elif num_of_lines_cleared == 4:
+                self.sounds_effects["tetris"].play(0)
 
         # Update the amount of lines needed to be sent according to the amount of lines cleared
         if self.mode == "multiplayer":

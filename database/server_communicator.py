@@ -14,13 +14,23 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
-    def update_settings(self, username: str, das: int, arr: int, skin: int, ghost: bool):
-        post(f"{self.SERVER_DOMAIN}/users/settings?username={username}&das={das}&arr={arr}&skin={skin}&ghost={ghost}")
+    def update_music(self, username: str, music: bool):
+        post(f"{self.SERVER_DOMAIN}/users/music?username={username}&music={music}")
+
+    def update_settings(
+        self, username: str, das: int, arr: int, skin: int, ghost: bool
+    ):
+        post(
+            f"{self.SERVER_DOMAIN}/users/settings?username={username}&das={das}&arr={arr}&skin={skin}&ghost={ghost}"
+        )
 
     def is_password_new(self, user_email, password):
-        return get(
-            f"{self.SERVER_DOMAIN}/pass/new?user_email={user_email}&password={password}"
-        ).text == "true"
+        return (
+            get(
+                f"{self.SERVER_DOMAIN}/pass/new?user_email={user_email}&password={password}"
+            ).text
+            == "true"
+        )
 
     def update_password(self, user_email, password):
         post(
@@ -28,19 +38,18 @@ class ServerCommunicator:
         )
 
     def check_code(self, user_email, code):
-        return get(
-            f"{self.SERVER_DOMAIN}/pass/check?user_email={user_email}&code={code}"
-        ).text == "true"
+        return (
+            get(
+                f"{self.SERVER_DOMAIN}/pass/check?user_email={user_email}&code={code}"
+            ).text
+            == "true"
+        )
 
     def user_create_code(self, user_email):
-        post(
-            f"{self.SERVER_DOMAIN}/users/create/code?user_email={user_email}"
-        )
+        post(f"{self.SERVER_DOMAIN}/users/create/code?user_email={user_email}")
 
     def reset_password(self, user_email):
-        post(
-            f"{self.SERVER_DOMAIN}/pass/reset?user_email={user_email}"
-        )
+        post(f"{self.SERVER_DOMAIN}/pass/reset?user_email={user_email}")
 
     def accept_friend_request(self, sender, recipient):
         post(

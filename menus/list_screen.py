@@ -17,7 +17,9 @@ class ListScreen(MenuScreen):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
-        super().__init__(width, height, server_communicator, refresh_rate, background_path)
+        super().__init__(
+            width, height, server_communicator, refresh_rate, background_path
+        )
         self.user = user
         self.offset = 0
         self.cache = cache
