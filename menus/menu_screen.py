@@ -17,6 +17,7 @@ from menus.text_box import TextBox
 
 class MenuScreen:
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
+    CLICK_SOUND = pygame.mixer.Sound("../resources/click.mp3")
 
     def __init__(
         self,
@@ -76,6 +77,7 @@ class MenuScreen:
                 # User pressed a button with no response function
                 if not func:
                     continue
+                self.CLICK_SOUND.play(0)
                 threading.Thread(target=self.show_loading, daemon=True).start()
                 func(*args)
                 self.loading = False
