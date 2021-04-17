@@ -6,9 +6,6 @@ import pygame
 class GridGameObject:
     def __init__(self, sprite: pygame.sprite, position: List, block_size):
         self.sprite = sprite
-        colorkey = self.sprite.get_at((0, 0))
-        self.sprite.set_colorkey(colorkey)
-
         self.position = position
         self.block_size = block_size
 

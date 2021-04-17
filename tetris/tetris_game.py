@@ -68,7 +68,7 @@ class TetrisGame(Game):
         server_socket: Optional[socket] = None,
     ):
         super().__init__(width + 1000, height, refresh_rate, background_path)
-        self.sounds_effects: Dict[str : pygame.mixer.Sound] = {
+        self.sound_effects: Dict[str: pygame.mixer.Sound] = {
             "piece_drop": pygame.mixer.Sound("../resources/bruh.mp3"),
             "line_clear": pygame.mixer.Sound("../resources/line_clear.mp3"),
             "tetris": pygame.mixer.Sound("../resources/tetris.mp3"),
@@ -106,7 +106,6 @@ class TetrisGame(Game):
             "manual_drop": False,
         }
         self.skin = self.user["skin"]
-        print(self.skin)
         self.pieces_and_next_sprites = {
             "<class 'tetris.pieces.i_piece.IPiece'>": pygame.image.load(
                 f"tetris-resources/ipiece-full-sprite{self.skin}.png"
@@ -284,7 +283,7 @@ class TetrisGame(Game):
         for i in range(5):
             cur_next_piece = self.cur_seven_bag[i]
             self.screen.blit(
-                self.pieces_and_next_sprites[str(cur_next_piece)], (500, 100 + step * i)
+                self.pieces_and_next_sprites[str(cur_next_piece)], (600, 100 + step * i)
             )
 
     def initialize_ghost_piece(self):
@@ -294,7 +293,7 @@ class TetrisGame(Game):
             self.game_objects.remove(self.ghost_piece)
 
         # Copy the current piece's type
-        self.ghost_piece = type(self.cur_piece)()
+        self.ghost_piece = type(self.cur_piece)(self.skin)
         self.ghost_piece.sprite.set_alpha(255)
         self.update_ghost_position()
         self.game_objects.append(self.ghost_piece)
@@ -415,7 +414,7 @@ class TetrisGame(Game):
         """Generate a new current piece and update every variable that has to do with it"""
         self.reset_move_variables()
         self.generate_seven_bag()
-        self.cur_piece = self.cur_seven_bag.pop(0)()
+        self.cur_piece = self.cur_seven_bag.pop(0)(self.skin)
         self.game_objects.append(self.cur_piece)
         if self.user["ghost"]:
             self.initialize_ghost_piece()
@@ -479,7 +478,7 @@ class TetrisGame(Game):
         drop = True
         # TODO new
         if self.user["music"]:
-            self.sounds_effects["piece_drop"].play(0)
+            self.sound_effects["piece_drop"].play(0)
         # Gravitate the piece very fast until it hits the ground
         while drop:
             self.gravitate()
@@ -583,7 +582,6 @@ class TetrisGame(Game):
         """Move the piece one block to the right and start the ARR timer"""
         self.reset_grids()
         self.reset_move_variables()
-        print(self.user["DAS"])
         self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
         self.move_variables["key_down"] = True
         self.move_variables["right_das"] = True
@@ -808,9 +806,9 @@ class TetrisGame(Game):
 
         if self.user["music"]:
             if 0 < num_of_lines_cleared < 4:
-                self.sounds_effects["line_clear"].play(0)
+                self.sound_effects["line_clear"].play(0)
             elif num_of_lines_cleared == 4:
-                self.sounds_effects["tetris"].play(0)
+                self.sound_effects["tetris"].play(0)
 
         # Update the amount of lines needed to be sent according to the amount of lines cleared
         if self.mode == "multiplayer":

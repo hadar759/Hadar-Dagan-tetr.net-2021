@@ -145,7 +145,7 @@ class MainMenu(MenuScreen):
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
         self.socket.send(pickle.dumps(["declined"]))
         buttons = {}
-        print(inviter_name)
+
         for button in self.buttons:
             if button.text == "X":
                 # Close the connection
@@ -270,6 +270,7 @@ class MainMenu(MenuScreen):
             50,
             Colors.GREEN if self.cache["user"]["music"] else Colors.RED,
         )
+
         self.buttons[music_button] = (self.toggle_sound, (music_button,))
 
         # Friends list screen

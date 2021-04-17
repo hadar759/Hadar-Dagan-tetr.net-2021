@@ -77,7 +77,7 @@ class MenuScreen:
                 # User pressed a button with no response function
                 if not func:
                     continue
-                self.CLICK_SOUND.play(0)
+                # self.CLICK_SOUND.play(0)
                 threading.Thread(target=self.show_loading, daemon=True).start()
                 func(*args)
                 self.loading = False

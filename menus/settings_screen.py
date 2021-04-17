@@ -1,12 +1,16 @@
 import threading
 from typing import Dict, Optional
 
+import pygame
+
 from database.server_communicator import ServerCommunicator
 from menus.menu_screen import MenuScreen
 from tetris import Colors
 
 
 class SettingsScreen(MenuScreen):
+    SKIN_SETS = [pygame.image.load(rf"../tetris/tetris-resources/skin_set{i}.png") for i in range(11)]
+
     def __init__(
         self,
         server_communicator: ServerCommunicator,
@@ -20,6 +24,9 @@ class SettingsScreen(MenuScreen):
             width, height, server_communicator, refresh_rate, background_path
         )
         self.cache = cache
+        self.skin = self.cache["user"]["skin"]
+        self.skin_x = 0
+        self.skin_y = 0
 
     def run(self):
         self.create_screen()
@@ -76,17 +83,30 @@ class SettingsScreen(MenuScreen):
             label_width,
             textbox_height,
             Colors.BLACK_BUTTON,
-            "SKIN",
+            "SKIN:",
             text_only=True,
         )
-        field_box = self.create_textbox(
-            (cur_x + label_width + 100, cur_y),
-            textbox_width,
-            textbox_height,
+        self.create_button(
+            (cur_x + label_width, cur_y + function_button_height // 2 - 10),
+            function_button_width,
+            function_button_height,
             Colors.BLACK_BUTTON,
-            "",
+            "◀",
+            func=self.previous_skin
         )
-        self.textboxes[field_box] = str(user["skin"])
+
+        self.skin_x = cur_x + label_width + 10 + function_button_width
+        self.skin_y = cur_y + function_button_height // 2
+
+        self.create_button(
+            (cur_x + label_width + 20 + function_button_width + 400,
+             cur_y + function_button_height // 2 - 10),
+            function_button_width,
+            function_button_height,
+            Colors.BLACK_BUTTON,
+            "▶",
+            func=self.next_skin
+        )
         cur_y += textbox_height + 30
 
         self.create_button(
@@ -138,9 +158,9 @@ class SettingsScreen(MenuScreen):
             50,
             50,
             Colors.BLACK_BUTTON,
-            "✔",
+            "✔" if self.cache["user"]["ghost"] else "❌",
             45,
-            Colors.GREEN,
+            Colors.GREEN if self.cache["user"]["ghost"] else Colors.RED,
         )
         self.buttons[button] = (self.change_binary_button, (button,))
         cur_y += textbox_height + 30
@@ -156,16 +176,35 @@ class SettingsScreen(MenuScreen):
             func=self.save_settings,
         )
 
+    def previous_skin(self):
+        """Scroll to the previous skin"""
+        if self.skin == 0:
+            self.skin = len(self.SKIN_SETS) - 1
+        else:
+            self.skin -= 1
+
+        # Display the skin again
+        self.screen.blit(self.SKIN_SETS[self.skin], (self.skin_x, self.skin_y))
+
+    def next_skin(self):
+        """Scroll to the next skin"""
+        if self.skin == len(self.SKIN_SETS) - 1:
+            self.skin = 0
+        else:
+            self.skin += 1
+
+        # Display the skin again
+        self.screen.blit(self.SKIN_SETS[self.skin], (self.skin_x, self.skin_y))
+
     def save_settings(self):
-        skin = list(self.textboxes.values())[0]
-        das_speed = list(self.textboxes.values())[1]
-        arr_speed = list(self.textboxes.values())[2]
+        das_speed = list(self.textboxes.values())[0]
+        arr_speed = list(self.textboxes.values())[1]
         ghost = not list(self.buttons.keys())[-2].text == "❌"
         invalid = False
         popups = []
-        if not das_speed.isdigit() or not arr_speed.isdigit() or not skin.isdigit():
+        if not das_speed.isdigit() or not arr_speed.isdigit():
             self.create_screen()
-            self.create_popup_button("ARR, DAS and skin values should be numeric")
+            self.create_popup_button("ARR and DAS values should be numeric")
             return
         if not 0 < int(das_speed) < 999:
             invalid = True
@@ -173,15 +212,12 @@ class SettingsScreen(MenuScreen):
         if not 0 < int(arr_speed) < 10:
             invalid = True
             popups.append("ARR value should be between 0 and 10")
-        if not 0 <= int(skin) < 10:
-            invalid = True
-            popups.append("Please enter valid skin number")
         if not invalid:
             # Change the settings
             user = self.cache["user"]
             user["DAS"] = int(das_speed)
             user["ARR"] = int(arr_speed) * 10
-            user["skin"] = int(skin)
+            user["skin"] = self.skin
             user["ghost"] = ghost
             # Update the cache
             self.cache["user"] = user
@@ -192,7 +228,7 @@ class SettingsScreen(MenuScreen):
                     user["username"],
                     int(das_speed),
                     int(arr_speed) * 10,
-                    int(skin),
+                    self.skin,
                     ghost,
                 ),
             ).start()
@@ -203,3 +239,6 @@ class SettingsScreen(MenuScreen):
         # Display all relevant popups on the screen
         for popup in popups:
             self.create_popup_button(popup)
+
+    def drawings(self):
+        self.screen.blit(self.SKIN_SETS[self.skin], (self.skin_x, self.skin_y))
