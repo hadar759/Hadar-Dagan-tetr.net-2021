@@ -87,7 +87,7 @@ class SettingsScreen(MenuScreen):
             text_only=True,
         )
         self.create_button(
-            (cur_x + label_width, cur_y + function_button_height // 2 - 10),
+            (cur_x + label_width - 50, cur_y + function_button_height // 2 - 10),
             function_button_width,
             function_button_height,
             Colors.BLACK_BUTTON,
@@ -95,11 +95,11 @@ class SettingsScreen(MenuScreen):
             func=self.previous_skin
         )
 
-        self.skin_x = cur_x + label_width + 10 + function_button_width
+        self.skin_x = cur_x + label_width - 50 + 10 + function_button_width
         self.skin_y = cur_y + function_button_height // 2
 
         self.create_button(
-            (cur_x + label_width + 20 + function_button_width + 400,
+            (cur_x + label_width - 50 + 20 + function_button_width + 400,
              cur_y + function_button_height // 2 - 10),
             function_button_width,
             function_button_height,
