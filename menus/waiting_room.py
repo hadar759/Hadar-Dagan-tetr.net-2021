@@ -17,7 +17,8 @@ from menus.user_profile_screen import UserProfile
 
 class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
-
+    MSG_SOUND = pygame.mixer.Sound("../sounds/se_game_msg.wav")
+    MSG_SOUND.set_volume(0.2)
     LETTER_SIZE = 15
     GAME_PORT = 44444
 
@@ -201,6 +202,7 @@ class WaitingRoom(MenuScreen):
                 ref_button = self.last_message
                 cur_x = ref_button.starting_x
 
+            self.MSG_SOUND.play(0)
             button_width = list(self.textboxes.keys())[1].width
             button_height = self.LETTER_SIZE * 2
             # Last button is a message
@@ -323,7 +325,7 @@ class WaitingRoom(MenuScreen):
             self.handle_text_action(textbox)
 
     def handle_text_action(self, textbox):
-        text_length = textbox.rendered_text.get_rect()[2]
+        text_length = textbox.rendered_text[0].get_rect()[2]
         # Text slipped out of textbox
         if text_length > textbox.width - self.LETTER_SIZE * 2:
             dif = text_length - textbox.width + self.LETTER_SIZE * 2

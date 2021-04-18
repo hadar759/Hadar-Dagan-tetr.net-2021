@@ -576,7 +576,7 @@ class MainMenu(MenuScreen):
                 args=("marathon", i),
             )
             if i % 2 == 0:
-                btn.color = btn.get_clicked_color(btn.color)
+                btn.color = btn.get_action_color(btn.color, alpha=15)
         # Second line of buttons
         row_height = row_height + button_height + 100
         for i in range(5):
@@ -590,7 +590,7 @@ class MainMenu(MenuScreen):
                 args=("marathon", i + 5),
             )
             if i % 2 == 1:
-                btn.color = btn.get_clicked_color(btn.color)
+                btn.color = btn.get_action_color(btn.color, alpha=15)
 
         self.display_buttons()
         pygame.display.flip()

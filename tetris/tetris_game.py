@@ -71,17 +71,25 @@ class TetrisGame(Game):
             width = width + 900
         super().__init__(width + 100, height, refresh_rate, background_path)
         self.sound_effects: Dict[str: pygame.mixer.Sound] = {
-            "piece_drop": pygame.mixer.Sound("../resources/bruh.mp3"),
-            "line_clear": pygame.mixer.Sound("../resources/line_clear.mp3"),
-            "tetris": pygame.mixer.Sound("../resources/tetris.mp3"),
+            "1_lines": pygame.mixer.Sound("../sounds/se_game_single.wav"),
+            "2_lines": pygame.mixer.Sound("../sounds/se_game_double.wav"),
+            "3_lines": pygame.mixer.Sound("../sounds/se_game_triple.wav"),
+            "4_lines": pygame.mixer.Sound("../sounds/se_game_tetris.wav"),
+            "hard_drop": pygame.mixer.Sound("../sounds/se_game_harddrop.wav"),
+            "piece_fall": pygame.mixer.Sound("../sounds/se_game_softdrop.wav"),
+            "piece_lock": pygame.mixer.Sound("../sounds/se_game_landing.wav"),
+            "piece_move": pygame.mixer.Sound("../sounds/se_game_move.wav"),
+            "piece_rotate": pygame.mixer.Sound("../sounds/se_game_rotate.wav"),
         }
+        for sound in self.sound_effects.values():
+            sound.set_volume(0.2)
         self.mode = mode
         self.user = user
         self.server_communicator = server_communicator
         # The current piece the player is controlling
-        self.cur_piece: Piece = None
+        self.cur_piece: Optional[Piece] = None
         # The ghost piece of the current piece
-        self.ghost_piece: Piece = None
+        self.ghost_piece: Optional[Piece] = None
         # The current time it takes a piece to drop one block
         self.gravity_time = self.GRAVITY_BASE_TIME
         # Game stats
@@ -316,7 +324,7 @@ class TetrisGame(Game):
         """Every action that is to be done at the end of the loop - after event handling"""
         if self.cur_piece:
             # Display the ghost piece if the screen was reset
-            if self.reset:
+            if self.reset and self.user["ghost"]:
                 self.ghost_piece.display_object(self.screen)
                 self.reset = False
             self.should_freeze = self.should_freeze_piece()
@@ -487,9 +495,6 @@ class TetrisGame(Game):
             self.freeze_piece()
             return
         drop = True
-        # TODO new
-        if self.user["music"]:
-            self.sound_effects["piece_drop"].play(0)
         # Gravitate the piece very fast until it hits the ground
         while drop:
             self.gravitate()
@@ -591,6 +596,8 @@ class TetrisGame(Game):
 
     def key_right(self):
         """Move the piece one block to the right and start the ARR timer"""
+        if self.user["music"]:
+            self.sound_effects["piece_move"].play(0)
         self.reset_grids()
         self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
@@ -600,6 +607,8 @@ class TetrisGame(Game):
 
     def key_left(self):
         """Move the piece one block to the left and start the ARR timer"""
+        if self.user["music"]:
+            self.sound_effects["piece_move"].play(0)
         self.reset_grids()
         self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
@@ -609,11 +618,15 @@ class TetrisGame(Game):
 
     def key_z(self):
         """Rotate the piece counter-clockwise"""
+        if self.user["music"]:
+            self.sound_effects["piece_rotate"].play(0)
         self.reset_grids()
         self.cur_piece.call_rotation_functions(pygame.K_z, self.game_grid)
 
     def key_x(self):
         """Rotate the piece clockwise"""
+        if self.user["music"]:
+            self.sound_effects["piece_rotate"].play(0)
         self.reset_grids()
         self.cur_piece.call_rotation_functions(pygame.K_x, self.game_grid)
 
@@ -627,6 +640,8 @@ class TetrisGame(Game):
         self.game_grid.freeze_piece(self.cur_piece)
         self.cur_piece = None
         self.should_freeze = False
+        if self.user["music"]:
+            self.sound_effects["piece_lock"].play(0)
 
     def should_freeze_piece(self):
         """Returns whether the current piece can, and should, be frozen"""
@@ -806,6 +821,8 @@ class TetrisGame(Game):
 
         # Update the score according to the amount of lines cleared
         self.lines_cleared += num_of_lines_cleared
+        if num_of_lines_cleared > 0 and self.user["music"]:
+            self.sound_effects[f"{min(4, num_of_lines_cleared)}_lines"].play(0)
         if num_of_lines_cleared == 1:
             self.score += 40 * (self.level + 1)
         elif num_of_lines_cleared == 2:
@@ -814,12 +831,6 @@ class TetrisGame(Game):
             self.score += 300 * (self.level + 1)
         elif num_of_lines_cleared == 4:
             self.score += 1200 * (self.level + 1)
-
-        if self.user["music"]:
-            if 0 < num_of_lines_cleared < 4:
-                self.sound_effects["line_clear"].play(0)
-            elif num_of_lines_cleared == 4:
-                self.sound_effects["tetris"].play(0)
 
         # Update the amount of lines needed to be sent according to the amount of lines cleared
         if self.mode == "multiplayer":

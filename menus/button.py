@@ -103,13 +103,13 @@ class Button:
             - self.rendered_text[0].get_rect()[3] // 2,
         )
 
-    def clicked(self, screen):
+    def button_action(self, screen, alpha: int = 15, reset: bool = True):
         # Do not show the button
         if self.transparent or not self.clickable:
             return
         button_color = self.color
         # Make the button brighter
-        self.color = self.get_clicked_color(button_color)
+        self.color = self.get_action_color(button_color, alpha)
 
         # Do not color the button in
         if not self.text_only:
@@ -117,13 +117,14 @@ class Button:
         self.show_text_in_button(screen)
         # Update the button
         pygame.display.flip()
-        # Return the button to it's previous condition
-        self.color = button_color
+        if reset:
+            # Return the button to it's previous condition
+            self.color = button_color
 
-    def get_clicked_color(self, button_color):
+    def get_action_color(self, button_color, alpha):
         """Returns the button color if it were to be clicked"""
         return {
-            key: tuple([min(255, val + 15) for val in button_color[key]])
+            key: tuple([min(255, val + alpha) for val in button_color[key]])
             for key in button_color
         }
 

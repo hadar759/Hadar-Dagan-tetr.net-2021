@@ -17,7 +17,8 @@ from menus.text_box import TextBox
 
 class MenuScreen:
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
-    CLICK_SOUND = pygame.mixer.Sound("../resources/click.mp3")
+    CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
+    HOVER_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonHover.mp3")
 
     def __init__(
         self,
@@ -37,6 +38,8 @@ class MenuScreen:
         self.background_path = background_path
         self.running = True
         self.loading = False
+        self.inside_button = False
+        self.hovered_btn_and_color = ()
         self.buttons: Dict[Button, callable] = {}
         self.textboxes: Dict[TextBox, str] = {}
         self.actions = {}
@@ -71,13 +74,13 @@ class MenuScreen:
                 if not button.inside_button(self.mouse_pos):
                     continue
                 # Change the button color
-                button.clicked(self.screen)
+                button.button_action(self.screen)
                 # Get the correct response using to the button
                 func, args = self.buttons[button]
                 # User pressed a button with no response function
                 if not func:
                     continue
-                # self.CLICK_SOUND.play(0)
+                self.CLICK_SOUND.play(0)
                 threading.Thread(target=self.show_loading, daemon=True).start()
                 func(*args)
                 self.loading = False
@@ -90,6 +93,29 @@ class MenuScreen:
                     textbox.active = True
                 else:
                     textbox.active = False
+
+        # Find if we're hovered over a button
+        for button in self.buttons:
+            # Mouse over button
+            if button.inside_button(self.mouse_pos) and button.clickable and not button.text_only and not button.transparent:
+                # We were hovering over an adjacent button, and never left, just moved to this button
+                button_changed = self.hovered_btn_and_color and self.hovered_btn_and_color[0] != button
+                if not self.hovered_btn_and_color or self.hovered_btn_and_color[0] != button:
+                    # Reverse the last button's color
+                    if button_changed:
+                        self.hovered_btn_and_color[0].color = self.hovered_btn_and_color[1]
+                    # Play sound
+                    self.HOVER_SOUND.play(0)
+                    # Save old button color
+                    self.hovered_btn_and_color = (button, button.color)
+                    # Update button
+                    button.button_action(self.screen, alpha=5, reset=False)
+                break
+        # Mouse isn't hovered over any button
+        else:
+            if self.hovered_btn_and_color:
+                self.hovered_btn_and_color[0].color = self.hovered_btn_and_color[1]
+                self.hovered_btn_and_color = ()
 
     def quit(self):
         self.running = False

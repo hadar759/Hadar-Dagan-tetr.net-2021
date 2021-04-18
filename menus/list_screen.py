@@ -43,7 +43,8 @@ class ListScreen(MenuScreen):
             self.create_popup_button("Can't scroll up")
             return
         self.offset -= 1
-        self.display_entries(*args)
+        if not args:
+            self.create_screen()
 
     def scroll_down(self, *args):
         offset = self.offset
@@ -54,4 +55,7 @@ class ListScreen(MenuScreen):
         if offset == self.offset:
             self.create_popup_button("Can't scroll down more")
         else:
-            self.display_entries(*args)
+            if not args:
+                self.create_screen()
+            else:
+                self.display_entries(*args)

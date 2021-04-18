@@ -23,6 +23,7 @@ class FriendsScreen(ListScreen):
         refresh_rate: int = 60,
         background_path: Optional[str] = None,
     ):
+        # TODO fix the problem with scrolling
         super().__init__(
             user,
             server_communicator,

@@ -205,8 +205,6 @@ class LeaderboardScreen(ListScreen):
         )
 
     def display_leaderboard(self, score_type):
-        self.offset = 0
-
         self.buttons = {}
         self.textboxes = {}
         title_width = self.width
@@ -252,8 +250,6 @@ class LeaderboardScreen(ListScreen):
             Colors.WHITE,
             func=self.scroll_up,
             args=(
-                cur_x,
-                cur_y,
                 score_type,
             ),
         )
@@ -269,8 +265,6 @@ class LeaderboardScreen(ListScreen):
             Colors.WHITE,
             func=self.scroll_down,
             args=(
-                cur_x,
-                cur_y,
                 score_type,
             ),
         )
@@ -345,3 +339,21 @@ class LeaderboardScreen(ListScreen):
         self.cache[username] = profile.profile
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
+
+    def scroll_up(self, score_type):
+        if self.offset == 0:
+            self.create_popup_button("Can't scroll up")
+            return
+        self.offset -= 1
+        self.display_leaderboard(score_type)
+
+    def scroll_down(self, score_type):
+        offset = self.offset
+        self.offset = self.offset = min(
+            max(0, len(self.entry_list) - self.num_on_screen), self.offset + 1
+        )
+        # Offset hasn't changed, i.e. we're at the end of the room list
+        if offset == self.offset:
+            self.create_popup_button("Can't scroll down more")
+        else:
+            self.display_leaderboard(score_type)
