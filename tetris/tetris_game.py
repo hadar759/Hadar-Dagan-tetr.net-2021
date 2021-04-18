@@ -67,7 +67,9 @@ class TetrisGame(Game):
         lines_or_level: Optional[int] = None,
         server_socket: Optional[socket] = None,
     ):
-        super().__init__(width + 1000, height, refresh_rate, background_path)
+        if mode == "multiplayer":
+            width = width + 900
+        super().__init__(width + 100, height, refresh_rate, background_path)
         self.sound_effects: Dict[str: pygame.mixer.Sound] = {
             "piece_drop": pygame.mixer.Sound("../resources/bruh.mp3"),
             "line_clear": pygame.mixer.Sound("../resources/line_clear.mp3"),
@@ -90,6 +92,8 @@ class TetrisGame(Game):
         self.starting_time = pygame.time.get_ticks()
         # Whether the current piece should be frozen
         self.should_freeze = False
+        # Whether the screen was reset this loop, used for ghost piece
+        self.reset = False
         # How many 'gravity_time's the current piece touched the ground without being frozen
         self.times_touching_ground = 0
         # A bag containing the next 7 pieces - according to tetris guideline
@@ -204,6 +208,8 @@ class TetrisGame(Game):
         self.screen.fill(Colors.BLACK)
         for grid in self.grids:
             grid.display_borders(self.screen)
+        # Screen was reset
+        self.reset = True
 
     def handle_connection(self):
         while self.running:
@@ -294,9 +300,10 @@ class TetrisGame(Game):
 
         # Copy the current piece's type
         self.ghost_piece = type(self.cur_piece)(self.skin)
-        self.ghost_piece.sprite.set_alpha(255)
+        # Make ghost a bit transparent
+        self.ghost_piece.sprite.set_alpha(125)
         self.update_ghost_position()
-        self.game_objects.append(self.ghost_piece)
+        #self.game_objects.append(self.ghost_piece)
 
     def update_ghost_position(self):
         """Changes the ghost position in accordance to the current piece position"""
@@ -308,6 +315,10 @@ class TetrisGame(Game):
     def end_of_loop(self):
         """Every action that is to be done at the end of the loop - after event handling"""
         if self.cur_piece:
+            # Display the ghost piece if the screen was reset
+            if self.reset:
+                self.ghost_piece.display_object(self.screen)
+                self.reset = False
             self.should_freeze = self.should_freeze_piece()
 
         elif self.mode == "multiplayer":
@@ -745,7 +756,7 @@ class TetrisGame(Game):
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds
-        pygame.time.wait(5000)
+        #pygame.time.wait(5000)
 
         return
 

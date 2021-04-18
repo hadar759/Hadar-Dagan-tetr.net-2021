@@ -57,14 +57,17 @@ class Game:
             if self.background_image:
                 self.screen.blit(self.background_image, (0, 0))
 
-            for game_object in self.game_objects:
-                game_object.display_object(self.screen)
+            self.display_objects()
 
             self.end_of_loop()
 
             pygame.display.flip()
 
             clock.tick(self.refresh_rate)
+
+    def display_objects(self):
+        for game_object in self.game_objects:
+            game_object.display_object(self.screen)
 
     def set_event_handler(self, event_num: int, func: EVENT_HANDLER_TYPE):
         self.event_handlers[event_num] = func
