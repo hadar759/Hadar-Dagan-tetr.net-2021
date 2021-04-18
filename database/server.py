@@ -554,5 +554,5 @@ app.include_router(router)
 if __name__ == "__main__":
     # Run Server
     # os.chdir("./database")
-    subprocess.call("uvicorn server:app --host 0.0.0.0 --port 8000")
-    # uvicorn.run(app)
+    #subprocess.call("uvicorn server:app --host 0.0.0.0 --port 8000")
+    uvicorn.run(app, host="0.0.0.0")
