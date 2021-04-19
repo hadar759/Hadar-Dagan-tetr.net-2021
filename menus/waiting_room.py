@@ -17,8 +17,11 @@ from menus.user_profile_screen import UserProfile
 
 class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
-    MSG_SOUND = pygame.mixer.Sound("sounds/se_game_msg.wav")
-    MSG_SOUND.set_volume(0.2)
+    BACKGROUND_MUSIC = {"msg": pygame.mixer.Sound("sounds/se_game_msg.wav"),
+                        "theme": pygame.mixer.Sound("sounds/05. Results.mp3")}
+    BACKGROUND_MUSIC["msg"].set_volume(0.2)
+    BACKGROUND_MUSIC["theme"].set_volume(0.05)
+
     LETTER_SIZE = 15
     GAME_PORT = 44444
 
@@ -55,6 +58,7 @@ class WaitingRoom(MenuScreen):
         self.invite_btn = None
 
     def run(self):
+        self.BACKGROUND_MUSIC["theme"].play(100)
         self.create_room()
         self.establish_connection()
         threading.Thread(target=self.recv_chat, daemon=True).start()

@@ -7,8 +7,6 @@ import time
 
 import bcrypt
 import threading
-import smtplib
-import ssl
 from typing import Optional
 
 import pygame
@@ -23,6 +21,9 @@ from menus.menu_screen import MenuScreen
 
 class WelcomeScreen(MenuScreen):
     """The starting screen of the game"""
+    BACKGROUND_MUSIC = {"theme": pygame.mixer.Sound("sounds/05. Results.mp3")}
+    for sound in BACKGROUND_MUSIC.values():
+        sound.set_volume(0.05)
 
     def __init__(
         self,
@@ -44,6 +45,11 @@ class WelcomeScreen(MenuScreen):
 
     def run(self):
         """Main loop of the welcome screen"""
+        # Play background music
+        self.BACKGROUND_MUSIC["theme"].play(10)
+        # Sync music with screen lol
+        time.sleep(1)
+        # Display the welcome screen
         self.create_first_screen()
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
@@ -54,6 +60,7 @@ class WelcomeScreen(MenuScreen):
         """Create the first screen of the game"""
         self.buttons = {}
         self.textboxes = {}
+        # TODO create a "WELCOME TO TETR.NET" with the project's symbol above it or something
         # Login button
         self.create_button(
             (self.width // 2 - 258, self.height // 3 - 250),
@@ -347,12 +354,14 @@ class WelcomeScreen(MenuScreen):
         if not valid_user:
             return
 
+        # Encrypt the password and get the user dict from the server
         password = bcrypt.hashpw(password.encode(), self.salt).hex()
         user = self.server_communicator.get_user(user_identifier, password)
 
         # Update the user's latest ip
         if user:
             new_outer_ip = self.get_outer_ip()
+            # Update routine user stats (online, ip etc...)
             threading.Thread(
                 target=self.server_communicator.on_connection,
                 args=(
@@ -361,8 +370,13 @@ class WelcomeScreen(MenuScreen):
                 ),
                 daemon=True,
             ).start()
+            # Cache stats
             cache = self.cache_stats(user["username"])
+            # Close the welcome screen
             self.running = False
+            # Stop all music
+            for sound in self.BACKGROUND_MUSIC.values():
+                sound.stop()
             MainMenu(
                 cache["user"],
                 cache,
@@ -521,15 +535,24 @@ class WelcomeScreen(MenuScreen):
             )
 
     def create_user(self, email, username, password):
+        """Creates a new user from their credentials and signs them into the system"""
+        # Encrypt the password and setup the user dict
         password = bcrypt.hashpw(password.encode(), self.salt).hex()
         user_post = DBPostCreator.create_user_post(
             email, username, password, self.get_outer_ip()
         )
+        # Register the user in the server
         threading.Thread(
             target=self.server_communicator.create_user(user_post), daemon=True
         ).start()
+        # Cache stats
         cache = self.cache_stats(username)
+        # Close the welcome screen
         self.running = False
+        # Stop all music
+        for sound in self.BACKGROUND_MUSIC.values():
+            sound.stop()
+
         MainMenu(
             user_post,
             cache,

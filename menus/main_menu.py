@@ -25,6 +25,9 @@ class MainMenu(MenuScreen):
 
     GAME_PORT = 44444
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
+    BACKGROUND_MUSIC = {"theme": pygame.mixer.Sound("sounds/01. Main Menu.mp3")}
+    for sound in BACKGROUND_MUSIC.values():
+        sound.set_volume(0.05)
 
     def __init__(
         self,
@@ -49,9 +52,17 @@ class MainMenu(MenuScreen):
     def run(self):
         """Main loop of the main menu"""
         while True:
+            # Play background music
+            self.BACKGROUND_MUSIC["theme"].play(1000, fade_ms=5000)
+            # Music is turned off - just pause so we can unpause if the user toggles
+            if not self.user["music"]:
+                pygame.mixer.pause()
+            # Display the menu
             self.create_menu()
+            # For invite checking
             old_time = round(time.time())
-            self.open_screen()
+
+            self.on_menu_start()
 
             while self.running:
                 self.run_once()
@@ -72,7 +83,7 @@ class MainMenu(MenuScreen):
             for key in new_cache:
                 self.cache[key] = new_cache[key]
 
-    def open_screen(self):
+    def on_menu_start(self):
         """Threads to be started when this screen is opened"""
         self.running = True
         threading.Thread(target=self.update_mouse_pos, daemon=True).start()
@@ -136,7 +147,7 @@ class MainMenu(MenuScreen):
         self.running = False
         waiting_room.run()
         self.cache = waiting_room.cache
-        self.open_screen()
+        self.on_menu_start()
 
     def dismiss_invite(self):
         """Dismisses an invite from a player"""
@@ -307,11 +318,13 @@ class MainMenu(MenuScreen):
             button.text_color = Colors.RED
             button.rendered_text = button.render_button_text()
             music = False
+            pygame.mixer.pause()
         else:
             button.text = "♪"
             button.text_color = Colors.GREEN
             button.rendered_text = button.render_button_text()
             music = True
+            pygame.mixer.unpause()
 
         # Update the user's music preference
         user = self.cache["user"]
@@ -335,7 +348,7 @@ class MainMenu(MenuScreen):
         settings_screen.run()
         self.cache = settings_screen.cache
         print(self.cache)
-        self.open_screen()
+        self.on_menu_start()
 
     def friends_screen(self, type):
         friends_screen = FriendsScreen(
@@ -352,7 +365,7 @@ class MainMenu(MenuScreen):
         self.running = False
         friends_screen.run()
         self.cache = friends_screen.cache
-        self.open_screen()
+        self.on_menu_start()
 
     def quit(self):
         self.buttons = {}
@@ -375,7 +388,7 @@ class MainMenu(MenuScreen):
         leaderboard.run()
         # Update the cache
         self.cache = leaderboard.cache
-        self.open_screen()
+        self.on_menu_start()
 
     def user_profile(self, username):
         profile = UserProfile(
@@ -394,7 +407,7 @@ class MainMenu(MenuScreen):
         self.cache["user"] = profile.user
         self.cache[username] = profile.profile
 
-        self.open_screen()
+        self.on_menu_start()
 
     def create_room_list(self):
         room_screen = RoomsScreen(
@@ -412,7 +425,7 @@ class MainMenu(MenuScreen):
         # Update the cache
         self.cache = room_screen.cache
 
-        self.open_screen()
+        self.on_menu_start()
 
     def multiplayer(self):
         """Create the multiplayer screen - set up the correct buttons"""
@@ -597,7 +610,12 @@ class MainMenu(MenuScreen):
 
     def start_game(self, mode, lines_or_level):
         """Start a generic game, given a mode and the optional starting lines or starting level"""
+        # Stop all music
+        for sound in self.BACKGROUND_MUSIC.values():
+            sound.stop()
+        # Close the main menu
         self.running = False
+        # Create the game
         self.buttons = {}
         self.reset_textboxes()
         game = TetrisGame(

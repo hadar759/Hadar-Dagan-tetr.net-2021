@@ -6,6 +6,7 @@ v1.0
 import pickle
 import threading
 import math
+import time
 from socket import socket
 from typing import Tuple, Optional, Dict, List
 import random
@@ -39,7 +40,28 @@ class TetrisGame(Game):
     TIME_TEXT = pygame.font.Font("tetris/tetris-resources/joystix-monospace.ttf", 19).render(
         "TIME:", True, Colors.WHITE
     )
+    SOUND_EFFECTS = {
+        "1_lines": pygame.mixer.Sound("sounds/se_game_single.wav"),
+        "2_lines": pygame.mixer.Sound("sounds/se_game_double.wav"),
+        "3_lines": pygame.mixer.Sound("sounds/se_game_triple.wav"),
+        "4_lines": pygame.mixer.Sound("sounds/se_game_tetris.wav"),
+        "hard_drop": pygame.mixer.Sound("sounds/se_game_harddrop.wav"),
+        "piece_fall": pygame.mixer.Sound("sounds/se_game_softdrop.wav"),
+        "piece_lock": pygame.mixer.Sound("sounds/se_game_landing.wav"),
+        "piece_move": pygame.mixer.Sound("sounds/se_game_move.wav"),
+        "piece_rotate": pygame.mixer.Sound("sounds/se_game_rotate.wav"),
+        "theme_start": pygame.mixer.Sound("sounds/02. Game Theme.mp3"),
+        "theme_mid": pygame.mixer.Sound("sounds/03. Game Theme (50 Left).mp3"),
+        "theme_end": pygame.mixer.Sound("sounds/04. Game Theme (10 Left).mp3"),
+        "theme_gameover": pygame.mixer.Sound("sounds/me_game_gameover.wav"),
+    }
 
+    for key, sound in SOUND_EFFECTS.items():
+        if key.startswith("theme"):
+            sound.set_volume(0.05)
+        else:
+            sound.set_volume(0.2)
+    
     GRAVITY_EVENT = USEREVENT + 1
     DAS_EVENT = USEREVENT + 2
     ARR_EVENT = USEREVENT + 3
@@ -70,19 +92,7 @@ class TetrisGame(Game):
         if mode == "multiplayer":
             width = width + 900
         super().__init__(width + 100, height, refresh_rate, background_path)
-        self.sound_effects: Dict[str: pygame.mixer.Sound] = {
-            "1_lines": pygame.mixer.Sound("sounds/se_game_single.wav"),
-            "2_lines": pygame.mixer.Sound("sounds/se_game_double.wav"),
-            "3_lines": pygame.mixer.Sound("sounds/se_game_triple.wav"),
-            "4_lines": pygame.mixer.Sound("sounds/se_game_tetris.wav"),
-            "hard_drop": pygame.mixer.Sound("sounds/se_game_harddrop.wav"),
-            "piece_fall": pygame.mixer.Sound("sounds/se_game_softdrop.wav"),
-            "piece_lock": pygame.mixer.Sound("sounds/se_game_landing.wav"),
-            "piece_move": pygame.mixer.Sound("sounds/se_game_move.wav"),
-            "piece_rotate": pygame.mixer.Sound("sounds/se_game_rotate.wav"),
-        }
-        for sound in self.sound_effects.values():
-            sound.set_volume(0.2)
+
         self.mode = mode
         self.user = user
         self.server_communicator = server_communicator
@@ -180,6 +190,10 @@ class TetrisGame(Game):
             self.win = False
 
     def run(self):
+        # Play background music
+        if self.user["music"]:
+            self.SOUND_EFFECTS["theme_start"].play(1000)
+
         self.running = True
         # Every event that has to do with moving the piece
         self.create_timer(self.GRAVITY_EVENT, self.gravity_time)
@@ -348,11 +362,19 @@ class TetrisGame(Game):
             self.marathon()
             self.show_score()
             self.show_lines()
+            threading.Thread(target=self.change_music, args=(self.level == 5, "theme_start", "theme_mid")).start()
+            threading.Thread(target=self.change_music, args=(self.level == 9, "theme_mid", "theme_end")).start()
 
         elif self.mode == "sprint":
             # Sprint specific functions
             self.show_time()
             self.show_lines()
+            threading.Thread(target=self.change_music,
+                             args=(self.lines_to_finish // 3 <= self.lines_cleared < self.lines_to_finish // 3 * 2,
+                                   "theme_start", "theme_mid")).start()
+            threading.Thread(target=self.change_music,
+                             args=(self.lines_cleared >= self.lines_to_finish // 3 * 2,
+                                   "theme_mid", "theme_end")).start()
             if self.lines_cleared >= self.lines_to_finish:
                 # If the player had cleared the amount of lines needed, he has won
                 self.game_over(True)
@@ -361,6 +383,18 @@ class TetrisGame(Game):
             self.display_opp_screen()
 
         self.show_next_pieces()
+
+    def change_music(self, condition, old_music, new_music):
+        """Stops the old music playing and starts the new one if the given condition is met"""
+        # Condition is met and new music isn't playing
+        if self.user["music"] and condition and self.SOUND_EFFECTS[new_music].get_num_channels() == 0:
+            # Play the new music
+            self.SOUND_EFFECTS[new_music].play(1000)
+            # Wait for new music to start
+            time.sleep(1)
+            # Stop the old music
+            self.SOUND_EFFECTS[old_music].stop()
+
 
     def display_opp_screen(self):
         """Displays the opponent's screen on the board"""
@@ -597,7 +631,7 @@ class TetrisGame(Game):
     def key_right(self):
         """Move the piece one block to the right and start the ARR timer"""
         if self.user["music"]:
-            self.sound_effects["piece_move"].play(0)
+            self.SOUND_EFFECTS["piece_move"].play(0)
         self.reset_grids()
         self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
@@ -608,7 +642,7 @@ class TetrisGame(Game):
     def key_left(self):
         """Move the piece one block to the left and start the ARR timer"""
         if self.user["music"]:
-            self.sound_effects["piece_move"].play(0)
+            self.SOUND_EFFECTS["piece_move"].play(0)
         self.reset_grids()
         self.reset_move_variables()
         self.create_timer(self.ARR_EVENT, self.user["DAS"], True)
@@ -619,14 +653,14 @@ class TetrisGame(Game):
     def key_z(self):
         """Rotate the piece counter-clockwise"""
         if self.user["music"]:
-            self.sound_effects["piece_rotate"].play(0)
+            self.SOUND_EFFECTS["piece_rotate"].play(0)
         self.reset_grids()
         self.cur_piece.call_rotation_functions(pygame.K_z, self.game_grid)
 
     def key_x(self):
         """Rotate the piece clockwise"""
         if self.user["music"]:
-            self.sound_effects["piece_rotate"].play(0)
+            self.SOUND_EFFECTS["piece_rotate"].play(0)
         self.reset_grids()
         self.cur_piece.call_rotation_functions(pygame.K_x, self.game_grid)
 
@@ -641,7 +675,7 @@ class TetrisGame(Game):
         self.cur_piece = None
         self.should_freeze = False
         if self.user["music"]:
-            self.sound_effects["piece_lock"].play(0)
+            self.SOUND_EFFECTS["piece_lock"].play(0)
 
     def should_freeze_piece(self):
         """Returns whether the current piece can, and should, be frozen"""
@@ -660,9 +694,13 @@ class TetrisGame(Game):
                     self.game_over(False)
                 return True
         return False
-
+    
     def game_over(self, win: bool = None):
         """End the game"""
+        # Stop all music
+        pygame.mixer.stop()
+        if self.user["music"]:
+            self.SOUND_EFFECTS["theme_gameover"].play(0)
         # Calculate the end time
         game_time = self.get_current_time_since_start()
         new_top = False
@@ -822,7 +860,7 @@ class TetrisGame(Game):
         # Update the score according to the amount of lines cleared
         self.lines_cleared += num_of_lines_cleared
         if num_of_lines_cleared > 0 and self.user["music"]:
-            self.sound_effects[f"{min(4, num_of_lines_cleared)}_lines"].play(0)
+            self.SOUND_EFFECTS[f"{min(4, num_of_lines_cleared)}_lines"].play(0)
         if num_of_lines_cleared == 1:
             self.score += 40 * (self.level + 1)
         elif num_of_lines_cleared == 2:
