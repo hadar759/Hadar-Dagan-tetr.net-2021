@@ -346,7 +346,8 @@ class RoomsScreen(ListScreen):
 
     def connect_to_room(self, room: Dict):
         sock = socket.socket()
-        sock.connect((room["ip"], 44444))
+        port = 80 if room["default"] else 44444
+        sock.connect((room["ip"], port))
         # Start the main menu
         waiting_room = WaitingRoom(
             self.user,
@@ -358,7 +359,7 @@ class RoomsScreen(ListScreen):
             self.width,
             self.height,
             75,
-            "../tetris/tetris-resources/tetris_background.jpg",
+            "tetris/tetris-resources/tetris_background.jpg",
         )
         self.running = False
         waiting_room.run()

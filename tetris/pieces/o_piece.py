@@ -7,7 +7,7 @@ from .tetris_piece import Piece
 
 class OPiece(Piece):
     def __init__(self, skin: int = 0, pos: List[List] = None):
-        self.sprite = pygame.image.load(rf"./tetris-resources/opiece-sprite{skin}.png")
+        self.sprite = pygame.image.load(rf"tetris/tetris-resources/opiece-sprite{skin}.png")
         if not pos:
             pos = [[0, 4], [0, 5], [1, 5], [1, 4]]
         super().__init__(self.sprite, pos)

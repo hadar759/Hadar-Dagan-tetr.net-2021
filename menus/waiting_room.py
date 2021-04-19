@@ -17,7 +17,7 @@ from menus.user_profile_screen import UserProfile
 
 class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
-    MSG_SOUND = pygame.mixer.Sound("../sounds/se_game_msg.wav")
+    MSG_SOUND = pygame.mixer.Sound("sounds/se_game_msg.wav")
     MSG_SOUND.set_volume(0.2)
     LETTER_SIZE = 15
     GAME_PORT = 44444

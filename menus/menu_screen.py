@@ -17,8 +17,14 @@ from menus.text_box import TextBox
 
 class MenuScreen:
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
-    CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
-    HOVER_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonHover.mp3")
+    #CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
+    CLICK_SOUND = pygame.mixer.Sound("sounds/se_sys_select.wav")
+    CLICK_SOUND.set_volume(0.05)
+    #HOVER_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonHover.mp3")
+    HOVER_SOUND = pygame.mixer.Sound("sounds/se_sys_cursor2.wav")
+    HOVER_SOUND.set_volume(0.05)
+    POPUP_SOUND = pygame.mixer.Sound("sounds/se_sys_alert.wav")
+    POPUP_SOUND.set_volume(0.2)
 
     def __init__(
         self,
@@ -211,6 +217,8 @@ class MenuScreen:
         return box
 
     def create_popup_button(self, text, size=38, color=Colors.RED):
+        if color == Colors.RED:
+            self.POPUP_SOUND.play(0)
         button_width = self.width // 2
         button_height = self.height // 3
         # Place the button in the middle of the screen

@@ -9,7 +9,7 @@ from tetris import Colors
 
 
 class SettingsScreen(MenuScreen):
-    SKIN_SETS = [pygame.image.load(rf"../tetris/tetris-resources/skin_set{i}.png") for i in range(11)]
+    SKIN_SETS = [pygame.image.load(rf"tetris/tetris-resources/skin_set{i}.png") for i in range(11)]
 
     def __init__(
         self,

@@ -24,6 +24,7 @@ class DBPostCreator:
             "ARR": 1,
             "skin": 0,
             "ghost": True,
+            "music": True,
         }
 
     @staticmethod

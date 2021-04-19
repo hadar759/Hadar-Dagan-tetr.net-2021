@@ -34,11 +34,12 @@ class WelcomeScreen(MenuScreen):
         super().__init__(
             width,
             height,
-            ServerCommunicator("127.0.0.1", "8000"),
+            # ServerCommunicator("127.0.0.1", "8000"),
+            ServerCommunicator("tetr-net.loca.lt", "80"),
             refresh_rate,
             background_path,
         )
-        with open(r"../resources/salt.txt", "r") as salt_file:
+        with open(r"resources/salt.txt", "r") as salt_file:
             self.salt = salt_file.read().encode()
 
     def run(self):
@@ -219,6 +220,7 @@ class WelcomeScreen(MenuScreen):
         else:
             box_text = "Reset Code"
             self.buttons[list(self.buttons.keys())[-1]] = self.check_code, (
+                user_email,
                 self.reset_password,
                 (user_email,),
             )
@@ -325,7 +327,7 @@ class WelcomeScreen(MenuScreen):
             password = bcrypt.hashpw(password.encode(), self.salt).hex()
             self.server_communicator.update_password(user_email, password)
             self.login()
-            self.create_popup_button("Password successfully updated", Colors.BLUE)
+            self.create_popup_button("Password successfully updated", color=Colors.BLUE)
 
     def login_continue(self):
         """Process the login info given"""

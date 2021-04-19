@@ -62,7 +62,7 @@ class Button:
             for line in split_text:
                 lines.append(
                     pygame.font.Font(
-                        "./tetris-resources/joystix-monospace.ttf", font_size
+                        "tetris/tetris-resources/joystix-monospace.ttf", font_size
                     ).render(line, True, text_color)
                 )
             return lines
@@ -70,7 +70,7 @@ class Button:
             for line in split_text:
                 lines.append(
                     pygame.font.Font(
-                        "./tetris-resources/seguisym.ttf", font_size
+                        "tetris/tetris-resources/seguisym.ttf", font_size
                     ).render(line, True, text_color)
                 )
             return lines

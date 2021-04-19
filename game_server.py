@@ -34,7 +34,7 @@ class GameServer:
 
         self.server_socket = socket.socket()
         self.server_ip = server_ip
-        self.server_communicator = ServerCommunicator("127.0.0.1", "8000")
+        self.server_communicator = ServerCommunicator("tetr-net.loca.lt", "80")
 
         # Add the room to the database
         self.server_communicator.create_room(
