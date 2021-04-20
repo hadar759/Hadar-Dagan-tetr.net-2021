@@ -18,10 +18,10 @@ class ServerCommunicator:
         post(f"{self.SERVER_DOMAIN}/users/music?username={username}&music={music}")
 
     def update_settings(
-        self, username: str, das: int, arr: int, skin: int, ghost: bool
+        self, username: str, das: int, arr: int, skin: int, ghost: bool, fade: bool
     ):
         post(
-            f"{self.SERVER_DOMAIN}/users/settings?username={username}&das={das}&arr={arr}&skin={skin}&ghost={ghost}"
+            f"{self.SERVER_DOMAIN}/users/settings?username={username}&das={das}&arr={arr}&skin={skin}&ghost={ghost}&fade={fade}"
         )
 
     def is_password_new(self, user_email, password):

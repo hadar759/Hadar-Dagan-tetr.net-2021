@@ -54,9 +54,11 @@ class Server:
 
     @router.post("/users/settings")
     def update_settings(
-        self, username: str, das: int, arr: int, skin: int, ghost: bool
+        self, username: str, das: int, arr: int, skin: int, ghost: bool, fade: bool
     ):
-        update_query = {"$set": {"DAS": das, "ARR": arr, "skin": skin, "ghost": ghost}}
+        update_query = {
+            "$set": {"DAS": das, "ARR": arr, "skin": skin, "ghost": ghost, "fade": fade}
+        }
         self.user_collection.dependency().find_one_and_update(
             {"username": username}, update_query
         )

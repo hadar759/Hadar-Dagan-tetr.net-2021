@@ -108,6 +108,8 @@ class TetrisGame(Game):
         self.level = 0
         self.score = 0
         self.starting_time = pygame.time.get_ticks()
+        # How many times gravity should be skipped due to fades
+        self.gravity_skips = 0
         # Whether the current piece should be frozen
         self.should_freeze = False
         # Whether the screen was reset this loop, used for ghost piece
@@ -231,6 +233,7 @@ class TetrisGame(Game):
         """Every action that is to be done at the start of the loop - before event handling"""
         # Make sure we always have a current piece on the screen
         if self.cur_piece is None:
+            self.clear_lines()
             self.generate_new_piece()
             # Clear the screen from the old next pieces
             self.reset_grids()
@@ -368,8 +371,6 @@ class TetrisGame(Game):
                     self.lines_received = 0
                 # Add the garbage to the screen
                 self.add_garbage()
-
-        self.clear_lines()
 
         if self.mode == "marathon":
             # Marathon specific functions
@@ -550,6 +551,10 @@ class TetrisGame(Game):
 
     def gravitate(self):
         """Gravitate the current piece one block down"""
+        # We just faded
+        if self.gravity_skips:
+            self.gravity_skips -= 1
+            return
         # If the piece doesn't need to be frozen and it's not None (i.e. we have a current piece) -
         # gravitate it down
         if not self.should_freeze and self.cur_piece:
@@ -933,7 +938,7 @@ class TetrisGame(Game):
             fade_coords = [(0, line * block_size) for line in lines_cleared]
             fade_width = self.grids[0].width * block_size
             fade_height = block_size
-            fade_time = time.time()
+            fade_start_time = pygame.time.get_ticks()
             # Fade the lines
             for i in range(4):
                 self.fade(
@@ -946,8 +951,13 @@ class TetrisGame(Game):
                 )
                 # Delay between fades
                 pygame.time.delay(10)
-            # Don't let fading impact game time
-            self.starting_time += time.time() - fade_time
+
+            # Measure time it took to fade
+            time_faded = pygame.time.get_ticks() - fade_start_time
+            # If I ever don't want to let fading impact game time
+            # self.starting_time += time_faded
+            # Amount of gravity events accumulated while fading
+            self.gravity_skips += time_faded // self.gravity_time
 
         # Remove all cleared lines
         for line in lines_cleared:

@@ -9,7 +9,10 @@ from tetris import Colors
 
 
 class SettingsScreen(MenuScreen):
-    SKIN_SETS = [pygame.image.load(rf"tetris/tetris-resources/skin_set{i}.png") for i in range(11)]
+    SKIN_SETS = [
+        pygame.image.load(rf"tetris/tetris-resources/skin_set{i}.png")
+        for i in range(11)
+    ]
 
     def __init__(
         self,
@@ -92,22 +95,25 @@ class SettingsScreen(MenuScreen):
             function_button_height,
             Colors.BLACK_BUTTON,
             "◀",
-            func=self.previous_skin
+            func=self.previous_skin,
         )
 
         self.skin_x = cur_x + label_width - 50 + 10 + function_button_width
         self.skin_y = cur_y + function_button_height // 2
 
         self.create_button(
-            (cur_x + label_width - 50 + 20 + function_button_width + 400,
-             cur_y + function_button_height // 2 - 10),
+            (
+                cur_x + label_width - 50 + 20 + function_button_width + 400,
+                cur_y + function_button_height // 2 - 10,
+            ),
             function_button_width,
             function_button_height,
             Colors.BLACK_BUTTON,
             "▶",
-            func=self.next_skin
+            func=self.next_skin,
         )
         cur_y += textbox_height + 30
+        cur_x -= label_width
 
         self.create_button(
             (cur_x, cur_y),
@@ -125,6 +131,30 @@ class SettingsScreen(MenuScreen):
             "",
         )
         self.textboxes[field_box] = str(user["DAS"])
+
+        cur_x += round(label_width * 1.3)
+
+        self.create_button(
+            (cur_x + label_width, cur_y),
+            label_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "Fading:",
+            text_only=True,
+        )
+
+        button = self.create_button(
+            (cur_x + label_width * 2 + 100, cur_y + 40),
+            50,
+            50,
+            Colors.BLACK_BUTTON,
+            "✔" if self.cache["user"]["fade"] else "❌",
+            45,
+            Colors.GREEN if self.cache["user"]["fade"] else Colors.RED,
+        )
+        self.buttons[button] = (self.change_binary_button, (button,))
+        cur_x -= round(label_width * 1.3)
+
         cur_y += textbox_height + 30
 
         self.create_button(
@@ -200,6 +230,12 @@ class SettingsScreen(MenuScreen):
         das_speed = list(self.textboxes.values())[0]
         arr_speed = list(self.textboxes.values())[1]
         ghost = not list(self.buttons.keys())[-2].text == "❌"
+        fade = (
+            not list(self.buttons.keys())[
+                [button.text for button in self.buttons].index("Fading:") + 1
+            ].text
+            == "❌"
+        )
         invalid = False
         popups = []
         if not das_speed.isdigit() or not arr_speed.isdigit():
@@ -219,6 +255,7 @@ class SettingsScreen(MenuScreen):
             user["ARR"] = int(arr_speed) * 10
             user["skin"] = self.skin
             user["ghost"] = ghost
+            user["fade"] = fade
             # Update the cache
             self.cache["user"] = user
             # Update the server
@@ -230,6 +267,7 @@ class SettingsScreen(MenuScreen):
                     int(arr_speed) * 10,
                     self.skin,
                     ghost,
+                    fade,
                 ),
             ).start()
             self.quit()
