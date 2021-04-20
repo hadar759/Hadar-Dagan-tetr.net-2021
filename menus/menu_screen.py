@@ -17,10 +17,10 @@ from menus.text_box import TextBox
 
 class MenuScreen:
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
-    #CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
+    # CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
     CLICK_SOUND = pygame.mixer.Sound("sounds/se_sys_select.wav")
     CLICK_SOUND.set_volume(0.05)
-    #HOVER_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonHover.mp3")
+    # HOVER_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonHover.mp3")
     HOVER_SOUND = pygame.mixer.Sound("sounds/se_sys_cursor2.wav")
     HOVER_SOUND.set_volume(0.05)
     POPUP_SOUND = pygame.mixer.Sound("sounds/se_sys_alert.wav")
@@ -103,13 +103,26 @@ class MenuScreen:
         # Find if we're hovered over a button
         for button in self.buttons:
             # Mouse over button
-            if button.inside_button(self.mouse_pos) and button.clickable and not button.text_only and not button.transparent:
+            if (
+                button.inside_button(self.mouse_pos)
+                and button.clickable
+                and not button.text_only
+                and not button.transparent
+            ):
                 # We were hovering over an adjacent button, and never left, just moved to this button
-                button_changed = self.hovered_btn_and_color and self.hovered_btn_and_color[0] != button
-                if not self.hovered_btn_and_color or self.hovered_btn_and_color[0] != button:
+                button_changed = (
+                    self.hovered_btn_and_color
+                    and self.hovered_btn_and_color[0] != button
+                )
+                if (
+                    not self.hovered_btn_and_color
+                    or self.hovered_btn_and_color[0] != button
+                ):
                     # Reverse the last button's color
                     if button_changed:
-                        self.hovered_btn_and_color[0].color = self.hovered_btn_and_color[1]
+                        self.hovered_btn_and_color[
+                            0
+                        ].color = self.hovered_btn_and_color[1]
                     # Play sound
                     self.HOVER_SOUND.play(0)
                     # Save old button color

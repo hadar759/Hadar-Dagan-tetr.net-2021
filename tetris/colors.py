@@ -53,9 +53,9 @@ class Colors:
     }
     DARK_YELLOW = (217, 139, 51)
     BLACK = (0, 0, 0)
-    #GREY = (29, 29, 29)
+    # GREY = (29, 29, 29)
     GREY = (35, 35, 35)
-    #DARK_GREY = (14, 14, 14)
+    # DARK_GREY = (14, 14, 14)
     DARK_GREY = (20, 20, 20)
     WHITE = (255, 255, 255)
     BLUE = (0, 162, 230)

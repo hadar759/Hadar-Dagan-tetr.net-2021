@@ -249,9 +249,7 @@ class LeaderboardScreen(ListScreen):
             55,
             Colors.WHITE,
             func=self.scroll_up,
-            args=(
-                score_type,
-            ),
+            args=(score_type,),
         )
 
         # Create the scroll down button
@@ -264,9 +262,7 @@ class LeaderboardScreen(ListScreen):
             55,
             Colors.WHITE,
             func=self.scroll_down,
-            args=(
-                score_type,
-            ),
+            args=(score_type,),
         )
 
         self.display_entries(cur_x, cur_y, score_type)

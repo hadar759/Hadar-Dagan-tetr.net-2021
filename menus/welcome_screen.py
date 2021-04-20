@@ -21,6 +21,7 @@ from menus.menu_screen import MenuScreen
 
 class WelcomeScreen(MenuScreen):
     """The starting screen of the game"""
+
     BACKGROUND_MUSIC = {"theme": pygame.mixer.Sound("sounds/05. Results.mp3")}
     for sound in BACKGROUND_MUSIC.values():
         sound.set_volume(0.05)
