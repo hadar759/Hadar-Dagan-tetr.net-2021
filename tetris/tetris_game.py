@@ -954,7 +954,7 @@ class TetrisGame(Game):
             self.clear_line(line)
 
         # If there are any lines to be cleared, reset the screen
-        if lines_cleared != 0:
+        if len(lines_cleared) != 0:
             self.reset_grids()
 
         # Update the score according to the amount of lines cleared
