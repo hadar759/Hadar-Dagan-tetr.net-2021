@@ -25,21 +25,21 @@ from tetris.colors import Colors
 
 class TetrisGame(Game):
     # Will be displayed when users lose
-    LOSE_TEXT = pygame.font.Font("tetris/tetris-resources/joystix-monospace.ttf", 60).render(
-        "YOU LOSE", True, Colors.WHITE
-    )
+    LOSE_TEXT = pygame.font.Font(
+        "tetris/tetris-resources/joystix-monospace.ttf", 60
+    ).render("YOU LOSE", True, Colors.WHITE)
     # Will be displayed when users win
-    WIN_TEXT = pygame.font.Font("tetris/tetris-resources/joystix-monospace.ttf", 60).render(
-        "YOU WIN", True, Colors.WHITE
-    )
+    WIN_TEXT = pygame.font.Font(
+        "tetris/tetris-resources/joystix-monospace.ttf", 60
+    ).render("YOU WIN", True, Colors.WHITE)
     # Will be displayed before the score
     SCORE_TEXT = pygame.font.Font(
         "tetris/tetris-resources/joystix-monospace.ttf", 19
     ).render("SCORE:", True, Colors.WHITE)
     # Will be displayed before the time
-    TIME_TEXT = pygame.font.Font("tetris/tetris-resources/joystix-monospace.ttf", 19).render(
-        "TIME:", True, Colors.WHITE
-    )
+    TIME_TEXT = pygame.font.Font(
+        "tetris/tetris-resources/joystix-monospace.ttf", 19
+    ).render("TIME:", True, Colors.WHITE)
     SOUND_EFFECTS = {
         "1_lines": pygame.mixer.Sound("sounds/se_game_single.wav"),
         "2_lines": pygame.mixer.Sound("sounds/se_game_double.wav"),
@@ -61,7 +61,7 @@ class TetrisGame(Game):
             sound.set_volume(0.05)
         else:
             sound.set_volume(0.2)
-    
+
     GRAVITY_EVENT = USEREVENT + 1
     DAS_EVENT = USEREVENT + 2
     ARR_EVENT = USEREVENT + 3
@@ -155,13 +155,27 @@ class TetrisGame(Game):
             ),
         }
         self.pieces = {
-            "I": pygame.image.load(f"tetris/tetris-resources/ipiece-sprite{self.skin}.png"),
-            "J": pygame.image.load(f"tetris/tetris-resources/jpiece-sprite{self.skin}.png"),
-            "O": pygame.image.load(f"tetris/tetris-resources/opiece-sprite{self.skin}.png"),
-            "L": pygame.image.load(f"tetris/tetris-resources/lpiece-sprite{self.skin}.png"),
-            "T": pygame.image.load(f"tetris/tetris-resources/tpiece-sprite{self.skin}.png"),
-            "S": pygame.image.load(f"tetris/tetris-resources/spiece-sprite{self.skin}.png"),
-            "Z": pygame.image.load(f"tetris/tetris-resources/zpiece-sprite{self.skin}.png"),
+            "I": pygame.image.load(
+                f"tetris/tetris-resources/ipiece-sprite{self.skin}.png"
+            ),
+            "J": pygame.image.load(
+                f"tetris/tetris-resources/jpiece-sprite{self.skin}.png"
+            ),
+            "O": pygame.image.load(
+                f"tetris/tetris-resources/opiece-sprite{self.skin}.png"
+            ),
+            "L": pygame.image.load(
+                f"tetris/tetris-resources/lpiece-sprite{self.skin}.png"
+            ),
+            "T": pygame.image.load(
+                f"tetris/tetris-resources/tpiece-sprite{self.skin}.png"
+            ),
+            "S": pygame.image.load(
+                f"tetris/tetris-resources/spiece-sprite{self.skin}.png"
+            ),
+            "Z": pygame.image.load(
+                f"tetris/tetris-resources/zpiece-sprite{self.skin}.png"
+            ),
             "G": pygame.image.load(
                 f"tetris/tetris-resources/garbage_piece_sprite{self.skin}.png"
             ),
@@ -325,7 +339,7 @@ class TetrisGame(Game):
         # Make ghost a bit transparent
         self.ghost_piece.sprite.set_alpha(125)
         self.update_ghost_position()
-        #self.game_objects.append(self.ghost_piece)
+        # self.game_objects.append(self.ghost_piece)
 
     def update_ghost_position(self):
         """Changes the ghost position in accordance to the current piece position"""
@@ -362,19 +376,11 @@ class TetrisGame(Game):
             self.marathon()
             self.show_score()
             self.show_lines()
-            threading.Thread(target=self.change_music, args=(self.level == 5, "theme_start", "theme_mid")).start()
-            threading.Thread(target=self.change_music, args=(self.level == 9, "theme_mid", "theme_end")).start()
 
         elif self.mode == "sprint":
             # Sprint specific functions
             self.show_time()
             self.show_lines()
-            threading.Thread(target=self.change_music,
-                             args=(self.lines_to_finish // 3 <= self.lines_cleared < self.lines_to_finish // 3 * 2,
-                                   "theme_start", "theme_mid")).start()
-            threading.Thread(target=self.change_music,
-                             args=(self.lines_cleared >= self.lines_to_finish // 3 * 2,
-                                   "theme_mid", "theme_end")).start()
             if self.lines_cleared >= self.lines_to_finish:
                 # If the player had cleared the amount of lines needed, he has won
                 self.game_over(True)
@@ -387,14 +393,17 @@ class TetrisGame(Game):
     def change_music(self, condition, old_music, new_music):
         """Stops the old music playing and starts the new one if the given condition is met"""
         # Condition is met and new music isn't playing
-        if self.user["music"] and condition and self.SOUND_EFFECTS[new_music].get_num_channels() == 0:
+        if (
+            self.user["music"]
+            and condition
+            and self.SOUND_EFFECTS[new_music].get_num_channels() == 0
+        ):
             # Play the new music
             self.SOUND_EFFECTS[new_music].play(1000)
             # Wait for new music to start
             time.sleep(1)
             # Stop the old music
             self.SOUND_EFFECTS[old_music].stop()
-
 
     def display_opp_screen(self):
         """Displays the opponent's screen on the board"""
@@ -694,7 +703,7 @@ class TetrisGame(Game):
                     self.game_over(False)
                 return True
         return False
-    
+
     def game_over(self, win: bool = None):
         """End the game"""
         # Stop all music
@@ -776,7 +785,9 @@ class TetrisGame(Game):
 
         # Stop the game, and load the end screen
 
-        self.background_image = pygame.image.load("tetris/tetris-resources/end-screen.png")
+        self.background_image = pygame.image.load(
+            "tetris/tetris-resources/end-screen.png"
+        )
         self.screen = pygame.display.set_mode(
             (self.background_image.get_size()[0], self.background_image.get_size()[1])
         )
@@ -809,7 +820,7 @@ class TetrisGame(Game):
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds
-        #pygame.time.wait(5000)
+        # pygame.time.wait(5000)
 
         return
 
@@ -820,14 +831,46 @@ class TetrisGame(Game):
             "tetris/tetris-resources/joystix-monospace.ttf", font_size
         ).render(inp, True, Colors.WHITE)
 
-    def fade(self, delay):
+    def fade(
+        self,
+        delay,
+        fade_width=None,
+        fade_height=None,
+        fade_coords=None,
+        reverse=False,
+        show_stats=False,
+    ):
         """Fade the screen"""
-        fade = pygame.Surface((self.screen.get_rect()[2], self.screen.get_rect()[3]))
+        if not fade_width:
+            fade_width = self.screen.get_rect()[2]
+        if not fade_height:
+            fade_height = self.screen.get_rect()[3]
+        if not fade_coords:
+            fade_coords = [(0, 0)]
+
+        fade = pygame.Surface((fade_width, fade_height))
         fade.fill((0, 0, 0))
-        for alpha in range(0, 100):
-            fade.set_alpha(alpha)
-            self.screen.blit(fade, (0, 0))
-            pygame.display.update()
+
+        # Setup the functions to display the other parts of the screen
+        screen_funcs = []
+        if show_stats:
+            screen_funcs = [self.display_objects, self.show_next_pieces]
+            if self.mode == "marathon":
+                screen_funcs += [self.show_score, self.show_lines]
+            elif self.mode == "sprint":
+                screen_funcs += [self.show_time, self.show_lines]
+
+        for alpha in range(0, 255, 4):
+            # Setup the fade
+            fade.set_alpha(alpha if not reverse else (255 - alpha))
+            # Display the rest of the screen so we can still see it
+            for display_func in screen_funcs:
+                display_func()
+            # Fade all wanted lines / all of the screen
+            for coord in fade_coords:
+                self.screen.blit(fade, coord)
+            # Show the fade
+            pygame.display.flip()
             pygame.time.delay(delay)
 
     @staticmethod
@@ -837,7 +880,7 @@ class TetrisGame(Game):
 
     def clear_lines(self):
         """Clear the lines needed to be cleared"""
-        num_of_lines_cleared = 0
+        lines_cleared = []
         for index, line in enumerate(self.game_grid.blocks):
             should_clear = True
             for block in line:
@@ -845,35 +888,91 @@ class TetrisGame(Game):
                 if not block.occupied:
                     should_clear = False
             if should_clear:
-                num_of_lines_cleared += 1
-                # Actually clear the line
-                self.clear_line(index)
+                lines_cleared.append(index)
 
-        # If there are any lines to be cleared, reset the screen
-        if num_of_lines_cleared != 0:
-            self.reset_grids()
+        self.lines_cleared += len(lines_cleared)
 
         # Update the marathon level if needed
-        if self.lines_cleared // 10 < (self.lines_cleared + num_of_lines_cleared) // 10:
+        if self.lines_cleared // 10 < (self.lines_cleared + len(lines_cleared)) // 10:
             self.level += 1
 
+        # Play the appropriate music
+        if self.mode == "sprint":
+            threading.Thread(
+                target=self.change_music,
+                args=(
+                    self.lines_to_finish // 3
+                    <= self.lines_cleared
+                    < self.lines_to_finish // 3 * 2,
+                    "theme_start",
+                    "theme_mid",
+                ),
+            ).start()
+            threading.Thread(
+                target=self.change_music,
+                args=(
+                    self.lines_cleared >= self.lines_to_finish // 3 * 2,
+                    "theme_mid",
+                    "theme_end",
+                ),
+            ).start()
+
+        elif self.mode == "marathon":
+            threading.Thread(
+                target=self.change_music,
+                args=(self.level == 5, "theme_start", "theme_mid"),
+            ).start()
+            threading.Thread(
+                target=self.change_music,
+                args=(self.level == 9, "theme_mid", "theme_end"),
+            ).start()
+
+        # Fade the lines cleared
+        if lines_cleared and self.user["fade"]:
+            block_size = self.grids[0].block_size
+            fade_coords = [(0, line * block_size) for line in lines_cleared]
+            fade_width = self.grids[0].width * block_size
+            fade_height = block_size
+            fade_time = time.time()
+            # Fade the lines
+            for i in range(4):
+                self.fade(
+                    1,
+                    fade_width=fade_width,
+                    fade_height=fade_height,
+                    fade_coords=fade_coords,
+                    reverse=i % 2 != 0,
+                    show_stats=True,
+                )
+                # Delay between fades
+                pygame.time.delay(10)
+            # Don't let fading impact game time
+            self.starting_time += time.time() - fade_time
+
+        # Remove all cleared lines
+        for line in lines_cleared:
+            self.clear_line(line)
+
+        # If there are any lines to be cleared, reset the screen
+        if lines_cleared != 0:
+            self.reset_grids()
+
         # Update the score according to the amount of lines cleared
-        self.lines_cleared += num_of_lines_cleared
-        if num_of_lines_cleared > 0 and self.user["music"]:
-            self.SOUND_EFFECTS[f"{min(4, num_of_lines_cleared)}_lines"].play(0)
-        if num_of_lines_cleared == 1:
+        if len(lines_cleared) > 0 and self.user["music"]:
+            self.SOUND_EFFECTS[f"{min(4, len(lines_cleared))}_lines"].play(0)
+        if len(lines_cleared) == 1:
             self.score += 40 * (self.level + 1)
-        elif num_of_lines_cleared == 2:
+        elif len(lines_cleared) == 2:
             self.score += 100 * (self.level + 1)
-        elif num_of_lines_cleared == 3:
+        elif len(lines_cleared) == 3:
             self.score += 300 * (self.level + 1)
-        elif num_of_lines_cleared == 4:
+        elif len(lines_cleared) == 4:
             self.score += 1200 * (self.level + 1)
 
         # Update the amount of lines needed to be sent according to the amount of lines cleared
         if self.mode == "multiplayer":
             # Just a more elegant way to send 1 line for 2 cleared, 2 for 3, and 4 for 4
-            self.lines_to_be_sent += math.floor((num_of_lines_cleared / 2) ** 2)
+            self.lines_to_be_sent += math.floor((len(lines_cleared) / 2) ** 2)
             self.total_attacks += self.lines_to_be_sent
 
     def clear_line(self, line_num):

@@ -40,6 +40,12 @@ class Server:
         with open(r"../resources/gmail.txt", "r") as email_file:
             self.email = email_file.read()
 
+    @router.post("/users/update/fade")
+    def update_fade(self):
+        self.user_collection.dependency().update_many(
+            {"type": "user"}, {"$set": {"fade": True}}
+        )
+
     @router.post("/users/music")
     def update_music(self, username: str, music: bool):
         self.user_collection.dependency().find_one_and_update(
@@ -151,6 +157,7 @@ class Server:
         return self.user_collection.dependency().find_one(
             {"username": username},
             {
+                "_id": 0,
                 "username": 1,
                 "sprint": 1,
                 "apm": 1,
@@ -165,7 +172,7 @@ class Server:
                 "skin": 1,
                 "ghost": 1,
                 "music": 1,
-                "_id": 0,
+                "fade": 1,
             },
         )
 
