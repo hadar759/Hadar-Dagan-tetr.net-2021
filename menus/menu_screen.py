@@ -260,7 +260,9 @@ class MenuScreen:
         for textbox in self.textboxes:
             if textbox.active and self.deleting:
                 # Delete from the textbox
-                self.textbox_key_actions(textbox, pygame.event.Event(pygame.KEYDOWN, key=pygame.K_BACKSPACE))
+                self.textbox_key_actions(
+                    textbox, pygame.event.Event(pygame.KEYDOWN, key=pygame.K_BACKSPACE)
+                )
 
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
         textbox_text = self.textboxes[textbox]

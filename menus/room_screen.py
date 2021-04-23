@@ -340,7 +340,11 @@ class RoomsScreen(ListScreen):
         )
         threading.Thread(target=room_server.run).start()
         self.connect_to_room(
-            {"ip": room_server.server_ip, "name": room_server.room_name, "default": False}
+            {
+                "ip": room_server.server_ip,
+                "name": room_server.room_name,
+                "default": False,
+            }
         )
         self.running = True
 
