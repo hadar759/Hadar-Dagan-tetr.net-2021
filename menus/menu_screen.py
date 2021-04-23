@@ -16,6 +16,7 @@ from menus.text_box import TextBox
 
 
 class MenuScreen:
+    REMOVE_EVENT = pygame.USEREVENT + 1
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
     # CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
     CLICK_SOUND = pygame.mixer.Sound("sounds/se_sys_select.wav")
@@ -50,6 +51,7 @@ class MenuScreen:
         self.textboxes: Dict[TextBox, str] = {}
         self.actions = {}
         self.mouse_pos: Optional[Tuple[int, int]] = None
+        self.deleting = False
 
     def run_once(self):
         self.update_screen()
@@ -64,6 +66,12 @@ class MenuScreen:
             self.quit()
             pygame.quit()
             quit()
+
+        if event.type == self.REMOVE_EVENT:
+            self.removing()
+
+        if event.type == pygame.KEYUP:
+            self.deleting = False
 
         # If the user typed something
         if event.type == pygame.KEYDOWN:
@@ -248,6 +256,12 @@ class MenuScreen:
             func=self.buttons.popitem,
         )
 
+    def removing(self):
+        for textbox in self.textboxes:
+            if textbox.active and self.deleting:
+                # Delete from the textbox
+                self.textbox_key_actions(textbox, pygame.event.Event(pygame.KEYDOWN, key=pygame.K_BACKSPACE))
+
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
         textbox_text = self.textboxes[textbox]
 
@@ -262,6 +276,8 @@ class MenuScreen:
             # Just regular deleting
             else:
                 self.textboxes[textbox] = textbox_text[:-1]
+            pygame.time.set_timer(self.REMOVE_EVENT, 300 if not self.deleting else 30)
+            self.deleting = True
 
         # ENTER
         elif event.key == 13 or event.key == pygame.K_TAB:

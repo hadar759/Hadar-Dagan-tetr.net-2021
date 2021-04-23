@@ -209,7 +209,7 @@ class WaitingRoom(MenuScreen):
                 ref_button = self.last_message
                 cur_x = ref_button.starting_x
 
-            self.MSG_SOUND.play(0)
+            self.BACKGROUND_MUSIC["msg"].play(0)
             button_width = list(self.textboxes.keys())[1].width
             button_height = self.LETTER_SIZE * 2
             # Last button is a message
@@ -220,7 +220,7 @@ class WaitingRoom(MenuScreen):
             sentence = ""
             for word in msg.split(" "):
                 rendered_sentence = pygame.font.Font(
-                    "./tetris-resources/joystix-monospace.ttf", font_size
+                    "tetris/tetris-resources/joystix-monospace.ttf", font_size
                 ).render(sentence + word, True, Colors.WHITE)
                 if rendered_sentence.get_rect()[2] > button_width:
                     messages.append(sentence)
@@ -316,6 +316,8 @@ class WaitingRoom(MenuScreen):
             # Just regular deleting
             else:
                 self.handle_deletion(textbox)
+            pygame.time.set_timer(self.REMOVE_EVENT, 300 if not self.deleting else 30)
+            self.deleting = True
 
         # ENTER
         elif event.key == 13 and textbox is self.msg_textbox and self.message:
@@ -518,6 +520,7 @@ class WaitingRoom(MenuScreen):
         )
 
     def quit(self):
+        pygame.mixer.stop()
         self.sock.send("disconnect".encode())
         self.running = False
         self.sock.detach()
