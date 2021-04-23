@@ -118,6 +118,8 @@ class ControlsScreen(MenuScreen):
             else:
                 cur_x += round(label_width * 1.3)
 
+        cur_y += textbox_height + 30
+
         continue_width = label_width + 200
         self.create_button(
             (self.width // 2 - label_width * 3 // 4, cur_y),
