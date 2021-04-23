@@ -6,6 +6,7 @@ import subprocess
 from typing import Optional, Dict, List
 import time
 
+import pygame
 import uvicorn
 from pymongo import *
 from fastapi import Depends, FastAPI
@@ -40,10 +41,28 @@ class Server:
         with open(r"../resources/gmail.txt", "r") as email_file:
             self.email = email_file.read()
 
-    @router.post("/users/update/fade")
-    def update_fade(self):
+    @router.post("/users/update-all/controls")
+    def update_controls(self):
         self.user_collection.dependency().update_many(
-            {"type": "user"}, {"$set": {"fade": True}}
+            {"type": "user"},
+            {
+                "$set": {
+                    "controls": {
+                        "down": pygame.K_DOWN,
+                        "right": pygame.K_RIGHT,
+                        "left": pygame.K_LEFT,
+                        "flip_clock": pygame.K_x,
+                        "flip_counterclock": pygame.K_z,
+                    },
+                }
+            },
+        )
+
+    @router.post("/users/controls")
+    def update_controls(self, controls: Dict):
+        username = controls.pop("username")
+        self.user_collection.dependency().find_one_and_update(
+            {"username": username}, {"$set": {"controls": controls}}
         )
 
     @router.post("/users/music")
@@ -174,6 +193,7 @@ class Server:
                 "skin": 1,
                 "ghost": 1,
                 "music": 1,
+                "controls": 1,
                 "fade": 1,
             },
         )

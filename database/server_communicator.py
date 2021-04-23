@@ -1,3 +1,4 @@
+import copy
 import json
 from typing import Dict
 
@@ -13,6 +14,14 @@ class ServerCommunicator:
     @staticmethod
     def bool_to_string(condition: bool):
         return str(condition).lower()
+
+    def update_controls(self, username: str, controls: Dict):
+        controls_with_username = copy.deepcopy(controls)
+        controls_with_username["username"] = username
+        post(
+            f"{self.SERVER_DOMAIN}/users/controls",
+            data=json.dumps(controls_with_username),
+        )
 
     def update_music(self, username: str, music: bool):
         post(f"{self.SERVER_DOMAIN}/users/music?username={username}&music={music}")

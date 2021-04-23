@@ -4,6 +4,7 @@ from typing import Dict, Optional
 import pygame
 
 from database.server_communicator import ServerCommunicator
+from menus.controls_screen import ControlsScreen
 from menus.menu_screen import MenuScreen
 from tetris import Colors
 
@@ -47,7 +48,6 @@ class SettingsScreen(MenuScreen):
         title_height = 250
         cur_x = 0
         cur_y = 0
-        # TODO design and create the settings screen
         # Create the screen title
         self.create_button(
             (cur_x, cur_y - 30),
@@ -173,6 +173,18 @@ class SettingsScreen(MenuScreen):
             "",
         )
         self.textboxes[field_box] = str(user["ARR"] // 10)
+
+        cur_x += round(label_width * 1.3)
+
+        self.create_button(
+            (cur_x + label_width, cur_y),
+            label_width * 3,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            "Customize Controls",
+            func=self.controls_screen,
+        )
+
         cur_y += textbox_height + 30
 
         self.create_button(
@@ -205,6 +217,21 @@ class SettingsScreen(MenuScreen):
             text_color=Colors.WHITE,
             func=self.save_settings,
         )
+
+    def controls_screen(self):
+        controls_screen = ControlsScreen(
+            self.server_communicator,
+            self.cache,
+            self.width,
+            self.height,
+            self.refresh_rate,
+            self.background_path,
+        )
+        self.running = False
+        controls_screen.run()
+        self.cache = controls_screen.cache
+        self.running = True
+        threading.Thread(target=self.update_mouse_pos).start()
 
     def previous_skin(self):
         """Scroll to the previous skin"""

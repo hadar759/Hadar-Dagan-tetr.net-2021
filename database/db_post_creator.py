@@ -1,3 +1,6 @@
+import pygame
+
+
 class DBPostCreator:
     @staticmethod
     def create_user_post(email: str, username: str, password: str, ip: str) -> dict:
@@ -25,6 +28,13 @@ class DBPostCreator:
             "skin": 0,
             "ghost": True,
             "music": True,
+            "controls": {
+                "down": pygame.K_DOWN,
+                "right": pygame.K_RIGHT,
+                "left": pygame.K_LEFT,
+                "flip_clock": pygame.K_x,
+                "flip_counterclock": pygame.K_z,
+            },
         }
 
     @staticmethod

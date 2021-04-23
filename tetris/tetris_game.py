@@ -120,7 +120,7 @@ class TetrisGame(Game):
         self.cur_seven_bag = []
         self.game_grid = TetrisGrid()
         self.grids = [self.game_grid]
-        # Every variable that has to do with moving the piece
+        # Every variable that has to do with moving the pieces
         self.move_variables: Dict[str, bool] = {
             "right_das": False,
             "left_das": False,
@@ -129,6 +129,16 @@ class TetrisGame(Game):
             "hard_drop": False,
             "manual_drop": False,
         }
+        # Bind all user controls
+        user_controls = self.user["controls"]
+        self.key_events = {
+            user_controls["down"]: self.key_down,
+            user_controls["right"]: self.key_right,
+            user_controls["left"]: self.key_left,
+            user_controls["flip_clock"]: self.key_x,
+            user_controls["flip_counterclock"]: self.key_z,
+        }
+
         self.skin = self.user["skin"]
         self.pieces_and_next_sprites = {
             "<class 'tetris.pieces.i_piece.IPiece'>": pygame.image.load(
@@ -577,16 +587,9 @@ class TetrisGame(Game):
             self.hard_drop()
 
         elif self.cur_piece:
-            if event.key == pygame.K_DOWN:
-                self.key_down()
-            elif event.key == pygame.K_RIGHT:
-                self.key_right()
-            elif event.key == pygame.K_LEFT:
-                self.key_left()
-            elif event.key == pygame.K_z:
-                self.key_z()
-            elif event.key == pygame.K_x:
-                self.key_x()
+            event_func = self.key_events.get(event.key)
+            if event_func:
+                event_func()
             if self.user["ghost"]:
                 self.update_ghost_position()
 
@@ -603,7 +606,7 @@ class TetrisGame(Game):
 
     def key_up(self):
         """In case a key is released change the relevant move variables"""
-        if self.last_pressed_key == pygame.K_DOWN:
+        if self.last_pressed_key == self.user["controls"]["down"]:
             self.move_variables["manual_drop"] = False
         # When we've released a move button, check if we've activated the other direction's das
         # before completely stopping all move variables.
