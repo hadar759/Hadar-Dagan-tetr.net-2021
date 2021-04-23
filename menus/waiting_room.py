@@ -18,12 +18,14 @@ from menus.user_profile_screen import UserProfile
 class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
 
-    BACKGROUND_MUSIC = {
+    SOUNDS = {
         "msg": pygame.mixer.Sound("sounds/se_game_msg.wav"),
         "theme": pygame.mixer.Sound("sounds/05. Results.mp3"),
+        "typing": pygame.mixer.Sound("sounds/typing_sound.mp3"),
     }
-    BACKGROUND_MUSIC["msg"].set_volume(0.2)
-    BACKGROUND_MUSIC["theme"].set_volume(0.05)
+    SOUNDS["msg"].set_volume(0.2)
+    SOUNDS["typing"].set_volume(0.2)
+    SOUNDS["theme"].set_volume(0.05)
 
     LETTER_SIZE = 15
     GAME_PORT = 44444
@@ -61,7 +63,7 @@ class WaitingRoom(MenuScreen):
         self.invite_btn = None
 
     def run(self):
-        self.BACKGROUND_MUSIC["theme"].play(100)
+        self.SOUNDS["theme"].play(100)
         self.create_room()
         self.establish_connection()
         threading.Thread(target=self.recv_chat, daemon=True).start()
@@ -209,7 +211,7 @@ class WaitingRoom(MenuScreen):
                 ref_button = self.last_message
                 cur_x = ref_button.starting_x
 
-            self.BACKGROUND_MUSIC["msg"].play(0)
+            self.SOUNDS["msg"].play(0)
             button_width = list(self.textboxes.keys())[1].width
             button_height = self.LETTER_SIZE * 2
             # Last button is a message
@@ -328,6 +330,7 @@ class WaitingRoom(MenuScreen):
 
         # Just regular text
         else:
+            self.SOUNDS["typing"].play(0)
             if self.textboxes[textbox] == textbox.text:
                 self.textboxes[textbox] = ""
             self.textboxes[textbox] += event.unicode

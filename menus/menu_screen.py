@@ -26,6 +26,8 @@ class MenuScreen:
     HOVER_SOUND.set_volume(0.05)
     POPUP_SOUND = pygame.mixer.Sound("sounds/se_sys_alert.wav")
     POPUP_SOUND.set_volume(0.2)
+    TYPING_SOUND = pygame.mixer.Sound("sounds/typing_sound.mp3")
+    TYPING_SOUND.set_volume(0.2)
 
     def __init__(
         self,
@@ -295,6 +297,7 @@ class MenuScreen:
 
         # TEXT
         else:
+            self.TYPING_SOUND.play(0)
             if self.textboxes[textbox] == textbox.text:
                 self.textboxes[textbox] = ""
             self.textboxes[textbox] += event.unicode
