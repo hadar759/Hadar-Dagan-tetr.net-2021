@@ -18,14 +18,12 @@ from menus.user_profile_screen import UserProfile
 class WaitingRoom(MenuScreen):
     """The starting screen of the game"""
 
-    SOUNDS = {
+    ROOM_SOUNDS = {
         "msg": pygame.mixer.Sound("sounds/se_game_msg.wav"),
         "theme": pygame.mixer.Sound("sounds/05. Results.mp3"),
-        "typing": pygame.mixer.Sound("sounds/typing_sound.mp3"),
     }
-    SOUNDS["msg"].set_volume(0.2)
-    SOUNDS["typing"].set_volume(0.2)
-    SOUNDS["theme"].set_volume(0.05)
+    ROOM_SOUNDS["msg"].set_volume(0.2)
+    ROOM_SOUNDS["theme"].set_volume(0.05)
 
     LETTER_SIZE = 15
     GAME_PORT = 44444
@@ -61,9 +59,10 @@ class WaitingRoom(MenuScreen):
         self.ready_players = []
         self.msg_textbox = None
         self.invite_btn = None
+        self.msg_offset = 0
 
     def run(self):
-        self.SOUNDS["theme"].play(100)
+        self.ROOM_SOUNDS["theme"].play(100)
         self.create_room()
         self.establish_connection()
         threading.Thread(target=self.recv_chat, daemon=True).start()
@@ -211,7 +210,7 @@ class WaitingRoom(MenuScreen):
                 ref_button = self.last_message
                 cur_x = ref_button.starting_x
 
-            self.SOUNDS["msg"].play(0)
+            self.ROOM_SOUNDS["msg"].play(0)
             button_width = list(self.textboxes.keys())[1].width
             button_height = self.LETTER_SIZE * 2
             # Last button is a message
@@ -303,46 +302,67 @@ class WaitingRoom(MenuScreen):
             self.buttons.pop(message)
 
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
-        textbox_text = self.textboxes[textbox]
+        textbox_text = (
+            self.textboxes[textbox] if self.textboxes[textbox] != textbox.text else ""
+        )
 
         # Deletion
         if event.key == pygame.K_BACKSPACE or event.key == pygame.K_DELETE:
             # We haven't entered any text
-            if textbox_text == textbox.text:
+            if len(textbox_text) == 0:
                 return
-            # Last letter
-            if len(textbox_text) <= 1:
-                self.textboxes[textbox] = textbox.text
-                if textbox is self.msg_textbox:
-                    self.message = ""
-            # Just regular deleting
-            else:
-                self.handle_deletion(textbox)
+            self.handle_deletion(textbox)
             pygame.time.set_timer(self.REMOVE_EVENT, 300 if not self.deleting else 30)
             self.deleting = True
 
         # ENTER
         elif event.key == 13 and textbox is self.msg_textbox and self.message:
-            # For some reason the last letter doesn't append to the message
             self.textboxes[textbox] = ""
             self.send_message()
             self.message = ""
+            self.text_offset = 0
+            self.msg_offset = 0
+
+        # Moving in the text
+        elif event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
+            old_text_offset = self.text_offset
+            old_msg_offset = self.msg_offset
+            # Offset the text as requested
+            self.text_offset += 1 if event.key == pygame.K_RIGHT else -1
+            self.msg_offset += 1 if event.key == pygame.K_RIGHT else -1
+            # Invalid offset - outside of text bounds
+            if self.text_offset < 0 or self.text_offset > len(textbox_text):
+                self.text_offset = old_text_offset
+                self.msg_offset = old_msg_offset
+            else:
+                self.SOUNDS["typing"].play(0)
+                textbox.show_text_in_textbox(
+                    textbox_text, self.screen, self.text_offset, True
+                )
 
         # Just regular text
         else:
-            self.SOUNDS["typing"].play(0)
-            if self.textboxes[textbox] == textbox.text:
-                self.textboxes[textbox] = ""
-            self.textboxes[textbox] += event.unicode
-            self.handle_text_action(textbox)
+            try:
+                self.SOUNDS["typing"].play(0)
+                self.textboxes[textbox] = (
+                    textbox_text[: self.text_offset]
+                    + event.unicode
+                    + textbox_text[self.text_offset :]
+                )
+                self.handle_text_action(textbox)
+                self.text_offset += 1
+            except Exception as e:
+                print(e)
 
     def handle_text_action(self, textbox):
         text_length = textbox.rendered_text[0].get_rect()[2]
         # Text slipped out of textbox
         if text_length > textbox.width - self.LETTER_SIZE * 2:
             dif = text_length - textbox.width + self.LETTER_SIZE * 2
+            num_slipped = dif // self.LETTER_SIZE
             # Remove all characters which slipped
-            self.textboxes[textbox] = self.textboxes[textbox][dif // self.LETTER_SIZE :]
+            self.textboxes[textbox] = self.textboxes[textbox][num_slipped:]
+            self.text_offset -= num_slipped
         # Textbox resetted, reset the message as well
         if (
             self.textboxes[textbox] == textbox.text
@@ -351,20 +371,36 @@ class WaitingRoom(MenuScreen):
         ):
             self.message = ""
         elif textbox is self.msg_textbox:
-            self.message += self.textboxes[textbox][-1]
+            self.message = (
+                self.message[: self.msg_offset]
+                + self.textboxes[textbox][self.text_offset]
+                + self.message[self.msg_offset :]
+            )
+            self.msg_offset += 1
 
     def handle_deletion(self, textbox):
         # Display the characters not on screen at the moment
         textbox_len = len(self.textboxes[textbox])
         # Not all of the text is displayed atm, display some of the older text
-        if len(self.message) > textbox_len and textbox is self.msg_textbox:
-            self.textboxes[textbox] = (
-                self.message[-textbox_len - 1] + self.textboxes[textbox]
-            )
-        # Delete from message as well
+        if self.text_offset == 0:
+            return
+
+        # Play typing sound
+        self.SOUNDS["typing"].play(0)
+        # Special textbox actions interacting with message
+        self.textboxes[textbox] = (
+            self.textboxes[textbox][: self.text_offset - 1]
+            + self.textboxes[textbox][self.text_offset :]
+        )
         if textbox is self.msg_textbox:
-            self.message = self.message[:-1]
-        self.textboxes[textbox] = self.textboxes[textbox][:-1]
+            # Delete from message as well
+            self.message = (
+                self.message[: self.msg_offset - 1] + self.message[self.msg_offset :]
+            )
+            self.msg_offset -= 1
+
+        # Update offset
+        self.text_offset -= 1
 
     def send_message(self):
         self.sock.send(f"{self.user['username']}: {self.message}".encode())

@@ -36,8 +36,8 @@ class WelcomeScreen(MenuScreen):
         super().__init__(
             width,
             height,
-            # ServerCommunicator("127.0.0.1", "8000"),
-            ServerCommunicator("tetr-net.loca.lt", "80"),
+            ServerCommunicator("127.0.0.1", "43434"),
+            # ServerCommunicator("tetr-net.loca.lt", "80"),
             refresh_rate,
             background_path,
         )
@@ -59,6 +59,7 @@ class WelcomeScreen(MenuScreen):
 
     def create_first_screen(self):
         """Create the first screen of the game"""
+        self.text_offset = 0
         self.buttons = {}
         self.textboxes = {}
         # TODO create a "WELCOME TO TETR.NET" with the project's symbol above it or something

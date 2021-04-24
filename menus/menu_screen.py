@@ -18,16 +18,16 @@ from menus.text_box import TextBox
 class MenuScreen:
     REMOVE_EVENT = pygame.USEREVENT + 1
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
-    # CLICK_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonUp.mp3")
-    CLICK_SOUND = pygame.mixer.Sound("sounds/se_sys_select.wav")
-    CLICK_SOUND.set_volume(0.05)
-    # HOVER_SOUND = pygame.mixer.Sound("../sounds/SFX_ButtonHover.mp3")
-    HOVER_SOUND = pygame.mixer.Sound("sounds/se_sys_cursor2.wav")
-    HOVER_SOUND.set_volume(0.05)
-    POPUP_SOUND = pygame.mixer.Sound("sounds/se_sys_alert.wav")
-    POPUP_SOUND.set_volume(0.2)
-    TYPING_SOUND = pygame.mixer.Sound("sounds/typing_sound.mp3")
-    TYPING_SOUND.set_volume(0.2)
+    SOUNDS = {
+        "click": pygame.mixer.Sound("sounds/se_sys_select.wav"),
+        "hover": pygame.mixer.Sound("sounds/se_sys_cursor2.wav"),
+        "popup": pygame.mixer.Sound("sounds/se_sys_alert.wav"),
+        "typing": pygame.mixer.Sound("sounds/typing_sound.mp3"),
+    }
+    SOUNDS["click"].set_volume(0.05)
+    SOUNDS["hover"].set_volume(0.05)
+    SOUNDS["popup"].set_volume(0.2)
+    SOUNDS["typing"].set_volume(0.2)
 
     def __init__(
         self,
@@ -54,6 +54,7 @@ class MenuScreen:
         self.actions = {}
         self.mouse_pos: Optional[Tuple[int, int]] = None
         self.deleting = False
+        self.text_offset = 0
 
     def run_once(self):
         self.update_screen()
@@ -96,7 +97,7 @@ class MenuScreen:
                 # User pressed a button with no response function
                 if not func:
                     continue
-                self.CLICK_SOUND.play(0)
+                self.SOUNDS["click"].play(0)
                 threading.Thread(target=self.show_loading, daemon=True).start()
                 func(*args)
                 self.loading = False
@@ -105,6 +106,11 @@ class MenuScreen:
             for textbox in self.textboxes.keys():
                 # Check if the click is inside the textbox area (i.e. whether the textbox was clicked)
                 if textbox.inside_button(self.mouse_pos):
+                    self.text_offset = (
+                        0
+                        if self.textboxes[textbox] == textbox.text
+                        else len(self.textboxes[textbox])
+                    )
                     # Make the textbox writeable
                     textbox.active = True
                 else:
@@ -134,7 +140,7 @@ class MenuScreen:
                             0
                         ].color = self.hovered_btn_and_color[1]
                     # Play sound
-                    self.HOVER_SOUND.play(0)
+                    self.SOUNDS["hover"].play(0)
                     # Save old button color
                     self.hovered_btn_and_color = (button, button.color)
                     # Update button
@@ -147,6 +153,7 @@ class MenuScreen:
                 self.hovered_btn_and_color = ()
 
     def quit(self):
+        self.text_offset = 0
         self.running = False
 
     @staticmethod
@@ -241,7 +248,7 @@ class MenuScreen:
 
     def create_popup_button(self, text, size=38, color=Colors.RED):
         if color == Colors.RED:
-            self.POPUP_SOUND.play(0)
+            self.SOUNDS["popup"].play(0)
         button_width = self.width // 2
         button_height = self.height // 3
         # Place the button in the middle of the screen
@@ -267,19 +274,28 @@ class MenuScreen:
                 )
 
     def textbox_key_actions(self, textbox: TextBox, event: pygame.event.EventType):
-        textbox_text = self.textboxes[textbox]
-
+        textbox_text = (
+            self.textboxes[textbox] if self.textboxes[textbox] != textbox.text else ""
+        )
         # BACKSPACE/DELETE
         if event.key == pygame.K_BACKSPACE or event.key == pygame.K_DELETE:
             # We haven't entered any text
-            if textbox_text == textbox.text:
+            if len(textbox_text) == 0:
                 return
-            # Last letter
-            if len(textbox_text) <= 1:
-                self.textboxes[textbox] = textbox.text
+            self.SOUNDS["typing"].play(0)
             # Just regular deleting
-            else:
-                self.textboxes[textbox] = textbox_text[:-1]
+            if self.text_offset != 0:
+                # Delete the letter at the current offset
+                self.textboxes[textbox] = (
+                    textbox_text[: self.text_offset - 1]
+                    + textbox_text[self.text_offset :]
+                )
+                # We've deleted everything
+                if self.textboxes[textbox] == "":
+                    self.textboxes[textbox] = textbox.text
+                # Update the offset
+                self.text_offset -= 1
+            # Start deletion timer for fast deletion on hold
             pygame.time.set_timer(self.REMOVE_EVENT, 300 if not self.deleting else 30)
             self.deleting = True
 
@@ -289,18 +305,40 @@ class MenuScreen:
             self.textboxes[textbox] = self.textboxes[textbox].rstrip()
             textbox.active = False
             next_textbox = self.get_next_in_dict(self.textboxes, textbox)
+            self.text_offset = (
+                len(self.textboxes[next_textbox])
+                if self.textboxes[next_textbox] != next_textbox.text
+                else 0
+            )
             try:
                 next_textbox.active = True
             # In case there aren't any more textboxes
             except AttributeError:
                 pass
 
+        # Moving in the text
+        elif event.key == pygame.K_RIGHT or event.key == pygame.K_LEFT:
+            old_offset = self.text_offset
+            # Offset the text as requested
+            self.text_offset += 1 if event.key == pygame.K_RIGHT else -1
+            # Invalid offset - outside of text bounds
+            if self.text_offset < 0 or self.text_offset > len(textbox_text):
+                self.text_offset = old_offset
+            else:
+                self.SOUNDS["typing"].play(0)
+                textbox.show_text_in_textbox(
+                    textbox_text, self.screen, self.text_offset, True
+                )
+
         # TEXT
         else:
-            self.TYPING_SOUND.play(0)
-            if self.textboxes[textbox] == textbox.text:
-                self.textboxes[textbox] = ""
-            self.textboxes[textbox] += event.unicode
+            self.SOUNDS["typing"].play(0)
+            self.textboxes[textbox] = (
+                textbox_text[: self.text_offset]
+                + event.unicode
+                + textbox_text[self.text_offset :]
+            )
+            self.text_offset += 1
 
     def display_buttons(self):
         """Display all buttons on the screen"""
@@ -328,7 +366,7 @@ class MenuScreen:
                 if not textbox.text_only:
                     textbox.color_button(self.screen)
                 self.textboxes[textbox] = textbox.show_text_in_textbox(
-                    self.textboxes[textbox], self.screen
+                    self.textboxes[textbox], self.screen, self.text_offset
                 )
 
     def show_text_in_buttons(self):
