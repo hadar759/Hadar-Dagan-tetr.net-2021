@@ -118,7 +118,6 @@ class WaitingRoom(MenuScreen):
 
         elif self.server_communicator.is_online(foe_name):
             server_ip = self.sock.getpeername()[0]
-
             threading.Thread(
                 target=self.server_communicator.invite_user,
                 args=(
@@ -194,7 +193,7 @@ class WaitingRoom(MenuScreen):
                     self.display_players()
                     msg = f"{msg[1:]} has left the room"
                 # Player joined
-                else:
+                elif "declined" not in msg:
                     # Add the new player to the players list
                     self.players[msg] = 0
                     # Display the player's button

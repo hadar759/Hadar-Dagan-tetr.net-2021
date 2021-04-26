@@ -34,7 +34,8 @@ class GameServer:
 
         self.server_socket = socket.socket()
         self.server_ip = server_ip
-        self.server_communicator = ServerCommunicator("tetr-net.loca.lt", "80")
+        # self.server_communicator = ServerCommunicator("tetr-net.loca.lt", "80")
+        self.server_communicator = ServerCommunicator("127.0.0.1", "43434")
 
         # Add the room to the database
         self.server_communicator.create_room(
@@ -133,7 +134,7 @@ class GameServer:
 
     def handle_message(self, data, client):
         # The client pressed the ready button
-        if data[0 : len("Ready%")] == "Ready%":
+        if data[0: len("Ready%")] == "Ready%":
             if client in self.ready_clients:
                 self.ready_clients.remove(client)
             else:
@@ -143,8 +144,6 @@ class GameServer:
         elif data == "disconnect":
             closed = False
             # This was the admin
-            print(self.admin)
-            print(self.players[client])
             if self.players[client] == self.admin:
                 self.remove_server()
                 closed = True
@@ -193,8 +192,16 @@ class GameServer:
 
             # Send the client the player name list
             client.send(pickle.dumps(self.players_wins))
-            # Receive ok from client
-            client.recv(1024)
+            # Receive ok/declination from client
+            msg = ""
+            ok = client.recv(1024).decode()
+            if ok[0:len("Declined%")] == "Declined%":
+                msg = f"{ok[len('Declined%'):]} declined an invitation"
+            # The client declined an invitation
+            if msg:
+                self.handle_message(msg, client)
+                return
+
             # Send the client all ready players
             ready_players = [self.players[client] for client in self.ready_clients]
             client.send(pickle.dumps(ready_players))

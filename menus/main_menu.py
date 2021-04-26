@@ -69,9 +69,8 @@ class MainMenu(MenuScreen):
 
                 # Display invites
                 cur_time = round(time.time())
-                if cur_time % 20 == 0 and cur_time != old_time:
+                if cur_time % 10 == 0 and cur_time != old_time:
                     old_time = cur_time
-                    # threading.Thread(target=self.check_invite).start()
                     threading.Thread(target=self.check_invite, daemon=True).start()
                 pygame.display.flip()
 
@@ -90,6 +89,7 @@ class MainMenu(MenuScreen):
         threading.Thread(target=self.keep_cache_updated, daemon=True).start()
 
     def check_invite(self):
+        """Check whether the user was invited"""
         invite = self.server_communicator.get_invite(self.user["username"]).replace(
             '"', ""
         )
@@ -124,6 +124,7 @@ class MainMenu(MenuScreen):
         )
 
     def accept_invite(self):
+        # TODO check and fix this
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
         room = {"name": "test private room", "ip": invite_ip}
         self.connect_to_room(room)
@@ -142,7 +143,7 @@ class MainMenu(MenuScreen):
             self.width,
             self.height,
             75,
-            "../tetris/tetris-resources/tetris_background.jpg",
+            "tetris/tetris-resources/tetris_background.jpg",
         )
         self.running = False
         waiting_room.run()
@@ -151,19 +152,19 @@ class MainMenu(MenuScreen):
 
     def dismiss_invite(self):
         """Dismisses an invite from a player"""
-        # TODO Do something with a declination
         inviter_name = self.server_communicator.get_invite(self.user["username"])
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
-        self.socket.send(pickle.dumps(["declined"]))
+        self.socket.connect((invite_ip, 44444))
+        # Notify the server of declination
+        self.socket.send(f"Declined%{self.user['username']}".encode())
         buttons = {}
 
+        # Remove the invite buttons from the screen
         for button in self.buttons:
             if button.text == "X":
                 # Close the connection
                 self.socket.close()
                 self.socket = socket.socket()
-                # Free the server
-                self.server_communicator.finished_server(invite_ip)
                 # Remove the invite from the DB
                 self.server_communicator.dismiss_invite(self.user["username"])
                 # Don't add the button to the new buttons array

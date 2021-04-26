@@ -12,6 +12,7 @@ from pymongo import *
 from fastapi import Depends, FastAPI
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
+from requests import get
 
 app = FastAPI()
 router = InferringRouter()
@@ -57,6 +58,14 @@ class Server:
                 }
             },
         )
+
+    @router.post("/users/delete-rooms")
+    def delete_rooms(self):
+        rooms = self.user_collection.dependency().find({"name": "hadar759's room"})
+
+        for room in rooms:
+            self.user_collection.dependency().find_one_and_delete({"name": "hadar759's room"})
+
 
     @router.post("/users/controls")
     def update_controls(self, controls: Dict):
@@ -350,19 +359,14 @@ class Server:
     def handle_invite(self, inviter: str, invitee: str, invite_ip: str):
         # Set up the new query for update:
         new_query = {"$set": {"invite": inviter, "invite_ip": invite_ip}}
-
         self.user_collection.dependency().update_one(
-            filter={"username": invitee}, update=new_query
+            {"username": invitee}, new_query
         )
 
     @router.get("/users/invites")
     def get_invite(self, username: str) -> str:
         user = self.user_by_username(username)
-        invite = user["invite"]
-        self.user_collection.dependency().update_one(
-            filter=user, update={"$set": {"invite": ""}}
-        )
-        return invite
+        return user["invite"]
 
     @router.get("/users/online")
     def player_online(self, username: str) -> bool:
@@ -580,6 +584,7 @@ class Server:
 app.include_router(router)
 
 
-if __name__ == "__main__":
-    # Run Server
-    uvicorn.run(app, host="0.0.0.0", port=43434)
+# if __name__ == "__main__":
+# Run Server
+print(get("https://api.ipify.org").text)
+uvicorn.run(app, host="0.0.0.0", port=43434)
