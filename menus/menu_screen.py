@@ -28,6 +28,7 @@ class MenuScreen:
     SOUNDS["hover"].set_volume(0.05)
     SOUNDS["popup"].set_volume(0.2)
     SOUNDS["typing"].set_volume(0.2)
+    HOVER_ALPHA = 5
 
     def __init__(
         self,
@@ -144,12 +145,12 @@ class MenuScreen:
                     # Save old button color
                     self.hovered_btn_and_color = (button, button.color)
                     # Update button
-                    button.button_action(self.screen, alpha=5, reset=False)
+                    button.button_action(self.screen, alpha=self.HOVER_ALPHA, reset=False)
                 break
         # Mouse isn't hovered over any button
         else:
             if self.hovered_btn_and_color:
-                self.hovered_btn_and_color[0].color = self.hovered_btn_and_color[1]
+                self.hovered_btn_and_color[0].button_action(self.screen, alpha=-self.HOVER_ALPHA, reset=False)
                 self.hovered_btn_and_color = ()
 
     def quit(self):
@@ -575,8 +576,8 @@ class MenuScreen:
         for future in concurrent.futures.as_completed(futures):
             new_cache[cache[future]] = future.result()
 
-        print(new_cache)
-        print(f"it took: {time.time() - start_time}secs")
+        # print(new_cache)
+        # print(f"it took: {time.time() - start_time}secs")
 
         return new_cache
 
