@@ -356,7 +356,7 @@ class TetrisGame(Game):
 
     def update_ghost_position(self):
         """Changes the ghost position in accordance to the current piece position"""
-        if self.cur_piece:
+        if self.cur_piece and self.ghost_piece:
             self.ghost_piece.position = self.cur_piece.get_lowest_position(
                 self.game_grid
             )
@@ -867,6 +867,8 @@ class TetrisGame(Game):
                 screen_funcs += [self.show_score, self.show_lines]
             elif self.mode == "sprint":
                 screen_funcs += [self.show_time, self.show_lines]
+            elif self.mode == "multiplayer":
+                screen_funcs += [self.display_opp_screen]
 
         for alpha in range(0, 255, 4):
             # Setup the fade
