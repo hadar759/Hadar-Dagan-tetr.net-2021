@@ -178,10 +178,10 @@ class SettingsScreen(MenuScreen):
 
         self.create_button(
             (cur_x + label_width, cur_y),
-            label_width * 3,
+            round(label_width * 1.5),
             textbox_height,
             Colors.BLACK_BUTTON,
-            "Customize Controls",
+            "Controls",
             func=self.controls_screen,
         )
 
