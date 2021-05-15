@@ -586,4 +586,5 @@ app.include_router(router)
 # if __name__ == "__main__":
 # Run Server
 print(get("https://api.ipify.org").text)
-uvicorn.run(app, host="0.0.0.0", port=43434)
+service_port = int(os.environ.get('PORT', 43434))
+uvicorn.run(app, host="0.0.0.0", port=service_port)
