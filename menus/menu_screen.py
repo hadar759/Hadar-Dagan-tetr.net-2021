@@ -145,12 +145,16 @@ class MenuScreen:
                     # Save old button color
                     self.hovered_btn_and_color = (button, button.color)
                     # Update button
-                    button.button_action(self.screen, alpha=self.HOVER_ALPHA, reset=False)
+                    button.button_action(
+                        self.screen, alpha=self.HOVER_ALPHA, reset=False
+                    )
                 break
         # Mouse isn't hovered over any button
         else:
             if self.hovered_btn_and_color:
-                self.hovered_btn_and_color[0].button_action(self.screen, alpha=-self.HOVER_ALPHA, reset=False)
+                self.hovered_btn_and_color[0].button_action(
+                    self.screen, alpha=-self.HOVER_ALPHA, reset=False
+                )
                 self.hovered_btn_and_color = ()
 
     def quit(self):

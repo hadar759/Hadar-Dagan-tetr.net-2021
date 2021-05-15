@@ -134,7 +134,7 @@ class GameServer:
 
     def handle_message(self, data, client):
         # The client pressed the ready button
-        if data[0: len("Ready%")] == "Ready%":
+        if data[0 : len("Ready%")] == "Ready%":
             if client in self.ready_clients:
                 self.ready_clients.remove(client)
             else:
@@ -195,7 +195,7 @@ class GameServer:
             # Receive ok/declination from client
             msg = ""
             ok = client.recv(1024).decode()
-            if ok[0:len("Declined%")] == "Declined%":
+            if ok[0 : len("Declined%")] == "Declined%":
                 msg = f"{ok[len('Declined%'):]} declined an invitation"
             # The client declined an invitation
             if msg:

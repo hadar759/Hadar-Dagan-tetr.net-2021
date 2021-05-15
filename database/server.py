@@ -64,8 +64,9 @@ class Server:
         rooms = self.user_collection.dependency().find({"name": "hadar759's room"})
 
         for room in rooms:
-            self.user_collection.dependency().find_one_and_delete({"name": "hadar759's room"})
-
+            self.user_collection.dependency().find_one_and_delete(
+                {"name": "hadar759's room"}
+            )
 
     @router.post("/users/controls")
     def update_controls(self, controls: Dict):
@@ -359,9 +360,7 @@ class Server:
     def handle_invite(self, inviter: str, invitee: str, invite_ip: str):
         # Set up the new query for update:
         new_query = {"$set": {"invite": inviter, "invite_ip": invite_ip}}
-        self.user_collection.dependency().update_one(
-            {"username": invitee}, new_query
-        )
+        self.user_collection.dependency().update_one({"username": invitee}, new_query)
 
     @router.get("/users/invites")
     def get_invite(self, username: str) -> str:
