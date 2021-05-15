@@ -21,7 +21,7 @@ pass_resets = {}
 
 
 def get_collection():
-    pass_text = os.environ.get("MONGODB", get_mongo_pass())
+    pass_text = os.environ.get("MONGODB", get_mongo_pass)
     # In case we aren't running in heroku
     if callable(pass_text):
         pass_text = pass_text()
