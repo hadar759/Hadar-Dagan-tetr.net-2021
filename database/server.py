@@ -21,12 +21,16 @@ pass_resets = {}
 
 
 def get_collection():
-    with open(r"./resources/mongodb.txt", "r") as pass_file:
-        pass_text = pass_file.read()
+    pass_text = os.environ.get("MONGODB", get_mongo_pass())
     client = MongoClient(pass_text)
     db = client["tetris"]
     user_collection = db["users"]
     return user_collection
+
+
+def get_mongo_pass():
+    with open(r"./resources/mongodb.txt", "r") as pass_file:
+        return pass_file.read()
 
 
 @cbv(router)
@@ -35,13 +39,20 @@ class Server:
     SPRINTS = {20: 0, 40: 1, 100: 2, 1000: 3}
 
     def __init__(self):
-        print(os.curdir)
         self.user_collection: Depends = Depends(get_collection)
-        with open(r"./resources/password.txt", "r") as pass_file:
-            self.email_pass = pass_file.read()
+        self.email_pass = os.environ.get("PASSWORD", self.get_password())
 
+        self.email = os.environ.get("GMAIL", self.get_email())
+
+    @staticmethod
+    def get_password():
+        with open(r"./resources/password.txt", "r") as pass_file:
+            return pass_file.read()
+
+    @staticmethod
+    def get_email():
         with open(r"./resources/gmail.txt", "r") as email_file:
-            self.email = email_file.read()
+            return email_file.read()
 
     @router.post("/users/update-all/controls")
     def update_controls(self):
