@@ -3,6 +3,8 @@ import threading
 import time
 from typing import Dict, Optional
 
+import pygame
+
 from game_server import GameServer
 from database.server_communicator import ServerCommunicator
 from .waiting_room import WaitingRoom
@@ -328,6 +330,7 @@ class RoomsScreen(ListScreen):
             return
         min_apm = int(min_apm)
         max_apm = int(max_apm)
+        pygame.mixer.pause()
         self.running = False
         room_server = GameServer(
             self.get_inner_ip(),
@@ -338,6 +341,7 @@ class RoomsScreen(ListScreen):
             private,
             self.user["username"],
         )
+        pygame.mixer.unpause()
         threading.Thread(target=room_server.run).start()
         self.connect_to_room(
             {
