@@ -6,10 +6,8 @@ from requests import post, get
 
 
 class ServerCommunicator:
-    def __init__(self, server_ip: str, server_port: str):
-        self.server_ip = server_ip
-        self.server_port = server_port
-        self.SERVER_DOMAIN = f"http://{self.server_ip}:{self.server_port}"
+    def __init__(self):
+        self.SERVER_DOMAIN = f"https://tetr-net.herokuapp.com"
 
     @staticmethod
     def bool_to_string(condition: bool):

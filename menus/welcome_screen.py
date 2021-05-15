@@ -36,8 +36,7 @@ class WelcomeScreen(MenuScreen):
         super().__init__(
             width,
             height,
-            ServerCommunicator("127.0.0.1", "43434"),
-            # ServerCommunicator("tetr-net.loca.lt", "80"),
+            ServerCommunicator(),
             refresh_rate,
             background_path,
         )
@@ -364,6 +363,7 @@ class WelcomeScreen(MenuScreen):
         if user:
             new_outer_ip = self.get_outer_ip()
             # Update routine user stats (online, ip etc...)
+            print("hello")
             threading.Thread(
                 target=self.server_communicator.on_connection,
                 args=(

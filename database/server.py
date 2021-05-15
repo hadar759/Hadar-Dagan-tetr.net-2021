@@ -21,7 +21,7 @@ pass_resets = {}
 
 
 def get_collection():
-    with open(r"../resources/mongodb.txt", "r") as pass_file:
+    with open(r"resources/mongodb.txt", "r") as pass_file:
         pass_text = pass_file.read()
     client = MongoClient(pass_text)
     db = client["tetris"]
@@ -36,10 +36,10 @@ class Server:
 
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
-        with open(r"../resources/password.txt", "r") as pass_file:
+        with open(r"resources/password.txt", "r") as pass_file:
             self.email_pass = pass_file.read()
 
-        with open(r"../resources/gmail.txt", "r") as email_file:
+        with open(r"resources/gmail.txt", "r") as email_file:
             self.email = email_file.read()
 
     @router.post("/users/update-all/controls")
