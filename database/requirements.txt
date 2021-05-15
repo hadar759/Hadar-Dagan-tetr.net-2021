@@ -19,3 +19,5 @@ requests == 2.24.0
 
 # C:\Coding-Projects\Python\Projects\tetr.net\database\server.py: 10
 uvicorn == 0.12.2
+
+dnspython == 2.0.0
