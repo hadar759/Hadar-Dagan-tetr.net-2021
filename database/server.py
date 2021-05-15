@@ -22,6 +22,9 @@ pass_resets = {}
 
 def get_collection():
     pass_text = os.environ.get("MONGODB", get_mongo_pass())
+    # In case we aren't running in heroku
+    if callable(pass_text):
+        pass_text = pass_text()
     client = MongoClient(pass_text)
     db = client["tetris"]
     user_collection = db["users"]
@@ -40,9 +43,12 @@ class Server:
 
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
-        self.email_pass = os.environ.get("PASSWORD", self.get_password())
-
-        self.email = os.environ.get("GMAIL", self.get_email())
+        self.email_pass = os.environ.get("PASSWORD", self.get_password)
+        self.email = os.environ.get("GMAIL", self.get_email)
+        # In case we aren't running in heroku
+        if callable(self.email_pass) or callable(self.email):
+            self.email_pass = self.email_pass()
+            self.email = self.email()
 
     @staticmethod
     def get_password():
