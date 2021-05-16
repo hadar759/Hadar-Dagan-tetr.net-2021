@@ -5,6 +5,7 @@ import ssl
 import subprocess
 from typing import Optional, Dict, List
 import time
+import yagmail
 
 import pygame
 import uvicorn
@@ -43,12 +44,13 @@ class Server:
 
     def __init__(self):
         self.user_collection: Depends = Depends(get_collection)
-        self.email_pass = os.environ.get("PASSWORD", self.get_password)
         self.email = os.environ.get("GMAIL", self.get_email)
+        self.email_pass = os.environ.get("PASSWORD", self.get_password)
         # In case we aren't running in heroku
         if callable(self.email_pass) or callable(self.email):
-            self.email_pass = self.email_pass()
             self.email = self.email()
+
+        self.yag = yagmail.SMTP(self.email, self.email_pass)
 
     @staticmethod
     def get_password():
@@ -546,15 +548,15 @@ class Server:
     @router.post("/users/create/code")
     def user_create_code(self, user_email):
         global pass_resets
-        # Create a secure SSL context
-        context = ssl.create_default_context()
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as email_server:
-            email_server.login(self.email, self.email_pass)
-            generated_code = "".join(random.choices([str(i) for i in range(10)], k=6))
-            pass_resets[user_email] = (generated_code, time.time())
-            email_msg = f"From: {self.email}\nSubject: Register User\n\nRegistration code: {generated_code}"
-            email_server.sendmail(self.email, user_email, email_msg)
+        generated_code = "".join(random.choices([str(i) for i in range(10)], k=6))
+        pass_resets[user_email] = (generated_code, time.time())
+
+        self.yag.send(
+            to=user_email,
+            subject="Register User",
+            contents=f"Registration code: {generated_code}",
+        )
 
     @router.get("/pass/new")
     def is_password_new(self, user_email, password):
@@ -579,15 +581,15 @@ class Server:
     @router.post("/pass/reset")
     def send_reset_email(self, user_email):
         global pass_resets
-        # Create a secure SSL context
-        context = ssl.create_default_context()
 
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as email_server:
-            email_server.login(self.email, self.email_pass)
-            generated_code = "".join(random.choices([str(i) for i in range(10)], k=6))
-            pass_resets[user_email] = (generated_code, time.time())
-            email_msg = f"From: {self.email}\nSubject: Reset password\n\nPassword reset code: {generated_code}"
-            email_server.sendmail(self.email, user_email, email_msg)
+        generated_code = "".join(random.choices([str(i) for i in range(10)], k=6))
+        pass_resets[user_email] = (generated_code, time.time())
+
+        self.yag.send(
+            to=user_email,
+            subject="Reset Password",
+            contents=f"nPassword reset code: {generated_code}",
+        )
 
     @router.get("/pass/check")
     def check_pass_reset(self, user_email, code):

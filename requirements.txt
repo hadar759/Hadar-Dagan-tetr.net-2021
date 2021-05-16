@@ -52,3 +52,5 @@ requests == 2.24.0
 
 # C:\Coding-Projects\Python\Projects\tetr.net\database\server.py: 9
 uvicorn == 0.12.2
+
+yagmail~=0.14.256

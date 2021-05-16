@@ -21,3 +21,5 @@ requests == 2.24.0
 uvicorn == 0.12.2
 
 dnspython == 2.0.0
+
+yagmail == 0.14.256
