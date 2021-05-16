@@ -5,6 +5,8 @@ import time
 from select import select
 from typing import List
 
+from requests import get
+
 from database.db_post_creator import DBPostCreator
 from database.server_communicator import ServerCommunicator
 
@@ -31,11 +33,11 @@ class GameServer:
         self.game_running = False
         self.room_name = room_name
         self.admin = admin
+        self.default = default
 
         self.server_socket = socket.socket()
         self.server_ip = server_ip
-        # self.server_communicator = ServerCommunicator("tetr-net.loca.lt", "80")
-        self.server_communicator = ServerCommunicator("127.0.0.1", "43434")
+        self.server_communicator = ServerCommunicator()
 
         # Add the room to the database
         self.server_communicator.create_room(
@@ -50,7 +52,8 @@ class GameServer:
         )
 
     def run(self):
-        self.server_socket.bind((self.server_ip, self.SERVER_PORT))
+        listen_ip = get_inner_ip() if self.default else self.server_ip
+        self.server_socket.bind((listen_ip, self.SERVER_PORT))
         self.server_socket.listen(1)
         # Always accept new clients
         threading.Thread(target=self.connect_clients, daemon=True).start()
@@ -121,7 +124,7 @@ class GameServer:
                     for other_client in self.client_list:
                         if other_client is client:
                             continue
-                        other_client.send(pickle.dumps(["Win", 0]))
+                        other_client.send(pickle.dumps(["Win", 0, 0]))
                     self.game_over()
                     return
 
@@ -224,12 +227,16 @@ class GameServer:
         )
 
 
+def get_outer_ip():
+    return get("https://api.ipify.org").text
+
+
 def get_inner_ip():
     return socket.gethostbyname(socket.gethostname())
 
 
 if __name__ == "__main__":
-    ip = get_inner_ip()
+    ip = get_outer_ip()
     print("server starts on", ip)
     server = GameServer(ip, True, "test room")
     # Add the room to the database

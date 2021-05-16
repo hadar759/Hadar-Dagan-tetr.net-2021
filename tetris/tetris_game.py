@@ -140,6 +140,7 @@ class TetrisGame(Game):
         }
 
         self.skin = self.user["skin"]
+
         self.pieces_and_next_sprites = {
             "<class 'tetris.pieces.i_piece.IPiece'>": pygame.image.load(
                 f"tetris/tetris-resources/ipiece-full-sprite{self.skin}.png"
@@ -166,32 +167,35 @@ class TetrisGame(Game):
                 rf"tetris/tetris-resources/garbage_piece_sprite{self.skin}.png"
             ),
         }
-        self.pieces = {
-            "I": pygame.image.load(
-                f"tetris/tetris-resources/ipiece-sprite{self.skin}.png"
-            ),
-            "J": pygame.image.load(
-                f"tetris/tetris-resources/jpiece-sprite{self.skin}.png"
-            ),
-            "O": pygame.image.load(
-                f"tetris/tetris-resources/opiece-sprite{self.skin}.png"
-            ),
-            "L": pygame.image.load(
-                f"tetris/tetris-resources/lpiece-sprite{self.skin}.png"
-            ),
-            "T": pygame.image.load(
-                f"tetris/tetris-resources/tpiece-sprite{self.skin}.png"
-            ),
-            "S": pygame.image.load(
-                f"tetris/tetris-resources/spiece-sprite{self.skin}.png"
-            ),
-            "Z": pygame.image.load(
-                f"tetris/tetris-resources/zpiece-sprite{self.skin}.png"
-            ),
-            "G": pygame.image.load(
-                f"tetris/tetris-resources/garbage_piece_sprite{self.skin}.png"
-            ),
-        }
+        if self.mode == "multiplayer":
+            self.pieces = {skin: {
+                "I": pygame.image.load(
+                    f"tetris/tetris-resources/ipiece-sprite{skin}.png"
+                ),
+                "J": pygame.image.load(
+                    f"tetris/tetris-resources/jpiece-sprite{skin}.png"
+                ),
+                "O": pygame.image.load(
+                    f"tetris/tetris-resources/opiece-sprite{skin}.png"
+                ),
+                "L": pygame.image.load(
+                    f"tetris/tetris-resources/lpiece-sprite{skin}.png"
+                ),
+                "T": pygame.image.load(
+                    f"tetris/tetris-resources/tpiece-sprite{skin}.png"
+                ),
+                "S": pygame.image.load(
+                    f"tetris/tetris-resources/spiece-sprite{skin}.png"
+                ),
+                "Z": pygame.image.load(
+                    f"tetris/tetris-resources/zpiece-sprite{skin}.png"
+                ),
+                "G": pygame.image.load(
+                    f"tetris/tetris-resources/garbage_piece_sprite{skin}.png"
+                ),
+            }
+                for skin in range(10)
+            }
 
         if self.mode == "sprint":
             # Sprint specific variables
@@ -262,8 +266,8 @@ class TetrisGame(Game):
 
     def handle_connection(self):
         while self.running:
-            data = [self.get_my_screen(), self.lines_to_be_sent]
-            # Send the screen & lines to be sent to the opponent
+            data = [self.get_my_screen(), self.lines_to_be_sent, self.skin]
+            # Send the screen, lines to be sent and skin to the opponent
             self.server_socket.send(pickle.dumps(data))
             self.lines_to_be_sent = 0
             try:
@@ -276,6 +280,8 @@ class TetrisGame(Game):
             screen_received = data_received[0]
             # Get the amount of lines to be received from the opponent
             lines_received = data_received[1]
+            # Get the opponent's skin
+            opp_skin = data_received[2]
             # In case the opponent topped out (lost)
             if screen_received == "Win":
                 self.win = True
@@ -287,11 +293,12 @@ class TetrisGame(Game):
                 self.set_event_handler(self.GAME_OVER_EVENT, self.game_over)
                 return
             else:
-                self.update_opp_screen(screen_received)
+                self.update_opp_screen(screen_received, opp_skin)
                 self.lines_received += int(lines_received)
 
-    def update_opp_screen(self, screen: List):
+    def update_opp_screen(self, screen: List, skin):
         """Updates the opponent's screen"""
+        print(skin)
         block_size = self.BLOCK_SIZE
         cur_opp_screen = []
         # go over every block of the opponent's screen
@@ -301,7 +308,8 @@ class TetrisGame(Game):
                 # No piece there
                 if piece == "N":
                     continue
-                piece_sprite = self.pieces[piece]
+                piece_sprite = self.pieces[skin][piece]
+                print(str(piece_sprite))
                 # Create a game object representing the piece
                 piece_obj = GameObject(
                     piece_sprite,
@@ -450,7 +458,7 @@ class TetrisGame(Game):
 
         # Create the garbage pieces and add them to the game
         for line in range(self.lines_received):
-            garbage_piece = GarbagePiece(self.LOWER_BORDER - line, hole)
+            garbage_piece = GarbagePiece(self.LOWER_BORDER - line, hole, self.skin)
             self.game_objects.append(garbage_piece)
 
         # Reoccupy the blocks' positions

@@ -23,7 +23,7 @@ class TetrisClient:
     def run(self):
         """Setup and start the socket and the tetris game"""
         # self.connect_to_server()
-        data = pickle.dumps([[], 0])
+        data = pickle.dumps([[], 0, self.tetris_game.user["skin"]])
         self.client_socket.send(data)
         self.tetris_game.server_socket = self.client_socket
         self.tetris_game.run()

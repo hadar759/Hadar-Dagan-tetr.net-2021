@@ -354,7 +354,7 @@ class RoomsScreen(ListScreen):
 
     def connect_to_room(self, room: Dict):
         sock = socket.socket()
-        port = 80 if room["default"] else 44444
+        port = 44444
         sock.connect((room["ip"], port))
         # Start the main menu
         waiting_room = WaitingRoom(
