@@ -207,6 +207,8 @@ class LeaderboardScreen(ListScreen):
     def display_leaderboard(self, score_type):
         self.buttons = {}
         self.textboxes = {}
+        self.scroll_funcs[-1] = (self.scroll_down, (score_type,))
+        self.scroll_funcs[1] = (self.scroll_up, (score_type,))
         title_width = self.width
         title_height = 200
         cur_x = 0
@@ -338,7 +340,9 @@ class LeaderboardScreen(ListScreen):
 
     def scroll_up(self, score_type):
         if self.offset == 0:
-            self.create_popup_button("Can't scroll up")
+            # Popup already present on screen
+            if list(self.buttons.values())[-1][0] != self.buttons.popitem:
+                self.create_popup_button("Can't scroll up")
             return
         self.offset -= 1
         self.display_leaderboard(score_type)
@@ -350,6 +354,8 @@ class LeaderboardScreen(ListScreen):
         )
         # Offset hasn't changed, i.e. we're at the end of the room list
         if offset == self.offset:
-            self.create_popup_button("Can't scroll down more")
+            # Popup already present on screen
+            if list(self.buttons.values())[-1][0] != self.buttons.popitem:
+                self.create_popup_button("Can't scroll down more")
         else:
             self.display_leaderboard(score_type)

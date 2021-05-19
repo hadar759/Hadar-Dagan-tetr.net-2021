@@ -57,13 +57,16 @@ class MenuScreen:
         self.deleting = False
         self.text_offset = 0
 
-    def run_once(self):
+    def run_once(self, event_handler=None):
+        if not event_handler:
+            event_handler = self.handle_events
+
         self.update_screen()
 
         for event in pygame.event.get():
             # Different event, but mouse pos was initiated
             if self.mouse_pos:
-                self.handle_events(event)
+                event_handler(event)
 
     def handle_events(self, event):
         if event.type == pygame.QUIT:
