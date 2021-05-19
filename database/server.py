@@ -1,18 +1,15 @@
 import os
 import random
-import smtplib
-import ssl
-import subprocess
-from typing import Optional, Dict, List
 import time
-import yagmail
+from typing import Optional, Dict
 
 import pygame
 import uvicorn
-from pymongo import *
+import yagmail
 from fastapi import Depends, FastAPI
 from fastapi_utils.cbv import cbv
 from fastapi_utils.inferring_router import InferringRouter
+from pymongo import *
 from requests import get
 
 app = FastAPI()
@@ -61,6 +58,12 @@ class Server:
     def get_email():
         with open(r"./resources/gmail.txt", "r") as email_file:
             return email_file.read()
+
+    @router.post("/users/server/del-by-ip")
+    def delete_server_by_ip(self, outer_ip: str, inner_ip: str):
+        self.user_collection.dependency().find_one_and_delete(
+            {"type": "room", "outer_ip": outer_ip, "inner_ip": inner_ip}
+        )
 
     @router.post("/users/update-all/controls")
     def update_controls(self):
@@ -287,9 +290,10 @@ class Server:
         )
 
     @router.post("/users/rooms/player-num")
-    def update_player_num(self, ip, player_num):
+    def update_player_num(self, outer_ip, inner_ip, player_num):
         self.user_collection.dependency().find_one_and_update(
-            {"ip": ip}, update={"$set": {"player_num": player_num}}
+            {"outer_ip": outer_ip, "inner_ip": inner_ip},
+            update={"$set": {"player_num": player_num}},
         )
 
     @router.post("/users/rooms")
@@ -606,5 +610,5 @@ app.include_router(router)
 # if __name__ == "__main__":
 # Run Server
 print(get("https://api.ipify.org").text)
-service_port = int(os.environ.get('PORT', 43434))
+service_port = int(os.environ.get("PORT", 43434))
 uvicorn.run(app, host="0.0.0.0", port=service_port)
