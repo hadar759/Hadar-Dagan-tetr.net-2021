@@ -74,14 +74,14 @@ class WaitingRoom(MenuScreen):
                 self.start_client_game(*self.start_args)
                 self.running = True
                 self.sock.send("!".encode())
-                threading.Thread(target=self.recv_chat, daemon=True).start()
-                threading.Thread(target=self.update_mouse_pos, daemon=True).start()
                 self.start_args = ()
                 self.handle_buttons_when_ready()
                 for user in self.ready_players:
                     self.handle_buttons_when_ready(user)
                 self.ready_players = []
                 self.screen = pygame.display.set_mode((self.width, self.height))
+                threading.Thread(target=self.recv_chat, daemon=True).start()
+                threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             self.run_once()
 
@@ -150,7 +150,7 @@ class WaitingRoom(MenuScreen):
         client.run()
 
     def recv_chat(self):
-        while True:
+        while self.running:
             try:
                 msg = self.sock.recv(1024).decode()
                 print(msg)
