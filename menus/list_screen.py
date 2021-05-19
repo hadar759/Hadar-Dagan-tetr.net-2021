@@ -27,8 +27,7 @@ class ListScreen(MenuScreen):
         self.cache = cache
         self.entry_list = []
         self.num_on_screen = num_on_screen
-        self.scroll_funcs = {-1: (self.scroll_down, ()),
-                             1: (self.scroll_up, ())}
+        self.scroll_funcs = {-1: (self.scroll_down, ()), 1: (self.scroll_up, ())}
 
     def run(self):
         self.create_screen()

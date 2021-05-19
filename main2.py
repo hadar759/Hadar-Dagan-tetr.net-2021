@@ -19,7 +19,10 @@ class Main:
         menu.run()"""
         try:
             menu = WelcomeScreen(
-                width - 200, height - 100, 75, "tetris/tetris-resources/tetris_background.jpg"
+                width - 200,
+                height - 100,
+                75,
+                "tetris/tetris-resources/tetris_background.jpg",
             )
             menu.run()
         except Exception as e:

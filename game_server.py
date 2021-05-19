@@ -16,7 +16,8 @@ class GameServer:
 
     def __init__(
         self,
-        server_ip: str,
+        outer_ip: str,
+        inner_ip: str,
         default: bool,
         room_name: str,
         min_apm: int = 0,
@@ -36,55 +37,74 @@ class GameServer:
         self.default = default
 
         self.server_socket = socket.socket()
-        self.server_ip = server_ip
+        self.outer_ip = outer_ip
+        self.inner_ip = inner_ip
+        self.min_apm = min_apm
+        self.max_apm = max_apm
+        self.private = private
         self.server_communicator = ServerCommunicator()
 
-        # Add the room to the database
+        self.create_server_db()
+
+    def create_server_db(self):
+        """Add the room to the database"""
         self.server_communicator.create_room(
             DBPostCreator.create_room_post(
-                default,
-                room_name,
-                server_ip,
-                min_apm,
-                max_apm,
-                private,
+                self.default,
+                self.room_name,
+                self.outer_ip,
+                self.inner_ip,
+                self.min_apm,
+                self.max_apm,
+                self.private,
             )
         )
 
     def run(self):
-        listen_ip = get_inner_ip() if self.default else self.server_ip
-        self.server_socket.bind((listen_ip, self.SERVER_PORT))
-        self.server_socket.listen(1)
-        # Always accept new clients
-        threading.Thread(target=self.connect_clients, daemon=True).start()
-        while True:
-            if not self.client_list:
-                continue
-            read_list, write_list, _ = select(self.client_list, self.client_list, [])
-            self.handle_read(read_list)
-            self.handle_write(write_list)
-            if len(self.ready_clients) < 2:
-                continue
-            else:
-                time_at_start = str(time.time())
-                # Notify each client of game start
-                for client in self.ready_clients:
-                    threading.Thread(
-                        target=self.notify_client_of_game_start,
-                        args=(
-                            client,
-                            time_at_start,
-                        ),
-                    ).start()
-                # Start the game
-                self.game_running = True
-            # Pass information between the players
-            while self.game_running:
+        try:
+            # listen_ip = get_inner_ip() if self.default else self.outer_ip
+            listen_ip = self.inner_ip
+            self.server_socket.bind((listen_ip, self.SERVER_PORT))
+            self.server_socket.listen(1)
+            # Always accept new clients
+            threading.Thread(target=self.connect_clients, daemon=True).start()
+            while True:
+                if not self.client_list:
+                    continue
                 read_list, write_list, _ = select(
                     self.client_list, self.client_list, []
                 )
                 self.handle_read(read_list)
                 self.handle_write(write_list)
+                if len(self.ready_clients) < 2:
+                    continue
+                else:
+                    time_at_start = str(time.time())
+                    # Notify each client of game start
+                    for client in self.ready_clients:
+                        threading.Thread(
+                            target=self.notify_client_of_game_start,
+                            args=(
+                                client,
+                                time_at_start,
+                            ),
+                        ).start()
+                    time.sleep(1)
+                    # Start the game
+                    self.game_running = True
+                # Pass information between the players
+                while self.game_running:
+                    read_list, write_list, _ = select(
+                        self.client_list, self.client_list, []
+                    )
+                    self.handle_read(read_list)
+                    self.handle_write(write_list)
+        except Exception as e:
+            print("bruhhh", e)
+            # Delete the server from the db
+            self.server_communicator.delete_server_by_ip(self.outer_ip, self.inner_ip)
+            self.create_server_db()
+            self.run()
 
     def remove_server(self):
         self.server_communicator.remove_room(self.room_name)
@@ -92,7 +112,7 @@ class GameServer:
     @staticmethod
     def notify_client_of_game_start(client, time_at_start):
         client.send("started".encode())
-        client.recv(1024)
+        client.recv(25600)
         client.send(str(time_at_start).encode())
 
     def handle_read(self, read_list: List[socket.socket]):
@@ -174,8 +194,7 @@ class GameServer:
         """End the game"""
         self.game_running = False
         for client in self.client_list:
-            print(f"emptied {self.players[client]}")
-            client.recv(25600)
+            threading.Thread(target=client.recv, args=(25600,)).start()
         self.data_dict = {}
         self.ready_clients = []
 
@@ -223,7 +242,7 @@ class GameServer:
     def update_player_num(self):
         print(len(self.client_list))
         self.server_communicator.update_player_num(
-            self.server_ip, len(self.client_list)
+            self.outer_ip, self.inner_ip, len(self.client_list)
         )
 
 
@@ -236,9 +255,10 @@ def get_inner_ip():
 
 
 if __name__ == "__main__":
-    ip = get_outer_ip()
-    print("server starts on", ip)
-    server = GameServer(ip, True, "test room")
+    outer_ip = get_outer_ip()
+    inner_ip = get_inner_ip()
+    print("server starts on", outer_ip, inner_ip)
+    server = GameServer(outer_ip, inner_ip, True, "test room")
     # Add the room to the database
     # server.server_communicator.create_room(DBPostCreator.create_db_post(ip))
     server.run()

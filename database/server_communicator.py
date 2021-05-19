@@ -21,6 +21,11 @@ class ServerCommunicator:
             data=json.dumps(controls_with_username),
         )
 
+    def delete_server_by_ip(self, outer_ip: str, inner_ip: str):
+        post(
+            f"{self.SERVER_DOMAIN}/users/server/del-by-ip?outer_ip={outer_ip}&inner_ip={inner_ip}"
+        )
+
     def update_music(self, username: str, music: bool):
         post(f"{self.SERVER_DOMAIN}/users/music?username={username}&music={music}")
 
@@ -92,9 +97,9 @@ class ServerCommunicator:
     def remove_room(self, room_name):
         post(f"{self.SERVER_DOMAIN}/users/rooms/delete?room_name={room_name}")
 
-    def update_player_num(self, ip, player_num):
+    def update_player_num(self, outer_ip, inner_ip, player_num):
         post(
-            f"{self.SERVER_DOMAIN}/users/rooms/player-num?ip={ip}&player_num={player_num}"
+            f"{self.SERVER_DOMAIN}/users/rooms/player-num?outer_ip={outer_ip}&inner_ip={inner_ip}&player_num={player_num}"
         )
 
     def create_room(self, room: Dict):

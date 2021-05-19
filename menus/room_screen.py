@@ -333,6 +333,7 @@ class RoomsScreen(ListScreen):
         pygame.mixer.pause()
         self.running = False
         room_server = GameServer(
+            self.get_outer_ip(),
             self.get_inner_ip(),
             False,
             room_name,
@@ -345,7 +346,8 @@ class RoomsScreen(ListScreen):
         threading.Thread(target=room_server.run).start()
         self.connect_to_room(
             {
-                "ip": room_server.server_ip,
+                "outer_ip": room_server.outer_ip,
+                "inner_ip": room_server.inner_ip,
                 "name": room_server.room_name,
                 "default": False,
             }
@@ -355,7 +357,7 @@ class RoomsScreen(ListScreen):
     def connect_to_room(self, room: Dict):
         sock = socket.socket()
         port = 44444
-        sock.connect((room["ip"], port))
+        sock.connect((room["outer_ip"] if room["default"] else room["inner_ip"], port))
         # Start the main menu
         waiting_room = WaitingRoom(
             self.user,

@@ -73,14 +73,15 @@ class WaitingRoom(MenuScreen):
                 self.running = False
                 self.start_client_game(*self.start_args)
                 self.running = True
+                self.sock.send("!".encode())
+                threading.Thread(target=self.recv_chat, daemon=True).start()
+                threading.Thread(target=self.update_mouse_pos, daemon=True).start()
                 self.start_args = ()
                 self.handle_buttons_when_ready()
                 for user in self.ready_players:
                     self.handle_buttons_when_ready(user)
                 self.ready_players = []
                 self.screen = pygame.display.set_mode((self.width, self.height))
-                threading.Thread(target=self.recv_chat, daemon=True).start()
-                threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             self.run_once()
 
@@ -180,6 +181,8 @@ class WaitingRoom(MenuScreen):
                     return
                 # Player disconnected
                 if msg[0] == "!":
+                    if len(msg) == 1:
+                        continue
                     self.players.pop(msg[1:])
                     wins_button = self.find_button_by_text("Wins")
                     self.buttons = {
@@ -351,7 +354,9 @@ class WaitingRoom(MenuScreen):
                 self.handle_text_action(textbox)
                 self.text_offset += 1
             except Exception as e:
-                print(e)
+                print(textbox_text)
+                print(self.text_offset)
+                print("Waiting room line 354", e)
 
     def handle_text_action(self, textbox):
         text_length = textbox.rendered_text[0].get_rect()[2]
