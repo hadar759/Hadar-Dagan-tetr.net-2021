@@ -7,196 +7,71 @@ from typing import List
 
 from requests import get
 
-from database.db_post_creator import DBPostCreator
-from database.server_communicator import ServerCommunicator
-
 
 class GameServer:
-    SERVER_PORT = 44444
-
     def __init__(
         self,
-        outer_ip: str,
-        inner_ip: str,
-        default: bool,
-        room_name: str,
-        min_apm: int = 0,
-        max_apm: int = 999,
-        private: bool = False,
-        admin="",
+        listen_ip: str,
+        port: int,
+        client_list: List[socket.socket],
     ):
-        self.client_list: List[socket.socket] = []
-        self.players = {}
-        self.players_wins = {}
-        self.ready_clients = []
-        self.responses_list = []
+        self.client_list: List[socket.socket] = client_list
         self.data_dict = {}
-        self.game_running = False
-        self.room_name = room_name
-        self.admin = admin
-        self.default = default
+        self.players = {}
+        self.game_running = True
 
         self.server_socket = socket.socket()
-        self.outer_ip = outer_ip
-        self.inner_ip = inner_ip
-        self.min_apm = min_apm
-        self.max_apm = max_apm
-        self.private = private
-        self.server_communicator = ServerCommunicator()
-
-        self.create_server_db()
-
-    def create_server_db(self):
-        """Add the room to the database"""
-        self.server_communicator.create_room(
-            DBPostCreator.create_room_post(
-                self.default,
-                self.room_name,
-                self.outer_ip,
-                self.inner_ip,
-                self.min_apm,
-                self.max_apm,
-                self.private,
-            )
-        )
+        self.listen_ip = listen_ip
+        self.port = port
+        self.winner = ""
 
     def run(self):
-        try:
-            # listen_ip = get_inner_ip() if self.default else self.outer_ip
-            listen_ip = self.inner_ip
-            self.server_socket.bind((listen_ip, self.SERVER_PORT))
-            self.server_socket.listen(1)
-            # Always accept new clients
-            threading.Thread(target=self.connect_clients, daemon=True).start()
-            while True:
-                if not self.client_list:
-                    continue
-                read_list, write_list, _ = select(
-                    self.client_list, self.client_list, []
-                )
-                self.handle_read(read_list)
-                self.handle_write(write_list)
-                if len(self.ready_clients) < 2:
-                    continue
-                else:
-                    time_at_start = str(time.time())
-                    # Notify each client of game start
-                    for client in self.ready_clients:
-                        threading.Thread(
-                            target=self.notify_client_of_game_start,
-                            args=(
-                                client,
-                                time_at_start,
-                            ),
-                        ).start()
-                    time.sleep(1)
-                    # Start the game
-                    self.game_running = True
-                # Pass information between the players
-                while self.game_running:
-                    read_list, write_list, _ = select(
-                        self.client_list, self.client_list, []
-                    )
-                    self.handle_read(read_list)
-                    self.handle_write(write_list)
-        except Exception as e:
-            print("bruhhh", e)
-            # Delete the server from the db
-            self.server_communicator.delete_server_by_ip(self.outer_ip, self.inner_ip)
-            self.create_server_db()
-            self.run()
-
-    def remove_server(self):
-        self.server_communicator.remove_room(self.room_name)
-
-    @staticmethod
-    def notify_client_of_game_start(client, time_at_start):
-        client.send("started".encode())
-        client.recv(25600)
-        client.send(str(time_at_start).encode())
+        print(f"server starting on {self.listen_ip}:{self.port}")
+        self.server_socket.bind((self.listen_ip, self.port))
+        self.server_socket.listen(1)
+        # Connect all the clients playing
+        self.connect_clients()
+        # Pass information between the players
+        while self.game_running:
+            read_list, write_list, _ = select(
+                self.client_list, self.client_list, []
+            )
+            self.handle_read(read_list)
+            self.handle_write(write_list)
+        self.server_socket.close()
+        return self.winner
 
     def handle_read(self, read_list: List[socket.socket]):
         """Handles reading from the clients"""
         for client in read_list:
             data = client.recv(25600)
+            try:
+                data = pickle.loads(data)
+            except EOFError:
+                print("data", data.decode())
+                continue
 
-            if not self.game_running:
-                try:
-                    data = data.decode()
-                # Info from the last game
-                except UnicodeDecodeError:
-                    print("skipped")
-                    continue
+            # Game ended, someone won
+            if data[0] == "W":
+                self.data_dict = {}
+                for other_client in self.client_list:
+                    if other_client is client:
+                        continue
+                    other_client.send(pickle.dumps(["Win", 0, 0]))
+                    self.winner = self.players[other_client]
+                self.game_over()
+                return
 
-                self.handle_message(data, client)
-
-            # Game in progress
+            # Send the screen from one client to another
             else:
-                try:
-                    data = pickle.loads(data)
-                except pickle.UnpicklingError:
-                    data = data.decode()
-                    self.handle_message(data, client)
-                    continue
-                # Game ended, someone won
-                if data[0] == "W":
-                    self.data_dict = {}
-                    for other_client in self.client_list:
-                        if other_client is client:
-                            continue
-                        other_client.send(pickle.dumps(["Win", 0, 0]))
-                    self.game_over()
-                    return
+                for other_client in self.client_list:
+                    if other_client is client:
+                        continue
+                    self.data_dict[other_client] = pickle.dumps(data)
 
-                # Send the screen from one client to another
-                else:
-                    for other_client in self.client_list:
-                        if other_client is client:
-                            continue
-                        self.data_dict[other_client] = pickle.dumps(data)
-
-    def handle_message(self, data, client):
-        # The client pressed the ready button
-        if data[0 : len("Ready%")] == "Ready%":
-            if client in self.ready_clients:
-                self.ready_clients.remove(client)
-            else:
-                self.ready_clients.append(client)
-
-        # Client disconnected
-        elif data == "disconnect":
-            closed = False
-            # This was the admin
-            if self.players[client] == self.admin:
-                self.remove_server()
-                closed = True
-            self.client_list.remove(client)
-            player_name = self.players[client]
-            self.players.pop(client)
-            if client in self.ready_clients:
-                self.ready_clients.remove(client)
-            self.players_wins.pop(player_name)
-
-            for other_client in self.client_list:
-                text_to_send = "closed" if closed else f"!{player_name}"
-                other_client.send(text_to_send.encode())
-            if closed:
-                quit()
-            # Update the removed player in the database
-            threading.Thread(target=self.update_player_num).start()
-            return
-        # Send the message to every client
-        for other_client in self.client_list:
-            self.data_dict[other_client] = data.encode()
-
-    # TODO fix the bug where it sometimes won't start or something, also optimize for school
     def game_over(self):
         """End the game"""
         self.game_running = False
-        for client in self.client_list:
-            threading.Thread(target=client.recv, args=(25600,)).start()
-        self.data_dict = {}
-        self.ready_clients = []
 
     def handle_write(self, write_list: List[socket.socket]):
         """Handles writing from the client"""
@@ -209,41 +84,14 @@ class GameServer:
                 client.send(foe_data)
 
     def connect_clients(self):
-        while True:
+        players = len(self.client_list)
+        for _ in range(players):
             client, addr = self.server_socket.accept()
-
-            # Send the client the player name list
-            client.send(pickle.dumps(self.players_wins))
-            # Receive ok/declination from client
-            msg = ""
-            ok = client.recv(1024).decode()
-            if ok[0 : len("Declined%")] == "Declined%":
-                msg = f"{ok[len('Declined%'):]} declined an invitation"
-            # The client declined an invitation
-            if msg:
-                self.handle_message(msg, client)
-                return
-
-            # Send the client all ready players
-            ready_players = [self.players[client] for client in self.ready_clients]
-            client.send(pickle.dumps(ready_players))
-
-            # Add the client to the relevant lists
-            self.client_list.append(client)
             name = client.recv(1024).decode()
+            client.send("ok".encode())
             self.players[client] = name
-            self.players_wins[name] = 0
-
-            for client in self.client_list:
-                client.send(name.encode())
-
-            threading.Thread(target=self.update_player_num).start()
-
-    def update_player_num(self):
-        print(len(self.client_list))
-        self.server_communicator.update_player_num(
-            self.outer_ip, self.inner_ip, len(self.client_list)
-        )
+            self.client_list.append(client)
+            self.client_list = [sock for sock in self.client_list if sock.getsockname()[1] == self.port]
 
 
 def get_outer_ip():

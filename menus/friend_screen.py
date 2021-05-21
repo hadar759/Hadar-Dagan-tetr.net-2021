@@ -2,7 +2,7 @@ import socket
 import threading
 from typing import Dict, Optional
 
-from game_server import GameServer
+from room_server import RoomServer
 from database.server_communicator import ServerCommunicator
 from .user_profile_screen import UserProfile
 from .waiting_room import WaitingRoom

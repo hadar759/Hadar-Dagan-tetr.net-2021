@@ -237,6 +237,7 @@ class TetrisGame(Game):
         self.set_event_handler(pygame.KEYUP, self.key_up)
         self.set_event_handler(pygame.KEYDOWN, self.key_pressed)
         if self.mode == "multiplayer":
+            print(self.server_socket)
             threading.Thread(target=self.handle_connection).start()
 
         # Display the grid borders
@@ -274,7 +275,7 @@ class TetrisGame(Game):
             try:
                 # Receive the screen and line data from the opponent
                 data_received = pickle.loads(self.server_socket.recv(25600))
-            except pickle.UnpicklingError:
+            except (pickle.UnpicklingError, ConnectionResetError):
                 self.running = False
                 break
             # Get the opponent screen

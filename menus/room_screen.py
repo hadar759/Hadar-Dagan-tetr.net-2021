@@ -5,7 +5,7 @@ from typing import Dict, Optional
 
 import pygame
 
-from game_server import GameServer
+from room_server import RoomServer
 from database.server_communicator import ServerCommunicator
 from .waiting_room import WaitingRoom
 from .list_screen import ListScreen
@@ -332,7 +332,7 @@ class RoomsScreen(ListScreen):
         max_apm = int(max_apm)
         pygame.mixer.pause()
         self.running = False
-        room_server = GameServer(
+        room_server = RoomServer(
             self.get_outer_ip(),
             self.get_inner_ip(),
             False,
