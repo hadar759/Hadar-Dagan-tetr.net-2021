@@ -14,7 +14,7 @@ class ServerCommunicator:
         return str(condition).lower()
 
     def get_players_in_room(self, room):
-        return int(get(f"{self.SERVER_DOMAIN}/users/rooms/players", data=json.dumps(room)).text)
+        return int(get(f"{self.SERVER_DOMAIN}/users/rooms/players?room_name={room['name']}&outer-ip={room['outer-ip']}").text)
 
     def update_controls(self, username: str, controls: Dict):
         controls_with_username = copy.deepcopy(controls)
