@@ -89,10 +89,11 @@ class RoomServer:
                     self.games.append(game_server)
                     threading.Thread(target=game_server.run).start()
 
-                    # time.sleep(5)
+                    # time.sleep(2)
                     time_at_start = str(time.time())
                     # Notify each client of game start
                     for client in self.ready_clients:
+                        # self.notify_client_of_game_start(client, time_at_start, self.current_game_port)
                         threading.Thread(
                             target=self.notify_client_of_game_start,
                             args=(
@@ -127,57 +128,26 @@ class RoomServer:
             for game in games_to_remove:
                 self.games.remove(game)
 
-
     def remove_server(self):
         self.server_communicator.remove_room(self.room_name)
 
     @staticmethod
     def notify_client_of_game_start(client, time_at_start, server_port):
-        client.send("started".encode())
-        client.recv(25600)
-        client.send(str(time_at_start).encode())
-        client.recv(25600)
-        client.send(str(server_port).encode())
+        client.send(f"Started%{time_at_start},{server_port}".encode())
 
     def handle_read(self, read_list: List[socket.socket]):
         """Handles reading from the clients"""
         for client in read_list:
             data = client.recv(25600)
 
-            if not self.game_running:
-                try:
-                    data = data.decode()
-                # Info from the last game
-                except UnicodeDecodeError:
-                    print("skipped")
-                    continue
+            try:
+                data = data.decode()
+            # Info from the last game
+            except UnicodeDecodeError:
+                print("skipped")
+                continue
 
-                self.handle_message(data, client)
-
-            # Game in progress
-            else:
-                try:
-                    data = pickle.loads(data)
-                except pickle.UnpicklingError:
-                    data = data.decode()
-                    self.handle_message(data, client)
-                    continue
-                # Game ended, someone won
-                if data[0] == "W":
-                    self.data_dict = {}
-                    for other_client in self.client_list:
-                        if other_client is client:
-                            continue
-                        other_client.send(pickle.dumps(["Win", 0, 0]))
-                    self.game_over()
-                    return
-
-                # Send the screen from one client to another
-                else:
-                    for other_client in self.client_list:
-                        if other_client is client:
-                            continue
-                        self.data_dict[other_client] = pickle.dumps(data)
+            self.handle_message(data, client)
 
     def handle_message(self, data, client):
         # The client pressed the ready button
@@ -209,18 +179,13 @@ class RoomServer:
             # Update the removed player in the database
             threading.Thread(target=self.update_player_num).start()
             return
+
+        elif data == self.players[client]:
+            return
+
         # Send the message to every client
         for other_client in self.client_list:
             self.data_dict[other_client] = data.encode()
-
-    # TODO fix the bug where it sometimes won't start or something, also optimize for school
-    def game_over(self):
-        """End the game"""
-        self.game_running = False
-        for client in self.client_list:
-            threading.Thread(target=client.recv, args=(25600,)).start()
-        self.data_dict = {}
-        self.ready_clients = []
 
     def handle_write(self, write_list: List[socket.socket]):
         """Handles writing from the client"""
@@ -230,7 +195,8 @@ class RoomServer:
             # A screen is available to send
             if foe_data:
                 self.data_dict.pop(client)
-                client.send(foe_data)
+                if foe_data.decode() != "got info":
+                    client.send(foe_data)
 
     def connect_clients(self):
         while True:

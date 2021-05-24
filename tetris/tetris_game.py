@@ -221,6 +221,7 @@ class TetrisGame(Game):
             self.win = False
 
     def run(self):
+        pygame.display.flip()
         # Play background music
         if self.user["music"]:
             self.SOUND_EFFECTS["theme_start"].play(1000)
@@ -267,17 +268,24 @@ class TetrisGame(Game):
         self.reset = True
 
     def handle_connection(self):
+        threading.Thread(target=self.send_data).start()
+        threading.Thread(target=self.recv_data).start()
+
+    def send_data(self):
         while self.running:
             data = [self.get_my_screen(), self.lines_to_be_sent, self.skin]
             # Send the screen, lines to be sent and skin to the opponent
             self.server_socket.send(pickle.dumps(data))
             self.lines_to_be_sent = 0
+            time.sleep(1)
+
+    def recv_data(self):
+        while self.running:
             try:
                 # Receive the screen and line data from the opponent
                 data_received = pickle.loads(self.server_socket.recv(25600))
-            except (pickle.UnpicklingError, ConnectionResetError):
-                self.running = False
-                break
+            except (pickle.UnpicklingError, ConnectionResetError, EOFError):
+                continue
             # Get the opponent screen
             screen_received = data_received[0]
             # Get the amount of lines to be received from the opponent
@@ -722,6 +730,10 @@ class TetrisGame(Game):
 
     def game_over(self, win: bool = None):
         """End the game"""
+        # Sometimes it chains the end events
+        if not self.running:
+            return
+
         # Stop all music
         pygame.mixer.stop()
         if self.user["music"]:
@@ -976,6 +988,7 @@ class TetrisGame(Game):
 
         # If there are any lines to be cleared, reset the screen
         if len(lines_cleared) != 0:
+            print("reset!")
             self.reset_grids()
 
         # Update the score according to the amount of lines cleared

@@ -309,19 +309,19 @@ class MenuScreen:
 
         # ENTER
         elif event.key == 13 or event.key == pygame.K_TAB:
-            # Move to the next textbox
-            self.textboxes[textbox] = self.textboxes[textbox].rstrip()
-            textbox.active = False
-            next_textbox = self.get_next_in_dict(self.textboxes, textbox)
-            self.text_offset = (
-                len(self.textboxes[next_textbox])
-                if self.textboxes[next_textbox] != next_textbox.text
-                else 0
-            )
             try:
+                # Move to the next textbox
+                self.textboxes[textbox] = self.textboxes[textbox].rstrip()
+                textbox.active = False
+                next_textbox = self.get_next_in_dict(self.textboxes, textbox)
+                self.text_offset = (
+                    len(self.textboxes[next_textbox])
+                    if self.textboxes[next_textbox] != next_textbox.text
+                    else 0
+                )
                 next_textbox.active = True
             # In case there aren't any more textboxes
-            except AttributeError:
+            except Exception as e:
                 pass
 
         # Moving in the text

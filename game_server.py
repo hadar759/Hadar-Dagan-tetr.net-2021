@@ -13,7 +13,7 @@ class GameServer:
         self,
         listen_ip: str,
         port: int,
-        client_list: List[socket.socket],
+        client_list: List[socket.socket]
     ):
         self.client_list: List[socket.socket] = client_list
         self.data_dict = {}
@@ -26,7 +26,6 @@ class GameServer:
         self.winner = ""
 
     def run(self):
-        print(f"server starting on {self.listen_ip}:{self.port}")
         self.server_socket.bind((self.listen_ip, self.port))
         self.server_socket.listen(1)
         # Connect all the clients playing
@@ -49,6 +48,7 @@ class GameServer:
                 data = pickle.loads(data)
             except EOFError:
                 print("data", data.decode())
+                self.game_running = False
                 continue
 
             # Game ended, someone won

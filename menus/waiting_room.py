@@ -79,8 +79,6 @@ class WaitingRoom(MenuScreen):
                 # self.players = pickle.loads(self.sock.recv(25600))
                 self.display_players()
                 self.handle_buttons_when_ready()
-                for user in self.ready_players:
-                    self.handle_buttons_when_ready(user)
                 self.ready_players = []
                 self.screen = pygame.display.set_mode((self.width, self.height))
                 threading.Thread(target=self.recv_chat, daemon=True).start()
@@ -151,26 +149,23 @@ class WaitingRoom(MenuScreen):
         client_game.set_bag_seed(bag_seed)
         client = TetrisClient(client_game, server_ip, port, self.user["username"])
         client.run()
+        # threading.Thread(target=client.run).start()
 
     def recv_chat(self):
         while self.running:
             try:
                 msg = self.sock.recv(1024).decode()
-                print(msg)
+                print("msg:", msg)
             # Messages from last game (the tetris game which just ended)
             except UnicodeDecodeError:
                 print("skipped")
                 continue
             # Game started
-            if msg == "started":
-                self.sock.send("got info".encode())
-                bag_seed = self.sock.recv(1024).decode()
-                self.sock.send("got info".encode())
-                port = self.sock.recv(1024).decode()
-                if port == "got info":
-                    port = self.sock.recv(1024).decode()
-                self.start_args = (self.sock.getpeername()[0], float(bag_seed), int(port))
-                break
+            if msg[:len("Started%")] == "Started%":
+                msg = msg.replace("Started%", "")
+                seed, port = msg.split(",")
+                self.start_args = (self.sock.getpeername()[0], float(seed), int(port))
+                return
             # Someone readied
             elif msg[: len("Ready%")] == "Ready%":
                 # Only the username
@@ -187,6 +182,7 @@ class WaitingRoom(MenuScreen):
                 self.players[msg] = self.players[msg] + 1
                 print(self.players)
                 self.display_players()
+                continue
             # Message is a player name - i.e. a player has just joined/disconnected
             elif ":" not in msg:
                 if msg == "closed":
@@ -210,6 +206,8 @@ class WaitingRoom(MenuScreen):
                     msg = f"{msg[1:]} has left the room"
                 # Player joined
                 elif "declined" not in msg:
+                    if msg == "starting":
+                        continue
                     # Add the new player to the players list
                     self.players[msg] = 0
                     # Display the player's button
@@ -225,7 +223,8 @@ class WaitingRoom(MenuScreen):
                 ref_button = self.last_message
                 cur_x = ref_button.starting_x
 
-            self.ROOM_SOUNDS["msg"].play(0)
+            if self.running:
+                self.ROOM_SOUNDS["msg"].play(0)
             button_width = list(self.textboxes.keys())[1].width
             button_height = self.LETTER_SIZE * 2
             # Last button is a message
@@ -666,6 +665,7 @@ class WaitingRoom(MenuScreen):
         send_to_server = self.handle_buttons_when_ready(username)
         if send_to_server:
             self.sock.send(f"Ready%{self.user['username']}".encode())
+
 
     def handle_buttons_when_ready(self, username: str = ""):
         if username:
