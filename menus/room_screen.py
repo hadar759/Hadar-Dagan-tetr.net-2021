@@ -349,12 +349,21 @@ class RoomsScreen(ListScreen):
                 "outer_ip": room_server.outer_ip,
                 "inner_ip": room_server.inner_ip,
                 "name": room_server.room_name,
-                "default": False,
-            }
+                "default": False
+            },
+            0
         )
         self.running = True
 
-    def connect_to_room(self, room: Dict):
+    def connect_to_room(self, room: Dict, player_num: Optional[int] = None):
+        # Get current num of players in room
+        if not player_num:
+            player_num = self.server_communicator.get_players_in_room(room)
+
+        # Limit num of players in a room to only 2
+        if player_num >= 2:
+            self.create_popup_button("Room already full")
+            return
         sock = socket.socket()
         port = 44444
         sock.connect((room["outer_ip"] if room["default"] else room["inner_ip"], port))

@@ -13,6 +13,9 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
+    def get_players_in_room(self, room):
+        return int(get(f"{self.SERVER_DOMAIN}/users/rooms/players", data=json.dumps(room)).text)
+
     def update_controls(self, username: str, controls: Dict):
         controls_with_username = copy.deepcopy(controls)
         controls_with_username["username"] = username

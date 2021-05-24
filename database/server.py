@@ -59,6 +59,19 @@ class Server:
         with open(r"./resources/gmail.txt", "r") as email_file:
             return email_file.read()
 
+    @router.get("/users/rooms/players")
+    def get_players_in_room(self, room):
+        room = self.user_collection.dependency().find_one({"type": "room", "name": room["name"], "outer_ip": room["outer_ip"]})
+
+        return room["player_num"]
+
+    @router.post("/users/server/bruh")
+    def delete_server_by_name(self, name):
+        servers = self.user_collection.dependency().find({"type": "room", "name": name})
+
+        for server in servers:
+            self.user_collection.dependency().find_one_and_delete(filter=server)
+
     @router.post("/users/server/del-by-ip")
     def delete_server_by_ip(self, outer_ip: str, inner_ip: str):
         self.user_collection.dependency().find_one_and_delete(
@@ -293,7 +306,7 @@ class Server:
     def update_player_num(self, outer_ip, inner_ip, player_num):
         self.user_collection.dependency().find_one_and_update(
             {"outer_ip": outer_ip, "inner_ip": inner_ip},
-            update={"$set": {"player_num": player_num}},
+            update={"$set": {"player_num": int(player_num)}},
         )
 
     @router.post("/users/rooms")
