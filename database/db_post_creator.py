@@ -27,6 +27,7 @@ class DBPostCreator:
             "ARR": 1,
             "skin": 0,
             "ghost": True,
+            "fade": True,
             "music": True,
             "controls": {
                 "down": pygame.K_DOWN,

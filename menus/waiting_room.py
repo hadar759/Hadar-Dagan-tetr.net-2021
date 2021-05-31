@@ -71,8 +71,9 @@ class WaitingRoom(MenuScreen):
             # Start the game, and restart the waiting room once it ends
             if self.start_args:
                 self.running = False
+                pygame.mixer.pause()
                 self.start_client_game(*self.start_args)
-                self.running = True
+                pygame.mixer.unpause()
                 self.start_args = ()
                 self.buttons = {button: self.buttons[button] for button in self.buttons if button.text not in
                                 self.players.keys() and button.text not in [str(val) for val in self.players.values()]}
@@ -81,6 +82,7 @@ class WaitingRoom(MenuScreen):
                 self.handle_buttons_when_ready()
                 self.ready_players = []
                 self.screen = pygame.display.set_mode((self.width, self.height))
+                self.running = True
                 threading.Thread(target=self.recv_chat, daemon=True).start()
                 threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
@@ -154,10 +156,11 @@ class WaitingRoom(MenuScreen):
     def recv_chat(self):
         while self.running:
             try:
+                self.sock.settimeout(1)
                 msg = self.sock.recv(1024).decode()
                 print("msg:", msg)
             # Messages from last game (the tetris game which just ended)
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, socket.timeout):
                 print("skipped")
                 continue
             # Game started

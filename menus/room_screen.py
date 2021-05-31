@@ -330,7 +330,6 @@ class RoomsScreen(ListScreen):
             return
         min_apm = int(min_apm)
         max_apm = int(max_apm)
-        pygame.mixer.pause()
         self.running = False
         room_server = RoomServer(
             self.get_outer_ip(),
@@ -342,8 +341,8 @@ class RoomsScreen(ListScreen):
             private,
             self.user["username"],
         )
-        pygame.mixer.unpause()
         threading.Thread(target=room_server.run).start()
+        pygame.mixer.pause()
         self.connect_to_room(
             {
                 "outer_ip": room_server.outer_ip,
@@ -354,6 +353,7 @@ class RoomsScreen(ListScreen):
             0
         )
         self.running = True
+        pygame.mixer.unpause()
 
     def connect_to_room(self, room: Dict, player_num: Optional[int] = None):
         # Get current num of players in room
@@ -366,6 +366,7 @@ class RoomsScreen(ListScreen):
             return
         sock = socket.socket()
         port = 44444
+        # TODO this fix is only because of aws
         sock.connect((room["outer_ip"] if room["default"] else room["inner_ip"], port))
         # Start the main menu
         waiting_room = WaitingRoom(

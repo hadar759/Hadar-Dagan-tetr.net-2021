@@ -290,7 +290,8 @@ class MenuScreen:
             # We haven't entered any text
             if len(textbox_text) == 0:
                 return
-            self.SOUNDS["typing"].play(0)
+            if event.key not in [pygame.K_RSHIFT, pygame.K_LSHIFT, pygame.K_CAPSLOCK, pygame.K_RCTRL, pygame.K_RCTRL]:
+                self.SOUNDS["typing"].play(0)
             # Just regular deleting
             if self.text_offset != 0:
                 # Delete the letter at the current offset

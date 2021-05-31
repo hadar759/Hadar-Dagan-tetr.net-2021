@@ -251,7 +251,5 @@ if __name__ == "__main__":
     outer_ip = get_outer_ip()
     inner_ip = get_inner_ip()
     print("server starts on", outer_ip, inner_ip)
-    server = RoomServer(outer_ip, inner_ip, False, "Hadar759's room")
-    # Add the room to the database
-    # server.server_communicator.create_room(DBPostCreator.create_db_post(ip))
+    server = RoomServer(outer_ip, inner_ip, True, "Default room")
     server.run()
