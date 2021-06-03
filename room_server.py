@@ -97,7 +97,11 @@ class RoomServer:
                         self.players_wins[winner] += 1
 
                     player_left = None
-                    temp_players = {player: self.players[player] for player in self.players if self.players[player] in players}
+                    temp_players = {
+                        player: self.players[player]
+                        for player in self.players
+                        if self.players[player] in players
+                    }
                     for player in self.players:
                         if player not in temp_players:
                             player_left = player

@@ -1,9 +1,8 @@
 import concurrent
-import math
-from abc import ABC
 import socket
 import threading
 import time
+from abc import ABC
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Dict, Tuple
 
@@ -12,8 +11,8 @@ from requests import get
 
 from database.server_communicator import ServerCommunicator
 from menus.button import Button
-from tetris.colors import Colors
 from menus.text_box import TextBox
+from tetris.colors import Colors
 
 
 class MenuScreen(ABC):

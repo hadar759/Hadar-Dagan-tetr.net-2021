@@ -1,8 +1,8 @@
 import threading
+from abc import abstractmethod
 from typing import Dict, Optional
 
 import pygame.event
-from abc import abstractmethod
 
 from database.server_communicator import ServerCommunicator
 from .menu_screen import MenuScreen

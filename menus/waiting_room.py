@@ -184,7 +184,7 @@ class WaitingRoom(MenuScreen):
                     button: self.buttons[button]
                     for button in self.buttons
                     if button.text not in self.players.keys()
-                       and button.text not in [str(val) for val in self.players.values()]
+                    and button.text not in [str(val) for val in self.players.values()]
                 }
                 self.display_players()
                 continue
