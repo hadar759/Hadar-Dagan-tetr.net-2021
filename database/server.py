@@ -80,6 +80,17 @@ class Server:
             {"type": "room", "outer_ip": outer_ip, "inner_ip": inner_ip}
         )
 
+    @router.get("/users/server/ip")
+    def get_server_by_ip(self, ip: str):
+        room = self.user_collection.dependency().find_one(
+            {"type": "room", "outer_ip": ip}
+        )
+        if not room:
+            room = self.user_collection.dependency().find_one(
+                {"type": "room", "inner_ip": ip}
+            )
+        return room
+
     @router.post("/users/update-all/controls")
     def update_controls(self):
         self.user_collection.dependency().update_many(
@@ -395,10 +406,20 @@ class Server:
         user = self.user_by_username(username)
         return user["invite_ip"]
 
+    def get_invite_room(self, username: str):
+        user = self.user_by_username(username)
+        return user["invite_room"]
+
     @router.post("/users/invites")
-    def handle_invite(self, inviter: str, invitee: str, invite_ip: str):
+    def handle_invite(self, inviter: str, invitee: str, invite_ip: str, room_name: str):
         # Set up the new query for update:
-        new_query = {"$set": {"invite": inviter, "invite_ip": invite_ip}}
+        new_query = {
+            "$set": {
+                "invite": inviter,
+                "invite_ip": invite_ip,
+                "invite_room": room_name,
+            }
+        }
         self.user_collection.dependency().update_one({"username": invitee}, new_query)
 
     @router.get("/users/invites")

@@ -13,6 +13,7 @@ class DBPostCreator:
             "ip": ip,
             "invite": "",
             "invite_ip": "",
+            "invite_room": "",
             "online": True,
             "sprint": ["0", "0", "0", "0"],
             "marathon": 0,

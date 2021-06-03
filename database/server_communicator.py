@@ -13,6 +13,14 @@ class ServerCommunicator:
     def bool_to_string(condition: bool):
         return str(condition).lower()
 
+    def get_invite_room(self, username):
+        return get(
+            f"{self.SERVER_DOMAIN}/users/invite-room?username={username}"
+        ).text.replace('"', "")
+
+    def get_server_by_ip(self, ip):
+        return json.loads(get(f"{self.SERVER_DOMAIN}/users/server/ip?ip={ip}").content)
+
     def get_players_in_room(self, room):
         return int(
             get(
@@ -165,10 +173,10 @@ class ServerCommunicator:
             f"{self.SERVER_DOMAIN}/users/invites?username={username}"
         ).text.replace('"', "")
 
-    def invite_user(self, inviter: str, invitee: str, invite_ip: str):
+    def invite_user(self, inviter: str, invitee: str, invite_ip: str, room_name: str):
         """Invites a given player to a given server ip"""
         post(
-            f"{self.SERVER_DOMAIN}/users/invites?inviter={inviter}&invitee={invitee}&invite_ip={invite_ip}"
+            f"{self.SERVER_DOMAIN}/users/invites?inviter={inviter}&invitee={invitee}&invite_ip={invite_ip}&room_name={room_name}"
         )
 
     def update_online(self, username: str, online: bool):
@@ -182,14 +190,6 @@ class ServerCommunicator:
         return (
             get(f"{self.SERVER_DOMAIN}/users/online?username={foe_name}").text == "true"
         )
-
-    def finished_server(self, server_ip: str):
-        """Returns the server to the database after use"""
-        post(f"{self.SERVER_DOMAIN}/users/servers?server_ip={server_ip}")
-
-    def get_free_server(self) -> str:
-        """Returns a random server ready for use"""
-        return get(f"{self.SERVER_DOMAIN}/users/servers").text
 
     def create_user(self, db_post: dict):
         """Adds a new user to the database"""
