@@ -406,6 +406,7 @@ class Server:
         user = self.user_by_username(username)
         return user["invite_ip"]
 
+    @router.get("/users/invite-room")
     def get_invite_room(self, username: str):
         user = self.user_by_username(username)
         return user["invite_room"]
