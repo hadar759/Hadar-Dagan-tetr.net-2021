@@ -34,8 +34,8 @@ class DBPostCreator:
                 "down": pygame.K_DOWN,
                 "right": pygame.K_RIGHT,
                 "left": pygame.K_LEFT,
-                "flip_clock": pygame.K_x,
-                "flip_counterclock": pygame.K_z,
+                "flip_cw": pygame.K_x,
+                "flip_ccw": pygame.K_z,
             },
         }
 

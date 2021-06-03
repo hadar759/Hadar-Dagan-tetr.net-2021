@@ -88,6 +88,9 @@ class ControlsScreen(MenuScreen):
         cur_x = self.width // 2 - round(label_width * 3)
 
         for index, key in enumerate(self.controls):
+            if key == "flip_ccw":
+                continue
+
             self.create_button(
                 (cur_x + round(1.5 * label_width) * (index % 2 != 0), cur_y),
                 label_width,
@@ -117,6 +120,29 @@ class ControlsScreen(MenuScreen):
 
             else:
                 cur_x += round(label_width * 1.3)
+
+        key = "flip_ccw"
+
+        self.create_button(
+            (cur_x + label_width + 140, cur_y),
+            label_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            key.replace("_", " "),
+            text_only=True,
+        )
+
+        key_button = self.create_button(
+            (
+                cur_x + label_width + 240 + label_width,
+                cur_y,
+            ),
+            textbox_width,
+            textbox_height,
+            Colors.BLACK_BUTTON,
+            pygame.key.name(self.controls[key]),
+        )
+        self.buttons[key_button] = (self.bind_button, (key_button,))
 
         cur_y += textbox_height + 30
 
