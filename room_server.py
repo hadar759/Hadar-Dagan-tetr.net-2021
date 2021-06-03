@@ -88,13 +88,27 @@ class RoomServer:
                     )
 
                     self.game_running = True
-                    game_server.run()
+                    print(self.client_list)
+                    winner, players = game_server.run()
                     self.game_running = False
 
                     # Update the player's on the winner
-                    self.players_wins[game_server.winner] += 1
-                    for client in self.client_list:
-                        client.send(f"Win%{game_server.winner}".encode())
+                    if winner:
+                        self.players_wins[winner] += 1
+
+                    player_left = None
+                    temp_players = {player: self.players[player] for player in self.players if self.players[player] in players}
+                    for player in self.players:
+                        if player not in temp_players:
+                            player_left = player
+
+                    if winner:
+                        for client in self.client_list:
+                            client.send(f"Win%{winner}".encode())
+                    else:
+                        self.handle_message("disconnect", player_left)
+                        self.players = temp_players
+                        self.client_list = list(self.players.keys())
 
                     # Accept clients again
                     threading.Thread(target=self.connect_clients, daemon=True).start()
@@ -106,10 +120,6 @@ class RoomServer:
 
         except Exception as e:
             print("bruhhh", e)
-            # Delete the server from the db
-            self.server_communicator.delete_server_by_ip(self.outer_ip, self.inner_ip)
-            self.create_server_db()
-            self.run()
 
     def remove_server(self):
         self.server_communicator.remove_room(self.room_name)

@@ -80,15 +80,6 @@ class WaitingRoom(MenuScreen):
                 self.running = True
                 threading.Thread(target=self.recv_chat, daemon=True).start()
 
-                # Play around with the order maybe for it to update the win
-                self.buttons = {
-                    button: self.buttons[button]
-                    for button in self.buttons
-                    if button.text not in self.players.keys()
-                    and button.text not in [str(val) for val in self.players.values()]
-                }
-                # self.players = pickle.loads(self.sock.recv(25600))
-                self.display_players()
                 self.handle_buttons_when_ready()
 
                 threading.Thread(target=self.update_mouse_pos, daemon=True).start()
@@ -189,7 +180,12 @@ class WaitingRoom(MenuScreen):
                 msg = msg.replace("Win%", "")
                 print(msg)
                 self.players[msg] = self.players[msg] + 1
-                print(self.players)
+                self.buttons = {
+                    button: self.buttons[button]
+                    for button in self.buttons
+                    if button.text not in self.players.keys()
+                       and button.text not in [str(val) for val in self.players.values()]
+                }
                 self.display_players()
                 continue
             # Message is a player name - i.e. a player has just joined/disconnected
@@ -605,6 +601,8 @@ class WaitingRoom(MenuScreen):
         self.cache[username] = profile.profile
         self.cache["user"] = profile.user
         self.running = True
+        threading.Thread(target=self.recv_chat, daemon=True).start()
+        threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
     def display_players(self):
         player_name_width = 295

@@ -8,6 +8,7 @@ import threading
 import math
 import time
 from socket import socket
+from socket import timeout
 from typing import Tuple, Optional, Dict, List
 import random
 
@@ -282,10 +283,17 @@ class TetrisGame(Game):
     def recv_data(self):
         while self.running:
             try:
+                self.server_socket.settimeout(2)
                 # Receive the screen and line data from the opponent
                 data_received = pickle.loads(self.server_socket.recv(25600))
             except (pickle.UnpicklingError, ConnectionResetError, EOFError):
                 continue
+            except timeout:
+                self.running = False
+                self.win = True
+                self.create_timer(self.GAME_OVER_EVENT, 20)
+                self.set_event_handler(self.GAME_OVER_EVENT, self.game_over)
+                return
             # Get the opponent screen
             screen_received = data_received[0]
             # Get the amount of lines to be received from the opponent
@@ -817,7 +825,8 @@ class TetrisGame(Game):
         self.screen = pygame.display.set_mode(
             (self.background_image.get_size()[0], self.background_image.get_size()[1])
         )
-        self.screen.blit(self.background_image, (0, 0))
+        if self.mode != "multiplayer":
+            self.screen.blit(self.background_image, (0, 0))
 
         # Display mode specific end stats
         if self.mode == "marathon":
@@ -846,7 +855,8 @@ class TetrisGame(Game):
 
         pygame.display.flip()
         # Show the ending screen for 5 seconds
-        # pygame.time.wait(5000)
+        if self.mode != "multiplayer":
+            pygame.time.wait(5000)
 
         return
 

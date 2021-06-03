@@ -33,3 +33,4 @@ class TetrisClient:
         print(self.client_socket.getpeername())
         self.tetris_game.server_socket = self.client_socket
         self.tetris_game.run()
+        self.client_socket.close()

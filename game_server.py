@@ -36,11 +36,17 @@ class GameServer:
         self.connect_clients()
         # Pass information between the players
         while self.game_running:
+            print("hi")
             read_list, write_list, _ = select(self.client_list, self.client_list, [])
-            self.handle_read(read_list)
-            self.handle_write(write_list)
+            try:
+                self.handle_read(read_list)
+                self.handle_write(write_list)
+            except Exception as e:
+                print(e)
+                break
         self.server_socket.close()
-        return self.winner
+        print(self.players)
+        return self.winner, self.players.values()
 
     @staticmethod
     def notify_client_of_game_start(client, time_at_start, server_port):
@@ -55,6 +61,8 @@ class GameServer:
             except EOFError:
                 print("data", data.decode())
                 self.game_running = False
+                self.players.pop(client)
+                self.client_list.remove(client)
                 continue
 
             # Game ended, someone won
