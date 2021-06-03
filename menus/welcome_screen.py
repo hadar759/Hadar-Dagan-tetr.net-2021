@@ -40,6 +40,8 @@ class WelcomeScreen(MenuScreen):
             refresh_rate,
             background_path,
         )
+        self.first_screen = True
+        self.logo = pygame.image.load("resources/tetrnet-logo.png")
         with open(r"resources/salt.txt", "r") as salt_file:
             self.salt = salt_file.read().encode()
 
@@ -61,10 +63,26 @@ class WelcomeScreen(MenuScreen):
         self.text_offset = 0
         self.buttons = {}
         self.textboxes = {}
-        # TODO create a "WELCOME TO TETR.NET" with the project's symbol above it or something
-        # Login button
+        self.first_screen = True
+
+        title_width = self.width
+        title_height = 100
+        # Create the screen title
         self.create_button(
-            (self.width // 2 - 258, self.height // 3 - 250),
+            (0, 0),
+            title_width,
+            title_height,
+            Colors.BLACK_BUTTON,
+            "WELCOME TO TETRNET",
+            100,
+            Colors.BLUE,
+            text_only=True,
+        )
+
+        # Login button
+        # self.width // 2 - 258
+        self.create_button(
+            (25, 350),
             504,
             200,
             Colors.BLACK_BUTTON,
@@ -74,7 +92,7 @@ class WelcomeScreen(MenuScreen):
 
         # Register button
         self.create_button(
-            (self.width // 2 - 258, self.height // 3 * 2 - 250),
+            (self.width - 504 - 25, 350),
             504,
             200,
             Colors.BLACK_BUTTON,
@@ -99,6 +117,7 @@ class WelcomeScreen(MenuScreen):
         self.buttons = {}
         self.textboxes = {}
         self.screen.blit(self.background_image, (0, 0))
+        self.first_screen = False
 
         button_width = self.width // 2
         button_height = self.height // 10
@@ -405,6 +424,7 @@ class WelcomeScreen(MenuScreen):
         self.buttons = {}
         self.textboxes = {}
         self.screen.blit(self.background_image, (0, 0))
+        self.first_screen = False
 
         self.create_return_button(self.create_first_screen)
 
@@ -575,3 +595,7 @@ class WelcomeScreen(MenuScreen):
         hostname = socket.gethostname()
         local_ip = socket.gethostbyname(hostname)
         return local_ip
+
+    def drawings(self):
+        if self.first_screen:
+            self.screen.blit(self.logo, (600, 150))
