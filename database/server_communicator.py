@@ -164,7 +164,7 @@ class ServerCommunicator:
 
     def dismiss_invite(self, invitee: str):
         post(
-            f"{self.SERVER_DOMAIN}/users/invites?inviter={''}&invitee={invitee}&invite_ip={''}"
+            f"{self.SERVER_DOMAIN}/users/invites?inviter={''}&invitee={invitee}&invite_ip={''}&invite_room={''}"
         )
 
     def get_invite(self, username: str) -> str:

@@ -380,6 +380,9 @@ class WelcomeScreen(MenuScreen):
 
         # Update the user's latest ip
         if user:
+            """if user["online"]:
+            self.create_popup_button("User already connected")
+            return"""
             new_outer_ip = self.get_outer_ip()
             # Update routine user stats (online, ip etc...)
             print("hello")

@@ -97,7 +97,7 @@ class MainMenu(MenuScreen):
             self.display_invite(invite)
 
     def display_invite(self, inviter_name):
-        screen_corner_x = 1500
+        """screen_corner_x = 1500
         screen_corner_y = 600
         button_height = 300
         button_width = 200
@@ -108,26 +108,84 @@ class MainMenu(MenuScreen):
             Colors.BLACK_BUTTON,
             inviter_name,
             func=self.accept_invite,
+        )"""
+
+        button_width = 600
+        button_height = 400
+        self.create_button(
+            (
+                self.width // 2 - button_width // 2,
+                self.height // 2 - button_height // 2,
+            ),
+            button_width,
+            button_height,
+            Colors.BLACK_BUTTON,
+            f"{inviter_name}\n",
         )
 
-        x_height = 20
-        x_width = 20
         self.create_button(
-            (screen_corner_x, screen_corner_y - button_height),
-            x_width,
-            x_height,
+            (
+                self.width // 2 - button_width // 2,
+                self.height // 2 - button_height // 2 - 135,
+            ),
+            button_width,
+            button_height,
             Colors.BLACK_BUTTON,
-            "X",
-            text_size=20,
+            f"invitation!",
+            text_only=True,
+            text_color=Colors.GREEN,
+        )
+
+        action_width = 200
+        action_height = 100
+        self.create_button(
+            (
+                self.width // 2 - action_width // 2 - 150,
+                self.height // 2 - button_height // 2 + 250,
+            ),
+            action_width,
+            action_height,
+            Colors.BLACK_BUTTON,
+            "Accept",
+            text_size=30,
+            text_color=Colors.GREEN,
+            func=self.accept_invite,
+        )
+
+        self.create_button(
+            (
+                self.width // 2 - action_width // 2 + 150,
+                self.height // 2 - button_height // 2 + 250,
+            ),
+            action_width,
+            action_height,
+            Colors.BLACK_BUTTON,
+            "Reject",
+            text_size=30,
             text_color=Colors.RED,
             func=self.dismiss_invite,
         )
 
     def accept_invite(self):
-        # TODO check and fix this
+        # Make it inner and outer
         invite_ip = self.server_communicator.get_invite_ip(self.user["username"])
-        room = {"name": "test private room", "ip": invite_ip}
+        invite_room = self.server_communicator.get_invite_room(self.user["username"])
+        inviter_name = self.server_communicator.get_invite(self.user["username"])
+        threading.Thread(
+            target=self.server_communicator.invite_user,
+            args=(
+                "",
+                self.user["username"],
+                "",
+                "",
+            ),
+        ).start()
+
+        room = {"name": invite_room, "ip": invite_ip}
         self.connect_to_room(room)
+
+        self.remove_button(inviter_name)
+        self.update_screen()
 
     def connect_to_room(self, room: Dict):
         sock = socket.socket()
@@ -157,24 +215,30 @@ class MainMenu(MenuScreen):
         self.socket.connect((invite_ip, 44444))
         # Notify the server of declination
         self.socket.send(f"Declined%{self.user['username']}".encode())
-        buttons = {}
+        # Close the connection
+        self.socket.close()
+        self.socket = socket.socket()
+        # Remove the invite from the DB
+        self.server_communicator.dismiss_invite(self.user["username"])
+        self.remove_button(inviter_name)
 
+        self.update_screen()
+
+    def remove_button(self, inviter_name):
+        buttons = {}
         # Remove the invite buttons from the screen
         for button in self.buttons:
-            if button.text == "X":
-                # Close the connection
-                self.socket.close()
-                self.socket = socket.socket()
-                # Remove the invite from the DB
-                self.server_communicator.dismiss_invite(self.user["username"])
+            if (
+                button.text == "Accept"
+                or button.text == "Reject"
+                or inviter_name in button.text
+                or button.text == "invitation!"
+            ):
                 # Don't add the button to the new buttons array
-                continue
-            elif button.text == inviter_name:
                 continue
             else:
                 buttons[button] = self.buttons[button]
         self.buttons = buttons
-        self.update_screen()
 
     def create_menu(self):
         """Creates the main menu screen and all it's components"""

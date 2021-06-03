@@ -104,34 +104,35 @@ class WaitingRoom(MenuScreen):
         # Send the server our username
         self.sock.send(self.user["username"].encode())
 
-    # TODO fix issue of crashing when admin leaves after game
     def challenge_player(self):
         self.buttons[self.invite_btn] = (None, ())
         foe_name = list(self.textboxes.values())[0]
         self.textboxes[(list(self.textboxes.keys()))[0]] = ""
+        user_exists = self.server_communicator.username_exists(foe_name)
+        user_online = (
+            False if not user_exists else self.server_communicator.is_online(foe_name)
+        )
 
         # Entered invalid foe name
         if (
             foe_name == self.user["username"]
             or foe_name in self.players
-            or not self.server_communicator.username_exists(foe_name)
+            or not user_exists
         ):
             self.create_popup_button(r"Invalid Username Entered")
 
-        elif self.server_communicator.is_online(foe_name):
+        elif user_online and not self.server_communicator.get_invite(foe_name):
             server_ip = self.sock.getpeername()[0]
             threading.Thread(
                 target=self.server_communicator.invite_user,
-                args=(
-                    self.user["username"],
-                    foe_name,
-                    server_ip,
-                ),
+                args=(self.user["username"], foe_name, server_ip, self.room_name),
             ).start()
 
-        else:
+        elif not user_online:
             self.create_popup_button("Opponent not online")
 
+        else:
+            self.create_popup_button("User already invited")
         self.buttons[self.invite_btn] = (
             threading.Thread(target=self.challenge_player).start,
             (),
