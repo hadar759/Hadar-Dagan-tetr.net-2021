@@ -2,6 +2,7 @@ import threading
 from typing import Dict, Optional
 
 import pygame.event
+from abc import abstractmethod
 
 from database.server_communicator import ServerCommunicator
 from .menu_screen import MenuScreen
@@ -45,9 +46,11 @@ class ListScreen(MenuScreen):
                 print(e)
         super().handle_events(event)
 
+    @abstractmethod
     def create_screen(self):
         pass
 
+    @abstractmethod
     def display_entries(self, *args):
         pass
 

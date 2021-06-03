@@ -1,5 +1,6 @@
 import concurrent
 import math
+from abc import ABC
 import socket
 import threading
 import time
@@ -15,7 +16,7 @@ from tetris.colors import Colors
 from menus.text_box import TextBox
 
 
-class MenuScreen:
+class MenuScreen(ABC):
     REMOVE_EVENT = pygame.USEREVENT + 1
     BUTTON_PRESS = pygame.MOUSEBUTTONDOWN
     SOUNDS = {
