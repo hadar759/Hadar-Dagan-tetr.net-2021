@@ -348,9 +348,9 @@ class RoomsScreen(ListScreen):
                 "outer_ip": room_server.outer_ip,
                 "inner_ip": room_server.inner_ip,
                 "name": room_server.room_name,
-                "default": False
+                "default": False,
             },
-            0
+            0,
         )
         self.running = True
         pygame.mixer.unpause()

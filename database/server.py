@@ -61,7 +61,9 @@ class Server:
 
     @router.get("/users/rooms/players")
     def get_players_in_room(self, room_name, outer_ip):
-        room = self.user_collection.dependency().find_one({"type": "room", "name": room_name, "outer_ip": outer_ip})
+        room = self.user_collection.dependency().find_one(
+            {"type": "room", "name": room_name, "outer_ip": outer_ip}
+        )
 
         return room["player_num"]
 

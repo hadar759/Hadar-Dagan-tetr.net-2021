@@ -9,12 +9,7 @@ from requests import get
 
 
 class GameServer:
-    def __init__(
-        self,
-        listen_ip: str,
-        port: int,
-        client_list: List[socket.socket]
-    ):
+    def __init__(self, listen_ip: str, port: int, client_list: List[socket.socket]):
         self.client_list: List[socket.socket] = client_list
         self.data_dict = {}
         self.players = {}
@@ -32,9 +27,7 @@ class GameServer:
         self.connect_clients()
         # Pass information between the players
         while self.game_running:
-            read_list, write_list, _ = select(
-                self.client_list, self.client_list, []
-            )
+            read_list, write_list, _ = select(self.client_list, self.client_list, [])
             self.handle_read(read_list)
             self.handle_write(write_list)
         self.server_socket.close()
@@ -91,7 +84,9 @@ class GameServer:
             client.send("ok".encode())
             self.players[client] = name
             self.client_list.append(client)
-            self.client_list = [sock for sock in self.client_list if sock.getsockname()[1] == self.port]
+            self.client_list = [
+                sock for sock in self.client_list if sock.getsockname()[1] == self.port
+            ]
 
 
 def get_outer_ip():

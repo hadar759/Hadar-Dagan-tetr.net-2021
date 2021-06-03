@@ -85,7 +85,9 @@ class RoomServer:
                     continue
                 else:
                     # Start the game
-                    game_server = GameServer(listen_ip, self.current_game_port, self.ready_clients)
+                    game_server = GameServer(
+                        listen_ip, self.current_game_port, self.ready_clients
+                    )
                     self.games.append(game_server)
                     threading.Thread(target=game_server.run).start()
 
@@ -96,11 +98,7 @@ class RoomServer:
                         # self.notify_client_of_game_start(client, time_at_start, self.current_game_port)
                         threading.Thread(
                             target=self.notify_client_of_game_start,
-                            args=(
-                                client,
-                                time_at_start,
-                                self.current_game_port
-                            ),
+                            args=(client, time_at_start, self.current_game_port),
                         ).start()
 
                     self.current_game_port += 1
@@ -151,7 +149,7 @@ class RoomServer:
 
     def handle_message(self, data, client):
         # The client pressed the ready button
-        if data[0: len("Ready%")] == "Ready%":
+        if data[0 : len("Ready%")] == "Ready%":
             if client in self.ready_clients:
                 self.ready_clients.remove(client)
             else:

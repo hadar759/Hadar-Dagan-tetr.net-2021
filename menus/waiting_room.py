@@ -75,8 +75,12 @@ class WaitingRoom(MenuScreen):
                 self.start_client_game(*self.start_args)
                 pygame.mixer.unpause()
                 self.start_args = ()
-                self.buttons = {button: self.buttons[button] for button in self.buttons if button.text not in
-                                self.players.keys() and button.text not in [str(val) for val in self.players.values()]}
+                self.buttons = {
+                    button: self.buttons[button]
+                    for button in self.buttons
+                    if button.text not in self.players.keys()
+                    and button.text not in [str(val) for val in self.players.values()]
+                }
                 # self.players = pickle.loads(self.sock.recv(25600))
                 self.display_players()
                 self.handle_buttons_when_ready()
@@ -164,7 +168,7 @@ class WaitingRoom(MenuScreen):
                 print("skipped")
                 continue
             # Game started
-            if msg[:len("Started%")] == "Started%":
+            if msg[: len("Started%")] == "Started%":
                 msg = msg.replace("Started%", "")
                 seed, port = msg.split(",")
                 self.start_args = (self.sock.getpeername()[0], float(seed), int(port))
@@ -179,7 +183,7 @@ class WaitingRoom(MenuScreen):
                     # Add the user to the ready players list
                     self.ready_players.append(msg)
                 continue
-            elif msg[:len("Win%")] == "Win%":
+            elif msg[: len("Win%")] == "Win%":
                 msg = msg.replace("Win%", "")
                 print(msg)
                 self.players[msg] = self.players[msg] + 1
@@ -668,7 +672,6 @@ class WaitingRoom(MenuScreen):
         send_to_server = self.handle_buttons_when_ready(username)
         if send_to_server:
             self.sock.send(f"Ready%{self.user['username']}".encode())
-
 
     def handle_buttons_when_ready(self, username: str = ""):
         if username:
