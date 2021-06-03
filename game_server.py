@@ -21,6 +21,15 @@ class GameServer:
         self.winner = ""
 
     def run(self):
+        time_at_start = str(time.time())
+        # Notify each client of game start
+        for client in self.client_list:
+            # self.notify_client_of_game_start(client, time_at_start, self.current_game_port)
+            threading.Thread(
+                target=self.notify_client_of_game_start,
+                args=(client, time_at_start, self.port),
+            ).start()
+
         self.server_socket.bind((self.listen_ip, self.port))
         self.server_socket.listen(1)
         # Connect all the clients playing
@@ -32,6 +41,10 @@ class GameServer:
             self.handle_write(write_list)
         self.server_socket.close()
         return self.winner
+
+    @staticmethod
+    def notify_client_of_game_start(client, time_at_start, server_port):
+        client.send(f"Started%{time_at_start},{server_port}".encode())
 
     def handle_read(self, read_list: List[socket.socket]):
         """Handles reading from the clients"""

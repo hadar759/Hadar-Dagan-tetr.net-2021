@@ -75,6 +75,12 @@ class WaitingRoom(MenuScreen):
                 self.start_client_game(*self.start_args)
                 pygame.mixer.unpause()
                 self.start_args = ()
+                self.ready_players = []
+                self.screen = pygame.display.set_mode((self.width, self.height))
+                self.running = True
+                threading.Thread(target=self.recv_chat, daemon=True).start()
+
+                # Play around with the order maybe for it to update the win
                 self.buttons = {
                     button: self.buttons[button]
                     for button in self.buttons
@@ -84,10 +90,7 @@ class WaitingRoom(MenuScreen):
                 # self.players = pickle.loads(self.sock.recv(25600))
                 self.display_players()
                 self.handle_buttons_when_ready()
-                self.ready_players = []
-                self.screen = pygame.display.set_mode((self.width, self.height))
-                self.running = True
-                threading.Thread(target=self.recv_chat, daemon=True).start()
+
                 threading.Thread(target=self.update_mouse_pos, daemon=True).start()
 
             self.run_once()
@@ -177,11 +180,10 @@ class WaitingRoom(MenuScreen):
             elif msg[: len("Ready%")] == "Ready%":
                 # Only the username
                 msg = msg.replace("Ready%", "")
-                if msg != self.user["username"]:
-                    # Change the screen to show the ready from the user
-                    self.pressed_ready(msg)
-                    # Add the user to the ready players list
-                    self.ready_players.append(msg)
+                # Change the screen to show the ready from the user
+                self.pressed_ready(msg)
+                # Add the user to the ready players list
+                self.ready_players.append(msg)
                 continue
             elif msg[: len("Win%")] == "Win%":
                 msg = msg.replace("Win%", "")
@@ -697,13 +699,6 @@ class WaitingRoom(MenuScreen):
                 button.text = "Ready?"
                 button.rendered_text = button.render_button_text()
                 break
-
-        # Paint the player button
-        [
-            button
-            for button in self.buttons.keys()
-            if button.text == self.user["username"]
-        ][0].color = color
 
         return True
 

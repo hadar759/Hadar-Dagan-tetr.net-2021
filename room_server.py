@@ -32,7 +32,6 @@ class RoomServer:
         self.players_wins = {}
         self.ready_clients = []
         self.responses_list = []
-        self.games: List[GameServer] = []
         self.data_dict = {}
         self.game_running = False
         self.room_name = room_name
@@ -72,7 +71,6 @@ class RoomServer:
             self.server_socket.listen(1)
             # Always accept new clients
             threading.Thread(target=self.connect_clients, daemon=True).start()
-            threading.Thread(target=self.check_winners, daemon=True).start()
             while True:
                 if not self.client_list:
                     continue
@@ -88,18 +86,18 @@ class RoomServer:
                     game_server = GameServer(
                         listen_ip, self.current_game_port, self.ready_clients
                     )
-                    self.games.append(game_server)
-                    threading.Thread(target=game_server.run).start()
 
-                    # time.sleep(2)
-                    time_at_start = str(time.time())
-                    # Notify each client of game start
-                    for client in self.ready_clients:
-                        # self.notify_client_of_game_start(client, time_at_start, self.current_game_port)
-                        threading.Thread(
-                            target=self.notify_client_of_game_start,
-                            args=(client, time_at_start, self.current_game_port),
-                        ).start()
+                    self.game_running = True
+                    game_server.run()
+                    self.game_running = False
+
+                    # Update the player's on the winner
+                    self.players_wins[game_server.winner] += 1
+                    for client in self.client_list:
+                        client.send(f"Win%{game_server.winner}".encode())
+
+                    # Accept clients again
+                    threading.Thread(target=self.connect_clients, daemon=True).start()
 
                     self.current_game_port += 1
 
@@ -112,19 +110,6 @@ class RoomServer:
             self.server_communicator.delete_server_by_ip(self.outer_ip, self.inner_ip)
             self.create_server_db()
             self.run()
-
-    def check_winners(self):
-        while True:
-            games_to_remove = []
-            for game in self.games:
-                if game.winner:
-                    self.players_wins[game.winner] += 1
-                    print(self.players_wins)
-                    games_to_remove.append(game)
-                    for client in self.client_list:
-                        client.send(f"Win%{game.winner}".encode())
-            for game in games_to_remove:
-                self.games.remove(game)
 
     def remove_server(self):
         self.server_communicator.remove_room(self.room_name)
@@ -197,7 +182,7 @@ class RoomServer:
                     client.send(foe_data)
 
     def connect_clients(self):
-        while True:
+        while not self.game_running:
             client, addr = self.server_socket.accept()
             if client in self.client_list:
                 continue
